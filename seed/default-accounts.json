@@ -1,0 +1,78 @@
+{
+  "_comment": "Default seed for new PFS sheets. The `accounts` array is the iteration-1 starter list mirroring the user's existing Historique 2020-2025 sheet (Quebec resident, dual condo + house ownership). The `categories` and `account_types` arrays drive the UI and the new-account picker.",
+  "schema_version": 2,
+
+  "_categories_doc": "Each category has id, name_fr, name_en, sort_order, kind, and an optional `group` + `group_sort` for future custom grouping (e.g., 'Liquid Assets' grouping cash+investments). Today the group fields are unused at runtime but persisted so future versions can render group headers without a data migration.",
+  "categories": [
+    { "id": "cash",              "name_fr": "Liquidités",          "name_en": "Cash",               "kind": "asset", "sort_order": 10, "group": "liquid",     "group_sort": 10 },
+    { "id": "investments",       "name_fr": "Investissements",      "name_en": "Investments",        "kind": "asset", "sort_order": 20, "group": "liquid",     "group_sort": 20 },
+    { "id": "real_estate",       "name_fr": "Immobilier",           "name_en": "Real Estate",        "kind": "asset", "sort_order": 30, "group": "real_estate","group_sort": 10 },
+    { "id": "other_asset",       "name_fr": "Autres actifs",        "name_en": "Other Assets",       "kind": "asset", "sort_order": 40, "group": "other",      "group_sort": 10 },
+    { "id": "real_estate_debt",  "name_fr": "Dettes immobilières",  "name_en": "Real Estate Debts",  "kind": "debt",  "sort_order": 50, "group": "real_estate","group_sort": 20 },
+    { "id": "other_debt",              "name_fr": "Dettes",               "name_en": "Debts",              "kind": "debt",  "sort_order": 60, "group": "other",      "group_sort": 20 }
+  ],
+
+  "_account_types_doc": "Catalog of common Quebec account types. The UI uses this to populate the 'add account' picker: pick a type → app derives id (id_prefix + counter), name, category, kind, and default owner/share. Users can override any field after creation. Adding new types here is the supported extension point.",
+  "account_types": [
+    { "id_prefix": "checking",          "name_fr": "Compte chèque",                       "name_en": "Checking Account",            "category": "cash",             "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "savings",           "name_fr": "Compte épargne",                      "name_en": "Savings Account",             "category": "cash",             "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "hisa",              "name_fr": "Épargne à intérêt élevé",             "name_en": "High-Interest Savings",       "category": "cash",             "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "cash_on_hand",      "name_fr": "Argent comptant",                     "name_en": "Cash on Hand",                "category": "cash",             "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "foreign_currency",  "name_fr": "Devises étrangères",                  "name_en": "Foreign Currency",            "category": "cash",             "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+
+    { "id_prefix": "tfsa",              "name_fr": "CELI",                                "name_en": "TFSA",                        "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "rrsp",              "name_fr": "REER",                                "name_en": "RRSP",                        "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "spousal_rrsp",      "name_fr": "REER de conjoint",                    "name_en": "Spousal RRSP",                "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "lira",              "name_fr": "CRI (compte de retraite immobilisé)", "name_en": "LIRA",                        "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "lif",               "name_fr": "FRV (fonds de revenu viager)",        "name_en": "LIF",                         "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "rrif",              "name_fr": "FERR",                                "name_en": "RRIF",                        "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "fhsa",              "name_fr": "CELIAPP",                             "name_en": "FHSA",                        "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "resp",              "name_fr": "REEE",                                "name_en": "RESP",                        "category": "investments",      "kind": "asset", "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "rdsp",              "name_fr": "REEI",                                "name_en": "RDSP",                        "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "non_reg",           "name_fr": "Compte non-enregistré",               "name_en": "Non-Registered Account",      "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "employer_pension", "name_fr": "Régime de retraite employeur",         "name_en": "Employer Pension",            "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "stock_options",     "name_fr": "Options d'achat / unités d'actions",  "name_en": "Stock Options / RSUs",        "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "crypto",            "name_fr": "Cryptomonnaie",                       "name_en": "Cryptocurrency",              "category": "investments",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+
+    { "id_prefix": "house",             "name_fr": "Maison",                              "name_en": "House",                       "category": "real_estate",      "kind": "asset", "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "condo",             "name_fr": "Condo",                               "name_en": "Condo",                       "category": "real_estate",      "kind": "asset", "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "cottage",           "name_fr": "Chalet",                              "name_en": "Cottage",                     "category": "real_estate",      "kind": "asset", "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "rental_property",   "name_fr": "Immeuble locatif",                    "name_en": "Rental Property",             "category": "real_estate",      "kind": "asset", "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "commercial_property","name_fr": "Immeuble commercial",                "name_en": "Commercial Property",         "category": "real_estate",      "kind": "asset", "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "land",              "name_fr": "Terrain",                             "name_en": "Land",                        "category": "real_estate",      "kind": "asset", "default_owner": "joint",  "default_ownership_share": 0.5 },
+
+    { "id_prefix": "mortgage",          "name_fr": "Hypothèque",                          "name_en": "Mortgage",                    "category": "real_estate_debt", "kind": "debt",  "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "heloc",             "name_fr": "Marge de crédit hypothécaire",        "name_en": "HELOC",                       "category": "real_estate_debt", "kind": "debt",  "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "second_mortgage",   "name_fr": "Deuxième hypothèque",                 "name_en": "Second Mortgage",             "category": "real_estate_debt", "kind": "debt",  "default_owner": "joint",  "default_ownership_share": 0.5 },
+    { "id_prefix": "construction_loan", "name_fr": "Prêt construction",                   "name_en": "Construction Loan",           "category": "real_estate_debt", "kind": "debt",  "default_owner": "joint",  "default_ownership_share": 0.5 },
+
+    { "id_prefix": "vehicle",           "name_fr": "Véhicule",                            "name_en": "Vehicle",                     "category": "other_asset",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "boat",              "name_fr": "Bateau",                              "name_en": "Boat",                        "category": "other_asset",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "life_insurance",    "name_fr": "Valeur de rachat assurance-vie",      "name_en": "Life Insurance Cash Value",   "category": "other_asset",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "business_equity",   "name_fr": "Capital d'entreprise",                "name_en": "Business Equity",             "category": "other_asset",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "collectibles",      "name_fr": "Objets de collection",                "name_en": "Collectibles",                "category": "other_asset",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "jewelry",           "name_fr": "Bijoux",                              "name_en": "Jewelry",                     "category": "other_asset",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "other_asset",       "name_fr": "Autre actif",                         "name_en": "Other Asset",                 "category": "other_asset",      "kind": "asset", "default_owner": "self",   "default_ownership_share": 1.0 },
+
+    { "id_prefix": "credit_card",       "name_fr": "Carte de crédit",                     "name_en": "Credit Card",                 "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "line_of_credit",    "name_fr": "Marge de crédit",                     "name_en": "Line of Credit",              "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "personal_loan",     "name_fr": "Prêt personnel",                      "name_en": "Personal Loan",               "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "auto_loan",         "name_fr": "Prêt auto",                           "name_en": "Auto Loan",                   "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "student_loan",      "name_fr": "Prêt étudiant",                       "name_en": "Student Loan",                "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "family_loan",       "name_fr": "Prêt familial",                       "name_en": "Family Loan",                 "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "tax_debt",          "name_fr": "Dette fiscale",                       "name_en": "Tax Debt",                    "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 },
+    { "id_prefix": "other_debt",        "name_fr": "Autre dette",                         "name_en": "Other Debt",                  "category": "other_debt",       "kind": "debt",  "default_owner": "self",   "default_ownership_share": 1.0 }
+  ],
+
+  "_accounts_doc": "Starter accounts (fresh installs). Existing users keep whatever's in their sheet; they can use the type picker to add new ones with English IDs.",
+  "accounts": [
+    { "id": "non_reg_1",          "type": "non_reg",           "name_fr": "Compte non-enregistré 1", "name_en": "Non-Registered 1",     "category": "investments",      "kind": "asset", "owner": "self",  "ownership_share": 1.0, "active": true, "sort_order": 10 },
+    { "id": "tfsa_1",             "type": "tfsa",              "name_fr": "CELI 1",                  "name_en": "TFSA 1",               "category": "investments",      "kind": "asset", "owner": "self",  "ownership_share": 1.0, "active": true, "sort_order": 20 },
+    { "id": "rrsp_1",             "type": "rrsp",              "name_fr": "REER 1",                  "name_en": "RRSP 1",               "category": "investments",      "kind": "asset", "owner": "self",  "ownership_share": 1.0, "active": true, "sort_order": 30 },
+
+    { "id": "house_1",            "type": "house",             "name_fr": "Maison",                  "name_en": "House",                "category": "real_estate",      "kind": "asset", "owner": "joint", "ownership_share": 0.5, "active": true, "sort_order": 10 },
+
+    { "id": "mortgage_1",         "type": "mortgage",          "name_fr": "Hypothèque maison",       "name_en": "House Mortgage",       "category": "real_estate_debt", "kind": "debt",  "owner": "joint", "ownership_share": 0.5, "active": true, "sort_order": 10 },
+    { "id": "heloc_1",            "type": "heloc",             "name_fr": "Marge hypothécaire maison","name_en": "House HELOC",         "category": "real_estate_debt", "kind": "debt",  "owner": "joint", "ownership_share": 0.5, "active": true, "sort_order": 20 }
+  ]
+}

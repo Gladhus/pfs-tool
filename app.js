@@ -385,19 +385,32 @@
   }
 
   async function loadAccounts() {
+    // UNFORMATTED_VALUE: get raw cell values (numbers as numbers, not locale-
+    // formatted strings). Without this, fr_CA formats 0.5 as "0,5" and
+    // Number("0,5") returns NaN — silently reverting any share % change.
     const resp = await gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: state.sheetId,
       range: "accounts!A:Z",
+      valueRenderOption: "UNFORMATTED_VALUE",
     });
     const rows = resp.result.values || [];
     if (rows.length < 2) { state.accounts = []; return; }
     const headers = rows[0];
+
+    // Parse a numeric cell that may arrive as number, "0.5", or "0,5" (fr locale)
+    const parseNum = (v, fallback) => {
+      if (v === "" || v == null) return fallback;
+      if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+      const n = Number(String(v).replace(",", "."));
+      return Number.isFinite(n) ? n : fallback;
+    };
+
     state.accounts = rows.slice(1).map(r => {
       const obj = {};
       headers.forEach((h, i) => { obj[h] = r[i] ?? ""; });
-      obj.ownership_share = Number(obj.ownership_share || 1);
-      obj.sort_order = Number(obj.sort_order || 0);
-      obj.active = String(obj.active).toUpperCase() === "TRUE" || obj.active === true;
+      obj.ownership_share = parseNum(obj.ownership_share, 1);
+      obj.sort_order      = parseNum(obj.sort_order, 0);
+      obj.active = obj.active === true || String(obj.active).toUpperCase() === "TRUE";
       return obj;
     }).filter(a => a.id);
   }
@@ -1637,7 +1650,7 @@
       await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: "accounts!A:Z" });
       await gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: state.sheetId, range: "accounts!A1",
-        valueInputOption: "USER_ENTERED", resource: { values: accountsRows },
+        valueInputOption: "RAW", resource: { values: accountsRows },
       });
 
       // Write snapshots tab if any rows were affected
@@ -1791,7 +1804,7 @@
       await gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: state.sheetId,
         range: "accounts!A1",
-        valueInputOption: "USER_ENTERED",
+        valueInputOption: "RAW",
         resource: { values: rows },
       });
       state.accounts = next;

@@ -109,6 +109,69 @@ export function setStatus(msg, level = '') {
   }
 }
 
+// Global fixed tooltip — escapes all overflow: hidden containers
+const _tip = document.createElement('div');
+_tip.id = 'pfs-tooltip';
+document.body.appendChild(_tip);
+
+function _showTip(anchor) {
+  _tip.textContent = anchor.dataset.tooltip;
+  _tip.style.opacity = '0';
+  _tip.style.display = 'block';
+  const r = anchor.getBoundingClientRect();
+  const tw = _tip.offsetWidth;
+  const th = _tip.offsetHeight;
+  let top = r.top - th - 8;
+  if (top < 8) top = r.bottom + 8;
+  let left = r.left + r.width / 2 - tw / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  _tip.style.top = top + 'px';
+  _tip.style.left = left + 'px';
+  _tip.style.opacity = '1';
+}
+
+document.addEventListener('mouseover', (e) => {
+  const el = e.target.closest('[data-tooltip]');
+  if (el) _showTip(el);
+});
+document.addEventListener('mouseout', (e) => {
+  const el = e.target.closest('[data-tooltip]');
+  if (el && !el.contains(e.relatedTarget)) _tip.style.opacity = '0';
+});
+
+// Generic confirm dialog — returns Promise<boolean>
+const _confirmDlg    = document.getElementById('confirm-dialog');
+const _confirmMsg    = document.getElementById('confirm-message');
+const _confirmList   = document.getElementById('confirm-list');
+const _confirmOkBtn  = document.getElementById('confirm-ok-btn');
+const _confirmCanBtn = document.getElementById('confirm-cancel-btn');
+
+export function showConfirm({ message, items = [], okLabel = 'OK', cancelLabel = 'Cancel' }) {
+  _confirmMsg.textContent = message;
+  _confirmList.innerHTML = '';
+  _confirmList.hidden = !items.length;
+  for (const item of items) {
+    const li = document.createElement('li');
+    li.textContent = item;
+    _confirmList.appendChild(li);
+  }
+  _confirmOkBtn.textContent = okLabel;
+  _confirmCanBtn.textContent = cancelLabel;
+  _confirmDlg.showModal();
+  return new Promise(resolve => {
+    const cleanup = (result) => {
+      _confirmDlg.close();
+      _confirmOkBtn.removeEventListener('click', onOk);
+      _confirmCanBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    _confirmOkBtn.addEventListener('click', onOk);
+    _confirmCanBtn.addEventListener('click', onCancel);
+  });
+}
+
 export function showSheetLink(id) {
   els.sheetInfo.hidden = false;
   const url = `https://docs.google.com/spreadsheets/d/${id}/edit`;

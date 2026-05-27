@@ -38,27 +38,63 @@ export function prevDate(date) {
   return earlier.length ? earlier[earlier.length - 1] : null;
 }
 
+// Returns { accountId: balance_raw } — the last known balance for each account
+// on or before asOfDate (carry-forward / LOCF semantics).
+export function buildEffectiveBalances(asOfDate) {
+  const best = {};
+  for (const s of state.snapshots) {
+    if (s.account_id === '__day__') continue;
+    if (s.date > asOfDate) continue;
+    const prev = best[s.account_id];
+    if (!prev || s.date > prev.date) best[s.account_id] = s;
+  }
+  const result = {};
+  for (const [id, s] of Object.entries(best)) result[id] = s.balance_raw;
+  return result;
+}
+
+// Efficiently computes carry-forward balances for a sorted array of dates.
+// Returns an array (one entry per date) of { accountId: balance_raw } objects.
+// Balances from before dates[0] are automatically pre-seeded.
+export function buildBalanceSweep(dates) {
+  if (!dates.length) return [];
+  const sorted = state.snapshots
+    .filter(s => s.account_id !== '__day__')
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const results = [];
+  const eff = {};
+  let si = 0;
+  for (const date of dates) {
+    while (si < sorted.length && sorted[si].date <= date) {
+      eff[sorted[si].account_id] = sorted[si].balance_raw;
+      si++;
+    }
+    results.push({ ...eff });
+  }
+  return results;
+}
+
 export function computeNetWorthFromSnapshots(date) {
-  const rows = state.snapshots.filter(s => s.date === date && s.account_id !== '__day__');
+  const balances = buildEffectiveBalances(date);
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
   let total = 0;
-  for (const r of rows) {
-    const a = acctById[r.account_id];
+  for (const [id, balance_raw] of Object.entries(balances)) {
+    const a = acctById[id];
     if (!a) continue;
-    total += r.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+    total += balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
   }
   return total;
 }
 
 export function computeDateStats(date) {
-  const rows = state.snapshots.filter(s => s.date === date && s.account_id !== '__day__');
+  const balances = buildEffectiveBalances(date);
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
   let netWorth = 0;
   const byCategory = {};
-  for (const r of rows) {
-    const a = acctById[r.account_id];
+  for (const [id, balance_raw] of Object.entries(balances)) {
+    const a = acctById[id];
     if (!a) continue;
-    const signed = r.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+    const signed = balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
     netWorth += signed;
     byCategory[a.category] = (byCategory[a.category] || 0) + signed;
   }

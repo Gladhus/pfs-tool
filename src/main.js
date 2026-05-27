@@ -23,6 +23,10 @@ import {
   closeGroupDialog, deleteGroupFromDialog,
 } from './groups.js';
 
+// Stamp the build version into the footer
+const vEl = document.getElementById('app-version');
+if (vEl) vEl.textContent = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : '';
+
 // --- Wire up all event listeners ---
 
 els.signinBtn.disabled = true;

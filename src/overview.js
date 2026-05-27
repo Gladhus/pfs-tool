@@ -2,7 +2,7 @@ import Chart from 'chart.js/auto';
 import { state } from './state.js';
 import { lang, t, tFn, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { computeDateStats, getDatesForPeriod } from './utils.js';
+import { computeDateStats, getDatesForPeriod, buildEffectiveBalances, buildBalanceSweep } from './utils.js';
 import { els } from './dom.js';
 import { icon, categoryIcon, categoryKey } from './icons.js';
 
@@ -87,14 +87,13 @@ function accountMatchesGroup(a, group) {
 }
 
 function groupStatsFor(date, group) {
+  const balances = buildEffectiveBalances(date);
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
   let total = 0;
-  for (const s of state.snapshots) {
-    if (s.account_id === '__day__') continue;
-    if (s.date !== date) continue;
-    const a = acctById[s.account_id];
+  for (const [id, balance_raw] of Object.entries(balances)) {
+    const a = acctById[id];
     if (!a || !accountMatchesGroup(a, group)) continue;
-    total += s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+    total += balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
   }
   return total;
 }
@@ -435,18 +434,21 @@ export function renderOverviewChart() {
   const net = new Array(dates.length).fill(0);
   const hasAny = new Array(dates.length).fill(false);
 
-  for (const s of state.snapshots) {
-    if (s.account_id === '__day__') continue;
-    const i = dateIdx.get(s.date);
-    if (i === undefined) continue;
-    const a = acctById[s.account_id];
-    if (!a) continue;
-    const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-    net[i] += signed;
-    hasAny[i] = true;
-    for (let b = 0; b < buckets.length; b++) {
-      if (buckets[b].match(a)) seriesArr[b][i] += signed;
+  const sweep = buildBalanceSweep(dates);
+  for (let i = 0; i < dates.length; i++) {
+    const balances = sweep[i];
+    let dayHasAny = false;
+    for (const [acctId, balance_raw] of Object.entries(balances)) {
+      const a = acctById[acctId];
+      if (!a) continue;
+      dayHasAny = true;
+      const signed = balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+      net[i] += signed;
+      for (let b = 0; b < buckets.length; b++) {
+        if (buckets[b].match(a)) seriesArr[b][i] += signed;
+      }
     }
+    hasAny[i] = dayHasAny;
   }
   const finalize = arr => arr.map((v, i) => hasAny[i] ? v : null);
   const netData = finalize(net);
@@ -630,15 +632,13 @@ function drawSpark(canvas, spec) {
     if (spec.kind === 'group') return accountMatchesGroup(a, spec.group);
     return foldCategoryId(a.category) === spec.id;
   };
-  const series = dates.map(d => {
+  const sweep = buildBalanceSweep(dates);
+  const series = sweep.map(balances => {
     let total = 0;
-    for (const s of state.snapshots) {
-      if (s.date !== d) continue;
-      const a = acctById[s.account_id];
-      if (!a) continue;
-      if (!matches(a)) continue;
-      const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-      total += signed;
+    for (const [id, balance_raw] of Object.entries(balances)) {
+      const a = acctById[id];
+      if (!a || !matches(a)) continue;
+      total += balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
     }
     return total;
   });

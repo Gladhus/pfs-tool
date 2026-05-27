@@ -2,7 +2,7 @@ import Chart from 'chart.js/auto';
 import { state } from './state.js';
 import { t, tFn, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { getDatesForPeriod } from './utils.js';
+import { getDatesForPeriod, buildBalanceSweep, activeAccounts } from './utils.js';
 import { els } from './dom.js';
 import { icon } from './icons.js';
 
@@ -13,30 +13,29 @@ export function getHistFilteredDates() {
 
 export function computeSeries(filteredDates) {
   const dates = filteredDates || state.datesSorted;
-  const dateSet = new Set(dates);
+  if (!dates.length) return { dates: [], net: [], investments: [], realEstateNet: [] };
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
-  const byDate = new Map();
-  for (const s of state.snapshots) {
-    if (s.account_id === '__day__') continue;
-    if (!dateSet.has(s.date)) continue;
-    const a = acctById[s.account_id];
-    if (!a) continue;
-    const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-    const m = byDate.get(s.date) || { net: 0, investments: 0, realEstateAssets: 0, realEstateDebts: 0 };
-    m.net += signed;
-    if (a.category === 'investments') m.investments += signed;
-    else if (a.category === 'real_estate') m.realEstateAssets += signed;
-    else if (a.category === 'real_estate_debt') m.realEstateDebts += signed;
-    byDate.set(s.date, m);
+  const sweep = buildBalanceSweep(dates);
+  const outDates = [], net = [], investments = [], realEstateNet = [];
+  for (let i = 0; i < dates.length; i++) {
+    const balances = sweep[i];
+    if (!Object.keys(balances).length) continue;
+    let n = 0, inv = 0, re = 0, red = 0;
+    for (const [id, balance_raw] of Object.entries(balances)) {
+      const a = acctById[id];
+      if (!a) continue;
+      const signed = balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+      n += signed;
+      if (a.category === 'investments') inv += signed;
+      else if (a.category === 'real_estate') re += signed;
+      else if (a.category === 'real_estate_debt') red += signed;
+    }
+    outDates.push(dates[i]);
+    net.push(n);
+    investments.push(inv);
+    realEstateNet.push(re + red);
   }
-  for (const d of dates) if (!byDate.has(d)) byDate.set(d, { net: 0, investments: 0, realEstateAssets: 0, realEstateDebts: 0 });
-  const sorted = dates.filter(d => byDate.has(d)).sort();
-  return {
-    dates: sorted,
-    net:           sorted.map(d => byDate.get(d).net),
-    investments:   sorted.map(d => byDate.get(d).investments),
-    realEstateNet: sorted.map(d => byDate.get(d).realEstateAssets + byDate.get(d).realEstateDebts),
-  };
+  return { dates: outDates, net, investments, realEstateNet };
 }
 
 export function populateHistAccountSelect() {
@@ -80,26 +79,7 @@ function fmtMonthHeading(yyyymm) {
 }
 
 export function renderHistoryTable() {
-  const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
-
-  // Build per-date aggregates
-  const byDate = new Map();
-  for (const s of state.snapshots) {
-    if (s.account_id === '__day__') continue;
-    const a = acctById[s.account_id];
-    if (!a) continue;
-    const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-    const m = byDate.get(s.date) || { investments: 0, realEstate: 0, realEstateDebts: 0, debts: 0, net: 0 };
-    m.net += signed;
-    if (a.kind === 'debt') m.debts += signed;
-    if (a.category === 'investments') m.investments += signed;
-    else if (a.category === 'real_estate') m.realEstate += signed;
-    else if (a.category === 'real_estate_debt') m.realEstateDebts += signed;
-    byDate.set(s.date, m);
-  }
-
-  const allDates = [...byDate.keys()].sort();
-  if (!allDates.length) {
+  if (!state.datesSorted.length) {
     els.historySection.hidden = false;
     els.historySummary.textContent = '';
     els.historyCards.innerHTML = `
@@ -110,12 +90,50 @@ export function renderHistoryTable() {
       </div>`;
     return;
   }
+
+  const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
+  const allDates = state.datesSorted;
+
+  // Carry-forward balances for every known date
+  const sweep = buildBalanceSweep(allDates);
+
+  // Track which accounts have exact data on each date (for incomplete flag)
+  const exactByDate = new Map();
+  for (const s of state.snapshots) {
+    if (s.account_id === '__day__') continue;
+    if (!exactByDate.has(s.date)) exactByDate.set(s.date, new Set());
+    exactByDate.get(s.date).add(s.account_id);
+  }
+  const activeIds = new Set(activeAccounts().map(a => a.id));
+
+  // Build per-date aggregates using carry-forward balances
+  const byDate = new Map();
+  for (let i = 0; i < allDates.length; i++) {
+    const date = allDates[i];
+    const balances = sweep[i];
+    if (!Object.keys(balances).length) continue;
+    const m = { investments: 0, realEstate: 0, realEstateDebts: 0, debts: 0, net: 0, incomplete: false };
+    for (const [id, balance_raw] of Object.entries(balances)) {
+      const a = acctById[id];
+      if (!a) continue;
+      const signed = balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+      m.net += signed;
+      if (a.kind === 'debt') m.debts += signed;
+      if (a.category === 'investments') m.investments += signed;
+      else if (a.category === 'real_estate') m.realEstate += signed;
+      else if (a.category === 'real_estate_debt') m.realEstateDebts += signed;
+    }
+    const exact = exactByDate.get(date) || new Set();
+    m.incomplete = [...activeIds].some(id => !exact.has(id));
+    byDate.set(date, m);
+  }
   els.historySection.hidden = false;
-  els.historySummary.textContent = tFn('history_summary', allDates.length, allDates[0], allDates[allDates.length - 1]);
+  const dateDates = [...byDate.keys()].sort();
+  els.historySummary.textContent = tFn('history_summary', dateDates.length, dateDates[0], dateDates[dateDates.length - 1]);
 
   // Group dates by YYYY-MM, months descending, days within month descending
   const byMonth = new Map();
-  for (const d of allDates) {
+  for (const d of dateDates) {
     const mo = d.slice(0, 7);
     if (!byMonth.has(mo)) byMonth.set(mo, []);
     byMonth.get(mo).push(d);
@@ -132,8 +150,8 @@ export function renderHistoryTable() {
     const reNet = latest.realEstate + latest.realEstateDebts;
 
     // Delta for the latest entry vs the chronologically previous entry overall
-    const prevIdx = allDates.indexOf(latestDate) - 1;
-    const prevDateKey = prevIdx >= 0 ? allDates[prevIdx] : null;
+    const prevIdx = dateDates.indexOf(latestDate) - 1;
+    const prevDateKey = prevIdx >= 0 ? dateDates[prevIdx] : null;
     const delta = prevDateKey ? latest.net - byDate.get(prevDateKey).net : null;
 
     // ── Card ──────────────────────────────────────────────
@@ -156,6 +174,13 @@ export function renderHistoryTable() {
     const dateLabel = document.createElement('div');
     dateLabel.className = 'hist-card-date';
     dateLabel.textContent = latestDate;
+    if (latest?.incomplete) {
+      const warn = document.createElement('span');
+      warn.className = 'hist-incomplete-icon';
+      warn.dataset.tooltip = t('incomplete_data');
+      warn.innerHTML = icon('alert', { size: 14 });
+      dateLabel.appendChild(warn);
+    }
 
     left.appendChild(moLabel);
     left.appendChild(dateLabel);
@@ -212,8 +237,8 @@ export function renderHistoryTable() {
 
       for (const date of olderDates) {
         const d = byDate.get(date);
-        const prevI = allDates.indexOf(date) - 1;
-        const prevK = prevI >= 0 ? allDates[prevI] : null;
+        const prevI = dateDates.indexOf(date) - 1;
+        const prevK = prevI >= 0 ? dateDates[prevI] : null;
         const dDelta = prevK ? d.net - byDate.get(prevK).net : null;
 
         const row = document.createElement('div');
@@ -224,6 +249,13 @@ export function renderHistoryTable() {
         const rDate = document.createElement('span');
         rDate.className = 'hist-older-date';
         rDate.textContent = date;
+        if (d?.incomplete) {
+          const warn = document.createElement('span');
+          warn.className = 'hist-incomplete-icon';
+          warn.dataset.tooltip = t('incomplete_data');
+          warn.innerHTML = icon('alert', { size: 14 });
+          rDate.appendChild(warn);
+        }
 
         const rNet = document.createElement('span');
         rNet.className = 'hist-older-net';
@@ -301,14 +333,16 @@ export function renderChart() {
   } else {
     const acct = state.accounts.find(a => a.id === selectedAccount);
     if (!acct) { els.chartSection.hidden = true; return; }
-    const dateSet = new Set(filteredDates);
-    const snapByDate = Object.fromEntries(
-      state.snapshots.filter(s => s.account_id === selectedAccount && dateSet.has(s.date))
-        .map(s => [s.date, s.balance_raw])
-    );
-    chartDates = filteredDates.filter(d => snapByDate[d] !== undefined);
+    const sweep = buildBalanceSweep(filteredDates);
+    const tempDates = [], values = [];
+    for (let i = 0; i < filteredDates.length; i++) {
+      const bal = sweep[i][selectedAccount];
+      if (bal === undefined) continue;
+      tempDates.push(filteredDates[i]);
+      values.push(bal);
+    }
+    chartDates = tempDates;
     if (!chartDates.length) { els.chartSection.hidden = true; return; }
-    const values = chartDates.map(d => snapByDate[d]);
     const hex = acct.kind === 'debt' ? COLOR_DEBT : COLOR_ASSET;
     datasets.push(lineDataset(tr(acct), values, hex));
   }

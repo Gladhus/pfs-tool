@@ -1,8 +1,8 @@
 import { state, HEADERS } from './state.js';
 import { t, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct, parseMoney } from './format.js';
-import { categoriesInOrder, accountsForCategory, activeAccounts, snapshotForDate, prevDate, computeNetWorthFromSnapshots, normalizeDate, rebuildDatesList } from './utils.js';
-import { els, setStatus } from './dom.js';
+import { categoriesInOrder, accountsForCategory, activeAccounts, snapshotForDate, prevDate, computeNetWorthFromSnapshots, buildEffectiveBalances, normalizeDate, rebuildDatesList } from './utils.js';
+import { els, setStatus, showConfirm } from './dom.js';
 import { icon, categoryIcon, categoryKey } from './icons.js';
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart } from './history.js';
@@ -14,7 +14,8 @@ export function renderForm() {
   const existing = snapshotForDate(date);
   const isEditing = state.datesSorted.includes(date);
   const prevD = prevDate(date);
-  const prevData = prevD ? snapshotForDate(prevD) : null;
+  // Use carry-forward so hints show each account's last known value, not just prevD's entries
+  const prevBalances = prevD ? buildEffectiveBalances(prevD) : {};
   els.dateBadge.hidden = false;
   els.dateBadge.textContent = isEditing ? t('existing_date') : t('new_date');
 
@@ -64,10 +65,13 @@ export function renderForm() {
       bal.inputMode = 'decimal';
       bal.autocomplete = 'off';
       bal.className = 'balance';
-      bal.placeholder = fmtMoney(0);
+      bal.placeholder = '—';
 
       const seedVal = existing.balances[a.id];
       if (seedVal !== undefined) bal.value = fmtMoney(seedVal);
+
+      const updateEmpty = () => row.classList.toggle('row-empty', bal.value.trim() === '');
+      updateEmpty();
 
       bal.addEventListener('focus', () => {
         const n = parseMoney(bal.value);
@@ -77,9 +81,10 @@ export function renderForm() {
       bal.addEventListener('blur', () => {
         const n = parseMoney(bal.value);
         bal.value = n === null ? '' : fmtMoney(n);
+        updateEmpty();
         recomputeTotals();
       });
-      bal.addEventListener('input', recomputeTotals);
+      bal.addEventListener('input', () => { updateEmpty(); recomputeTotals(); });
       bal.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
@@ -92,7 +97,7 @@ export function renderForm() {
       const balWrap = document.createElement('div');
       balWrap.className = 'bal-wrap';
       balWrap.appendChild(bal);
-      const prevVal = prevData?.balances[a.id];
+      const prevVal = prevBalances[a.id];
       if (prevVal !== undefined) {
         const hint = document.createElement('span');
         hint.className = 'prev-val';
@@ -137,17 +142,29 @@ export function readFormValues() {
 
 export function recomputeTotals() {
   const values = readFormValues();
+  const prevD = prevDate(state.currentDate);
+  const fallback = prevD ? buildEffectiveBalances(prevD) : {};
   const byCategory = {};
   let netWorth = 0;
   let filledCount = 0;
   let totalCount = 0;
+  let usingFallback = false;
 
   for (const a of activeAccounts()) {
     totalCount++;
     const v = values[a.id];
-    if (!v || v.balance === null || Number.isNaN(v.balance)) continue;
-    filledCount++;
-    const signed = v.balance * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+    const entered = (!v || v.balance === null || Number.isNaN(v.balance)) ? null : v.balance;
+    let balance;
+    if (entered !== null) {
+      filledCount++;
+      balance = entered;
+    } else if (fallback[a.id] !== undefined) {
+      balance = fallback[a.id];
+      usingFallback = true;
+    } else {
+      continue;
+    }
+    const signed = balance * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
     byCategory[a.category] = (byCategory[a.category] || 0) + signed;
     netWorth += signed;
   }
@@ -188,9 +205,11 @@ export function recomputeTotals() {
     els.totalsGrid.appendChild(row);
   }
 
-  els.netWorthVal.textContent = fmtMoney(netWorth);
+  const fallbackIcon = usingFallback
+    ? `<span class="entry-fallback-icon" data-tooltip="${t('net_worth_fallback')}">${icon('alert', { size: 22 })}</span> `
+    : '';
+  els.netWorthVal.innerHTML = fallbackIcon + fmtMoney(netWorth);
 
-  const prevD = prevDate(state.currentDate);
   if (prevD) {
     const prevNet = computeNetWorthFromSnapshots(prevD);
     const delta = netWorth - prevNet;
@@ -214,20 +233,53 @@ export async function saveSnapshot() {
   const values = readFormValues();
   const enteredAt = new Date().toISOString();
   const newRows = [];
+  // __day__ is always touched so an empty textarea clears an existing day comment.
+  const touched = new Set(['__day__']);
+
+  // Accounts that already have a snapshot for this date — clearing them = delete.
+  const existingOnDate = new Set(
+    state.snapshots.filter(s => s.date === date && s.account_id !== '__day__').map(s => s.account_id)
+  );
 
   for (const a of activeAccounts()) {
     const v = values[a.id];
-    if (!v || v.balance === null || Number.isNaN(v.balance)) continue;
-    newRows.push([date, a.id, v.balance, v.comment || '', enteredAt]);
+    const hasValue = v && v.balance !== null && !Number.isNaN(v.balance);
+    if (hasValue) {
+      newRows.push([date, a.id, v.balance, v.comment || '', enteredAt]);
+      touched.add(a.id);
+    } else if (existingOnDate.has(a.id)) {
+      // Field was pre-filled but user cleared it — mark touched to drop the old row.
+      touched.add(a.id);
+    }
   }
   const dayComment = els.dayCommentEl.value.trim();
   if (dayComment) {
     newRows.push([date, '__day__', 0, dayComment, enteredAt]);
   }
 
-  if (!newRows.length) {
+  // Existing rows for this date that weren't touched are preserved as-is.
+  const keptRows = state.snapshots
+    .filter(s => s.date === date && !touched.has(s.account_id))
+    .map(s => [s.date, s.account_id, s.balance_raw, s.comment || '', s.entered_at || '']);
+
+  if (!newRows.length && !keptRows.length) {
     setStatus('Nothing to save — all balances are empty.', 'warn');
     return;
+  }
+
+  // Warn if any previously saved entries for this date will be deleted.
+  const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
+  const deletedNames = [...existingOnDate]
+    .filter(id => touched.has(id) && !newRows.some(r => r[1] === id))
+    .map(id => { const a = acctById[id]; return a ? (a.name_fr || a.name_en) : id; });
+  if (deletedNames.length) {
+    const ok = await showConfirm({
+      message: t('confirm_delete_entries'),
+      items: deletedNames,
+      okLabel: t('confirm_delete_ok'),
+      cancelLabel: t('cancel'),
+    });
+    if (!ok) return;
   }
 
   setStatus('Saving snapshot…');
@@ -238,6 +290,7 @@ export async function saveSnapshot() {
     for (const s of keep) {
       allRows.push([s.date, s.account_id, s.balance_raw, s.comment || '', s.entered_at || '']);
     }
+    for (const r of keptRows) allRows.push(r);
     for (const r of newRows) allRows.push(r);
 
     await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'snapshots!A:Z' });
@@ -295,10 +348,10 @@ export function onCopyPrev() {
     setStatus('No previous entry to copy from.', 'warn');
     return;
   }
-  const prev = snapshotForDate(prevD);
+  const prevBalances = buildEffectiveBalances(prevD);
   els.categoriesEl.querySelectorAll('.account-row').forEach(row => {
     const id = row.dataset.accountId;
-    const v = prev.balances[id];
+    const v = prevBalances[id];
     if (v !== undefined) row.querySelector('input.balance').value = fmtMoney(v);
   });
   recomputeTotals();

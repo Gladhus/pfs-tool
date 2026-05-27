@@ -440,8 +440,19 @@
     </div>
   </dialog>
 
+  <dialog id="confirm-dialog" class="confirm-dialog">
+    <div class="confirm-body">
+      <p class="confirm-message" id="confirm-message"></p>
+      <ul class="confirm-list" id="confirm-list"></ul>
+      <div class="confirm-actions">
+        <button type="button" class="secondary" id="confirm-cancel-btn"></button>
+        <button type="button" class="danger" id="confirm-ok-btn"></button>
+      </div>
+    </div>
+  </dialog>
+
   <footer>
-    <small>PFS Tool — v0.7</small>
+    <small>PFS Tool — <span id="app-version"></span></small>
   </footer>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>

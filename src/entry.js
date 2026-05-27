@@ -1,5 +1,5 @@
 import { state, HEADERS } from './state.js';
-import { t, tFn, tr } from './i18n.js';
+import { t, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct, parseMoney } from './format.js';
 import { categoriesInOrder, accountsForCategory, activeAccounts, snapshotForDate, prevDate, computeNetWorthFromSnapshots, normalizeDate, rebuildDatesList } from './utils.js';
 import { els, setStatus } from './dom.js';
@@ -12,19 +12,8 @@ export function renderForm() {
 
   const existing = snapshotForDate(date);
   const isEditing = state.datesSorted.includes(date);
-  const prevD = prevDate(date);
-  const prevData = prevD ? snapshotForDate(prevD) : null;
-
-  if (isEditing) {
-    els.dateBadge.hidden = false;
-    els.dateBadge.textContent = t('existing_date');
-  } else if (prevD) {
-    els.dateBadge.hidden = false;
-    els.dateBadge.textContent = tFn('new_prefilled', prevD);
-  } else {
-    els.dateBadge.hidden = false;
-    els.dateBadge.textContent = t('new_date');
-  }
+  els.dateBadge.hidden = false;
+  els.dateBadge.textContent = isEditing ? t('existing_date') : t('new_date');
 
   els.dayCommentEl.value = existing.dayComment || '';
 
@@ -68,9 +57,7 @@ export function renderForm() {
       bal.placeholder = fmtMoney(0);
 
       const seedVal = existing.balances[a.id];
-      const prevVal = prevData ? prevData.balances[a.id] : undefined;
-      const initial = seedVal !== undefined ? seedVal : prevVal !== undefined ? prevVal : null;
-      if (initial !== null) bal.value = fmtMoney(initial);
+      if (seedVal !== undefined) bal.value = fmtMoney(seedVal);
 
       bal.addEventListener('focus', () => {
         const n = parseMoney(bal.value);

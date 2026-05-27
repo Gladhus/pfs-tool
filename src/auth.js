@@ -212,8 +212,8 @@ export async function loadAndRenderForm() {
   populateTypePicker();
 
   const now = new Date();
-  state.currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  els.monthInput.value = state.currentMonth;
+  state.currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  els.dateInput.value = state.currentDate;
 
   renderForm();
   els.entryForm.hidden = false;

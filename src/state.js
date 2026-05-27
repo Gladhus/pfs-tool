@@ -12,7 +12,7 @@ export const SHEET_TITLE = cfg.SHEET_TITLE || 'PFS Tool — Bilan financier';
 
 export const HEADERS = {
   accounts:  ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order'],
-  snapshots: ['month', 'account_id', 'balance_raw', 'comment', 'entered_at'],
+  snapshots: ['date', 'account_id', 'balance_raw', 'comment', 'entered_at'],
   config:    ['key', 'value'],
 };
 
@@ -29,8 +29,8 @@ export const state = {
   categoryMeta: [],
   accountTypes: [],
   snapshots:    [],
-  monthsSorted: [],
-  currentMonth: null,
+  datesSorted:  [],
+  currentDate:  null,
   importParsed: null,
   chart:        null,
   overviewChart: null,

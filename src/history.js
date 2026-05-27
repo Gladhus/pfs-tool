@@ -2,39 +2,39 @@ import Chart from 'chart.js/auto';
 import { state } from './state.js';
 import { t, tFn, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { getMonthsForPeriod } from './utils.js';
+import { getDatesForPeriod } from './utils.js';
 import { els } from './dom.js';
 
-export function getHistFilteredMonths() {
+export function getHistFilteredDates() {
   const btn = document.querySelector('#hist-period-pills .period-btn.active');
-  return getMonthsForPeriod(btn?.dataset.period || 'all');
+  return getDatesForPeriod(btn?.dataset.period || 'all');
 }
 
-export function computeSeries(filteredMonths) {
-  const months = filteredMonths || state.monthsSorted;
-  const monthSet = new Set(months);
+export function computeSeries(filteredDates) {
+  const dates = filteredDates || state.datesSorted;
+  const dateSet = new Set(dates);
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
-  const byMonth = new Map();
+  const byDate = new Map();
   for (const s of state.snapshots) {
-    if (s.account_id === '__month__') continue;
-    if (!monthSet.has(s.month)) continue;
+    if (s.account_id === '__day__') continue;
+    if (!dateSet.has(s.date)) continue;
     const a = acctById[s.account_id];
     if (!a) continue;
     const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-    const m = byMonth.get(s.month) || { net: 0, investments: 0, realEstateAssets: 0, realEstateDebts: 0 };
+    const m = byDate.get(s.date) || { net: 0, investments: 0, realEstateAssets: 0, realEstateDebts: 0 };
     m.net += signed;
     if (a.category === 'investments') m.investments += signed;
     else if (a.category === 'real_estate') m.realEstateAssets += signed;
     else if (a.category === 'real_estate_debt') m.realEstateDebts += signed;
-    byMonth.set(s.month, m);
+    byDate.set(s.date, m);
   }
-  for (const mo of months) if (!byMonth.has(mo)) byMonth.set(mo, { net: 0, investments: 0, realEstateAssets: 0, realEstateDebts: 0 });
-  const sorted = months.filter(m => byMonth.has(m)).sort();
+  for (const d of dates) if (!byDate.has(d)) byDate.set(d, { net: 0, investments: 0, realEstateAssets: 0, realEstateDebts: 0 });
+  const sorted = dates.filter(d => byDate.has(d)).sort();
   return {
-    months: sorted,
-    net:           sorted.map(m => byMonth.get(m).net),
-    investments:   sorted.map(m => byMonth.get(m).investments),
-    realEstateNet: sorted.map(m => byMonth.get(m).realEstateAssets + byMonth.get(m).realEstateDebts),
+    dates: sorted,
+    net:           sorted.map(d => byDate.get(d).net),
+    investments:   sorted.map(d => byDate.get(d).investments),
+    realEstateNet: sorted.map(d => byDate.get(d).realEstateAssets + byDate.get(d).realEstateDebts),
   };
 }
 
@@ -71,86 +71,118 @@ export function populateHistAccountSelect() {
 }
 
 export function renderHistoryTable() {
+  const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
+
+  // Build per-date aggregates
+  const byDate = new Map();
+  for (const s of state.snapshots) {
+    if (s.account_id === '__day__') continue;
+    const a = acctById[s.account_id];
+    if (!a) continue;
+    const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+    const m = byDate.get(s.date) || { investments: 0, realEstate: 0, realEstateDebts: 0, debts: 0, net: 0 };
+    m.net += signed;
+    if (a.kind === 'debt') m.debts += signed;
+    if (a.category === 'investments') m.investments += signed;
+    else if (a.category === 'real_estate') m.realEstate += signed;
+    else if (a.category === 'real_estate_debt') m.realEstateDebts += signed;
+    byDate.set(s.date, m);
+  }
+
+  const allDates = [...byDate.keys()].sort();
+  if (!allDates.length) { els.historySection.hidden = true; return; }
+  els.historySection.hidden = false;
+  els.historySummary.textContent = tFn('history_summary', allDates.length, allDates[0], allDates[allDates.length - 1]);
+
+  // Group dates by YYYY-MM
+  const byMonth = new Map();
+  for (const d of allDates) {
+    const mo = d.slice(0, 7);
+    if (!byMonth.has(mo)) byMonth.set(mo, []);
+    byMonth.get(mo).push(d);
+  }
+
+  const tbody = els.historyTableBody;
+  tbody.innerHTML = '';
+
   const labels = {
-    month: t('month'),
+    date: t('date_label'),
     investments: t('investments'),
     realEstateNet: t('real_estate_net'),
     debts: t('debts'),
     netWorth: t('net_worth'),
     delta: t('delta'),
   };
-  const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
-  const byMonth = new Map();
-  for (const s of state.snapshots) {
-    if (s.account_id === '__month__') continue;
-    const a = acctById[s.account_id];
-    if (!a) continue;
-    const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-    const m = byMonth.get(s.month) || { investments: 0, realEstate: 0, realEstateDebts: 0, debts: 0, net: 0 };
-    m.net += signed;
-    if (a.kind === 'debt') m.debts += signed;
-    if (a.category === 'investments') m.investments += signed;
-    else if (a.category === 'real_estate') m.realEstate += signed;
-    else if (a.category === 'real_estate_debt') m.realEstateDebts += signed;
-    byMonth.set(s.month, m);
-  }
-  for (const s of state.snapshots) {
-    if (s.account_id === '__month__' && !byMonth.has(s.month)) {
-      byMonth.set(s.month, { investments: 0, realEstate: 0, realEstateDebts: 0, debts: 0, net: 0 });
+
+  // Months descending, days within each month also descending
+  const monthsDesc = [...byMonth.keys()].sort().reverse();
+
+  for (const mo of monthsDesc) {
+    const datesInMonth = byMonth.get(mo).slice().reverse(); // descending within month
+
+    // Month group header row
+    const headerRow = document.createElement('tr');
+    headerRow.className = 'month-group-header';
+    headerRow.dataset.month = mo;
+    const headerCell = document.createElement('td');
+    headerCell.colSpan = 6;
+    headerCell.textContent = mo;
+    headerRow.appendChild(headerCell);
+    tbody.appendChild(headerRow);
+
+    headerRow.addEventListener('click', () => {
+      const isCollapsed = headerRow.classList.toggle('collapsed');
+      tbody.querySelectorAll(`tr.day-row[data-month="${mo}"]`).forEach(r => {
+        r.hidden = isCollapsed;
+      });
+    });
+
+    for (const date of datesInMonth) {
+      const m = byDate.get(date);
+      const reNet = m.realEstate + m.realEstateDebts;
+
+      // Delta vs chronologically previous entry
+      const prevIdx = allDates.indexOf(date) - 1;
+      const prevDate = prevIdx >= 0 ? allDates[prevIdx] : null;
+      const delta = prevDate ? m.net - byDate.get(prevDate).net : null;
+
+      const rowEl = document.createElement('tr');
+      rowEl.className = 'day-row';
+      rowEl.dataset.month = mo;
+      rowEl.dataset.date = date;
+      if (date === state.currentDate) rowEl.classList.add('current');
+
+      const cDate  = document.createElement('td'); cDate.textContent = date;
+      const cInv   = document.createElement('td'); cInv.className = 'num';  cInv.textContent = fmtMoney(m.investments);
+      const cRE    = document.createElement('td'); cRE.className = 'num';   cRE.textContent  = fmtMoney(reNet);
+      const cDebt  = document.createElement('td'); cDebt.className = 'num'; cDebt.textContent = fmtMoney(m.debts);
+      const cNet   = document.createElement('td'); cNet.className = 'num';  cNet.textContent = fmtMoney(m.net);
+      const cDelta = document.createElement('td'); cDelta.className = 'num delta';
+
+      cDate.dataset.label  = labels.date;
+      cInv.dataset.label   = labels.investments;
+      cRE.dataset.label    = labels.realEstateNet;
+      cDebt.dataset.label  = labels.debts;
+      cNet.dataset.label   = labels.netWorth;
+      cDelta.dataset.label = labels.delta;
+
+      if (delta !== null) {
+        const pct = fmtPct(delta, byDate.get(prevDate).net);
+        cDelta.textContent = fmtDelta(delta) + (pct ? ` (${pct})` : '');
+        cDelta.classList.add(delta >= 0 ? 'up' : 'down');
+      } else {
+        cDelta.textContent = '—';
+      }
+
+      rowEl.appendChild(cDate); rowEl.appendChild(cInv); rowEl.appendChild(cRE);
+      rowEl.appendChild(cDebt); rowEl.appendChild(cNet); rowEl.appendChild(cDelta);
+      tbody.appendChild(rowEl);
     }
-  }
-
-  const months = [...byMonth.keys()].sort().reverse();
-  if (!months.length) { els.historySection.hidden = true; return; }
-  els.historySection.hidden = false;
-  els.historySummary.textContent = tFn('history_summary', months.length, months[months.length - 1], months[0]);
-
-  const tbody = els.historyTableBody;
-  tbody.innerHTML = '';
-  const sortedAsc = [...months].reverse();
-  const prevByMonth = {};
-  for (let i = 0; i < sortedAsc.length; i++) {
-    prevByMonth[sortedAsc[i]] = i > 0 ? sortedAsc[i - 1] : null;
-  }
-
-  for (const month of months) {
-    const m = byMonth.get(month);
-    const reNet = m.realEstate + m.realEstateDebts;
-    const prev = prevByMonth[month];
-    const delta = prev ? m.net - byMonth.get(prev).net : null;
-
-    const rowEl = document.createElement('tr');
-    if (month === state.currentMonth) rowEl.classList.add('current');
-    rowEl.dataset.month = month;
-
-    const cMonth = document.createElement('td'); cMonth.textContent = month;
-    const cInv   = document.createElement('td'); cInv.className = 'num';   cInv.textContent = fmtMoney(m.investments);
-    const cRE    = document.createElement('td'); cRE.className = 'num';    cRE.textContent  = fmtMoney(reNet);
-    const cDebt  = document.createElement('td'); cDebt.className = 'num';  cDebt.textContent = fmtMoney(m.debts);
-    const cNet   = document.createElement('td'); cNet.className = 'num';   cNet.textContent = fmtMoney(m.net);
-    const cDelta = document.createElement('td'); cDelta.className = 'num delta';
-    cMonth.dataset.label = labels.month;
-    cInv.dataset.label   = labels.investments;
-    cRE.dataset.label    = labels.realEstateNet;
-    cDebt.dataset.label  = labels.debts;
-    cNet.dataset.label   = labels.netWorth;
-    cDelta.dataset.label = labels.delta;
-    if (delta !== null) {
-      const pct = fmtPct(delta, byMonth.get(prev).net);
-      cDelta.textContent = fmtDelta(delta) + (pct ? ` (${pct})` : '');
-      cDelta.classList.add(delta >= 0 ? 'up' : 'down');
-    } else {
-      cDelta.textContent = '—';
-    }
-
-    rowEl.appendChild(cMonth); rowEl.appendChild(cInv); rowEl.appendChild(cRE);
-    rowEl.appendChild(cDebt);  rowEl.appendChild(cNet); rowEl.appendChild(cDelta);
-    tbody.appendChild(rowEl);
   }
 }
 
 export function renderChart() {
-  const filteredMonths = getHistFilteredMonths();
+  const filteredDates = getHistFilteredDates();
   const selectedAccount = els.histAccountSelect?.value || '';
   const isOverview = selectedAccount === '';
 
@@ -166,11 +198,11 @@ export function renderChart() {
     return gr;
   };
 
-  let chartMonths;
+  let chartDates;
   if (isOverview) {
-    const data = computeSeries(filteredMonths);
-    if (!data.months.length) { els.chartSection.hidden = true; return; }
-    chartMonths = data.months;
+    const data = computeSeries(filteredDates);
+    if (!data.dates.length) { els.chartSection.hidden = true; return; }
+    chartDates = data.dates;
     if (els.showNet?.checked) {
       datasets.push({ label: t('net_worth_chart'), data: data.net, borderColor: '#0f172a', backgroundColor: makeGradient(15, 23, 42), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#0f172a', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2 });
     }
@@ -183,14 +215,14 @@ export function renderChart() {
   } else {
     const acct = state.accounts.find(a => a.id === selectedAccount);
     if (!acct) { els.chartSection.hidden = true; return; }
-    const monthSet = new Set(filteredMonths);
-    const snapByMonth = Object.fromEntries(
-      state.snapshots.filter(s => s.account_id === selectedAccount && monthSet.has(s.month))
-        .map(s => [s.month, s.balance_raw])
+    const dateSet = new Set(filteredDates);
+    const snapByDate = Object.fromEntries(
+      state.snapshots.filter(s => s.account_id === selectedAccount && dateSet.has(s.date))
+        .map(s => [s.date, s.balance_raw])
     );
-    chartMonths = filteredMonths.filter(m => snapByMonth[m] !== undefined);
-    if (!chartMonths.length) { els.chartSection.hidden = true; return; }
-    const values = chartMonths.map(m => snapByMonth[m]);
+    chartDates = filteredDates.filter(d => snapByDate[d] !== undefined);
+    if (!chartDates.length) { els.chartSection.hidden = true; return; }
+    const values = chartDates.map(d => snapByDate[d]);
     const color = acct.kind === 'debt' ? '#e11d48' : '#059669';
     const [r, g, b] = acct.kind === 'debt' ? [225, 29, 72] : [5, 150, 105];
     datasets.push({ label: tr(acct), data: values, borderColor: color, backgroundColor: makeGradient(r, g, b), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: color, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2 });
@@ -201,7 +233,7 @@ export function renderChart() {
 
   const config = {
     type: 'line',
-    data: { labels: chartMonths, datasets },
+    data: { labels: chartDates, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,

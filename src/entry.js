@@ -1,32 +1,32 @@
 import { state, HEADERS } from './state.js';
 import { t, tFn, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct, parseMoney } from './format.js';
-import { categoriesInOrder, accountsForCategory, activeAccounts, snapshotForMonth, prevMonth, computeNetWorthFromSnapshots, normalizeMonth, rebuildMonthsList } from './utils.js';
+import { categoriesInOrder, accountsForCategory, activeAccounts, snapshotForDate, prevDate, computeNetWorthFromSnapshots, normalizeDate, rebuildDatesList } from './utils.js';
 import { els, setStatus } from './dom.js';
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart } from './history.js';
 
 export function renderForm() {
-  const month = els.monthInput.value || state.currentMonth;
-  state.currentMonth = month;
+  const date = els.dateInput.value || state.currentDate;
+  state.currentDate = date;
 
-  const existing = snapshotForMonth(month);
-  const isEditing = state.monthsSorted.includes(month);
-  const prevMo = prevMonth(month);
-  const prevData = prevMo ? snapshotForMonth(prevMo) : null;
+  const existing = snapshotForDate(date);
+  const isEditing = state.datesSorted.includes(date);
+  const prevD = prevDate(date);
+  const prevData = prevD ? snapshotForDate(prevD) : null;
 
   if (isEditing) {
-    els.monthBadge.hidden = false;
-    els.monthBadge.textContent = t('existing_month');
-  } else if (prevMo) {
-    els.monthBadge.hidden = false;
-    els.monthBadge.textContent = tFn('new_prefilled', prevMo);
+    els.dateBadge.hidden = false;
+    els.dateBadge.textContent = t('existing_date');
+  } else if (prevD) {
+    els.dateBadge.hidden = false;
+    els.dateBadge.textContent = tFn('new_prefilled', prevD);
   } else {
-    els.monthBadge.hidden = false;
-    els.monthBadge.textContent = t('new_month');
+    els.dateBadge.hidden = false;
+    els.dateBadge.textContent = t('new_date');
   }
 
-  els.monthCommentEl.value = existing.monthComment || '';
+  els.dayCommentEl.value = existing.dayComment || '';
 
   els.categoriesEl.innerHTML = '';
   for (const cat of categoriesInOrder()) {
@@ -143,12 +143,12 @@ export function recomputeTotals() {
 
   els.netWorthVal.textContent = fmtMoney(netWorth);
 
-  const prevMo = prevMonth(state.currentMonth);
-  if (prevMo) {
-    const prevNet = computeNetWorthFromSnapshots(prevMo);
+  const prevD = prevDate(state.currentDate);
+  if (prevD) {
+    const prevNet = computeNetWorthFromSnapshots(prevD);
     const delta = netWorth - prevNet;
     const pct = fmtPct(delta, prevNet);
-    els.netWorthDelta.textContent = `${fmtDelta(delta)}${pct ? ` (${pct})` : ''} vs ${prevMo}`;
+    els.netWorthDelta.textContent = `${fmtDelta(delta)}${pct ? ` (${pct})` : ''} vs ${prevD}`;
     els.netWorthDelta.className = 'delta ' + (delta >= 0 ? 'up' : 'down');
   } else {
     els.netWorthDelta.textContent = '';
@@ -158,9 +158,9 @@ export function recomputeTotals() {
 
 export async function saveSnapshot() {
   if (!state.sheetId) return;
-  const month = els.monthInput.value;
-  if (!/^\d{4}-\d{2}$/.test(month)) {
-    setStatus('Pick a valid month (YYYY-MM).', 'warn');
+  const date = els.dateInput.value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    setStatus('Pick a valid date (YYYY-MM-DD).', 'warn');
     return;
   }
 
@@ -171,11 +171,11 @@ export async function saveSnapshot() {
   for (const a of activeAccounts()) {
     const v = values[a.id];
     if (!v || v.balance === null || Number.isNaN(v.balance)) continue;
-    newRows.push([month, a.id, v.balance, v.comment || '', enteredAt]);
+    newRows.push([date, a.id, v.balance, v.comment || '', enteredAt]);
   }
-  const monthComment = els.monthCommentEl.value.trim();
-  if (monthComment) {
-    newRows.push([month, '__month__', 0, monthComment, enteredAt]);
+  const dayComment = els.dayCommentEl.value.trim();
+  if (dayComment) {
+    newRows.push([date, '__day__', 0, dayComment, enteredAt]);
   }
 
   if (!newRows.length) {
@@ -186,10 +186,10 @@ export async function saveSnapshot() {
   setStatus('Saving snapshot…');
   els.saveSnapshotBtn.disabled = true;
   try {
-    const keep = state.snapshots.filter(s => s.month !== month);
+    const keep = state.snapshots.filter(s => s.date !== date);
     const allRows = [HEADERS.snapshots];
     for (const s of keep) {
-      allRows.push([s.month, s.account_id, s.balance_raw, s.comment || '', s.entered_at || '']);
+      allRows.push([s.date, s.account_id, s.balance_raw, s.comment || '', s.entered_at || '']);
     }
     for (const r of newRows) allRows.push(r);
 
@@ -200,15 +200,15 @@ export async function saveSnapshot() {
     });
 
     state.snapshots = allRows.slice(1).map(r => ({
-      month: normalizeMonth(r[0]), account_id: r[1], balance_raw: Number(r[2]) || 0,
+      date: normalizeDate(r[0]), account_id: r[1], balance_raw: Number(r[2]) || 0,
       comment: r[3] || '', entered_at: r[4] || '',
     }));
-    rebuildMonthsList();
+    rebuildDatesList();
     renderForm();
     renderHistoryTable();
     renderChart();
     renderOverview();
-    setStatus(`Saved snapshot for ${month}.`, 'ok');
+    setStatus(`Saved snapshot for ${date}.`, 'ok');
   } catch (err) {
     console.error(err);
     setStatus('Save failed: ' + (err.result?.error?.message || err.message || err), 'warn');
@@ -218,17 +218,17 @@ export async function saveSnapshot() {
 }
 
 export function onCopyPrev() {
-  const prevMo = prevMonth(els.monthInput.value);
-  if (!prevMo) {
-    setStatus('No previous month to copy from.', 'warn');
+  const prevD = prevDate(els.dateInput.value);
+  if (!prevD) {
+    setStatus('No previous entry to copy from.', 'warn');
     return;
   }
-  const prev = snapshotForMonth(prevMo);
+  const prev = snapshotForDate(prevD);
   els.categoriesEl.querySelectorAll('.account-row').forEach(row => {
     const id = row.dataset.accountId;
     const v = prev.balances[id];
     if (v !== undefined) row.querySelector('input.balance').value = fmtMoney(v);
   });
   recomputeTotals();
-  setStatus(`Pre-filled from ${prevMo}.`);
+  setStatus(`Pre-filled from ${prevD}.`);
 }

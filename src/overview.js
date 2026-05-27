@@ -2,27 +2,20 @@ import Chart from 'chart.js/auto';
 import { state } from './state.js';
 import { lang, t, tFn, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { computeMonthStats, getMonthsForPeriod } from './utils.js';
+import { computeDateStats, getDatesForPeriod } from './utils.js';
 import { els } from './dom.js';
 
-function fmtMonthLong(yyyymm) {
-  const [year, month] = yyyymm.split('-');
-  return new Date(+year, +month - 1, 1).toLocaleDateString(
+function fmtDateLong(yyyymmdd) {
+  const [year, month, day] = yyyymmdd.split('-');
+  return new Date(+year, +month - 1, +day).toLocaleDateString(
     lang() === 'fr' ? 'fr-CA' : 'en-CA',
-    { year: 'numeric', month: 'long' }
+    { year: 'numeric', month: 'long', day: 'numeric' }
   );
 }
 
-export function getOvFilteredMonths() {
-  const fromVal = els.ovFrom?.value;
-  const toVal   = els.ovTo?.value;
-  if (fromVal || toVal) {
-    return state.monthsSorted.filter(m =>
-      (!fromVal || m >= fromVal) && (!toVal || m <= toVal)
-    );
-  }
+export function getOvFilteredDates() {
   const btn = document.querySelector('#ov-period-pills .period-btn.active');
-  return getMonthsForPeriod(btn?.dataset.period || 'all');
+  return getDatesForPeriod(btn?.dataset.period || 'all');
 }
 
 export function renderOverview() {
@@ -34,7 +27,7 @@ export function renderOverview() {
     els.privateModeBtn.textContent = state.privateMode ? t('private_mode_off') : t('private_mode');
   }
 
-  if (!state.monthsSorted.length) {
+  if (!state.datesSorted.length) {
     els.ovNetWorth.textContent = '—';
     if (els.ovDelta) els.ovDelta.textContent = '';
     els.ovAsOf.textContent = '';
@@ -42,29 +35,25 @@ export function renderOverview() {
     return;
   }
 
-  const filteredMonths = getOvFilteredMonths();
+  const filteredDates = getOvFilteredDates();
   const periodBtn = document.querySelector('#ov-period-pills .period-btn.active');
 
-  const latestMonth = filteredMonths.length
-    ? filteredMonths[filteredMonths.length - 1]
-    : state.monthsSorted[state.monthsSorted.length - 1];
+  const latestDate = filteredDates.length
+    ? filteredDates[filteredDates.length - 1]
+    : state.datesSorted[state.datesSorted.length - 1];
 
-  // Reference = first month in the filtered window (consistent across hero + cards).
-  const periodRefMonth = filteredMonths.length > 1 ? filteredMonths[0] : null;
+  const periodRefDate = filteredDates.length > 1 ? filteredDates[0] : null;
 
-  // Short label to append after every delta value.
-  const isCustom = !!(els.ovFrom?.value || els.ovTo?.value);
   const activePeriod = periodBtn?.dataset.period || 'all';
-  const periodLabel = isCustom ? '' : (activePeriod === 'all' ? t('period_all') : activePeriod);
+  const periodLabel = activePeriod === 'all' ? t('period_all') : activePeriod;
 
-  const current   = computeMonthStats(latestMonth);
-  const periodRef = periodRefMonth ? computeMonthStats(periodRefMonth) : null;
+  const current   = computeDateStats(latestDate);
+  const periodRef = periodRefDate ? computeDateStats(periodRefDate) : null;
 
-  // In private mode replace every $ amount with ●●● but keep percentages.
   const redact = (formatted) => state.privateMode ? '••••••' : formatted;
 
   els.ovNetWorth.textContent = redact(fmtMoney(current.netWorth));
-  els.ovAsOf.textContent = tFn('data_as_of', fmtMonthLong(latestMonth));
+  els.ovAsOf.textContent = tFn('data_as_of', fmtDateLong(latestDate));
 
   if (els.ovDelta) {
     if (periodRef != null) {
@@ -121,18 +110,18 @@ export function renderOverviewChart() {
   const canvas = els.ovChartCanvas;
   if (!canvas) return;
 
-  const months = getOvFilteredMonths();
+  const dates = getOvFilteredDates();
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
-  const byMonth = {};
+  const byDate = {};
   for (const s of state.snapshots) {
-    if (s.account_id === '__month__') continue;
-    if (!months.includes(s.month)) continue;
+    if (s.account_id === '__day__') continue;
+    if (!dates.includes(s.date)) continue;
     const a = acctById[s.account_id];
     if (!a) continue;
     const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-    byMonth[s.month] = (byMonth[s.month] || 0) + signed;
+    byDate[s.date] = (byDate[s.date] || 0) + signed;
   }
-  const values = months.map(m => byMonth[m] ?? null);
+  const values = dates.map(d => byDate[d] ?? null);
 
   const ctx = canvas.getContext('2d');
   const h = canvas.parentElement?.offsetHeight || 280;
@@ -154,7 +143,7 @@ export function renderOverviewChart() {
   state.overviewChart = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: months,
+      labels: dates,
       datasets: [{
         label: t('net_worth_chart'),
         data: values,
@@ -192,7 +181,7 @@ export function renderOverviewChart() {
         },
         x: {
           grid: { display: false }, border: { display: false },
-          ticks: { color: '#94a3b8', font: { size: 11 }, maxRotation: 0, maxTicksLimit: months.length <= 6 ? months.length : 12 },
+          ticks: { color: '#94a3b8', font: { size: 11 }, maxRotation: 0, maxTicksLimit: dates.length <= 6 ? dates.length : 12 },
         },
       },
     },

@@ -475,13 +475,25 @@ textarea:focus {
   border-bottom: 1px solid #f1f5f9;
   font-feature-settings: "tnum";
 }
-.history-table tbody tr { cursor: pointer; transition: background 80ms; }
-.history-table tbody tr:hover { background: var(--surface-2); }
-.history-table tbody tr.current { background: var(--accent-light); }
-.history-table tbody tr.current td { font-weight: 600; }
+.history-table tbody tr.day-row { cursor: pointer; transition: background 80ms; }
+.history-table tbody tr.day-row:hover { background: var(--surface-2); }
+.history-table tbody tr.day-row.current { background: var(--accent-light); }
+.history-table tbody tr.day-row.current td { font-weight: 600; }
 .history-table .delta { font-weight: 600; }
 .history-table .delta.up   { color: var(--accent); }
 .history-table .delta.down { color: var(--red); }
+
+.history-table tbody tr.month-group-header { cursor: pointer; background: var(--surface-2); user-select: none; }
+.history-table tbody tr.month-group-header td {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  padding: 0.4rem 0.75rem;
+}
+.history-table tbody tr.month-group-header td::before { content: '▾ '; font-size: 0.65rem; }
+.history-table tbody tr.month-group-header.collapsed td::before { content: '▸ '; }
 
 /* ── Chart section ───────────────────────────────────────── */
 .chart-section {

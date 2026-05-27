@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { setLang, applyI18n, t } from './i18n.js';
+import { setLang, applyI18n, t, tFn } from './i18n.js';
 import { els } from './dom.js';
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
@@ -13,6 +13,7 @@ import {
   configError, onSignedIn, onSignOut, onResetSheetLink, onGapiLoad, initTokenClient,
   loadAndRenderForm, setActiveTab, applyToken,
 } from './auth.js';
+import { migrateMonthlyToDaily, loadAll } from './sheets.js';
 
 // --- Wire up all event listeners ---
 
@@ -24,20 +25,20 @@ els.signinBtn.addEventListener('click', () => {
 els.signoutBtn.addEventListener('click', onSignOut);
 els.resetSheetBtn.addEventListener('click', onResetSheetLink);
 
-els.monthInput.addEventListener('change', () => {
-  state.currentMonth = els.monthInput.value;
+els.dateInput.addEventListener('change', () => {
+  state.currentDate = els.dateInput.value;
   renderForm();
 });
 els.copyPrevBtn.addEventListener('click', onCopyPrev);
 els.reloadBtn.addEventListener('click', () => loadAndRenderForm());
 els.saveSnapshotBtn.addEventListener('click', saveSnapshot);
 
-// History table row click — navigate to entry tab for that month
+// History table row click — navigate to entry tab for that date
 els.historyTableBody.addEventListener('click', (e) => {
-  const row = e.target.closest('tr[data-month]');
+  const row = e.target.closest('tr.day-row[data-date]');
   if (!row) return;
-  state.currentMonth = row.dataset.month;
-  els.monthInput.value = row.dataset.month;
+  state.currentDate = row.dataset.date;
+  els.dateInput.value = row.dataset.date;
   renderForm();
   setActiveTab('entry');
 });
@@ -52,23 +53,9 @@ document.querySelectorAll('#ov-period-pills .period-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#ov-period-pills .period-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    if (els.ovFrom) els.ovFrom.value = '';
-    if (els.ovTo)   els.ovTo.value   = '';
     renderOverview();
   });
 });
-if (els.ovFrom) {
-  els.ovFrom.addEventListener('change', () => {
-    document.querySelectorAll('#ov-period-pills .period-btn').forEach(b => b.classList.remove('active'));
-    renderOverview();
-  });
-}
-if (els.ovTo) {
-  els.ovTo.addEventListener('change', () => {
-    document.querySelectorAll('#ov-period-pills .period-btn').forEach(b => b.classList.remove('active'));
-    renderOverview();
-  });
-}
 
 // History chart period pills + account select
 document.querySelectorAll('#hist-period-pills .period-btn').forEach(btn => {
@@ -111,14 +98,36 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     setLang(btn.dataset.lang);
     if (els.newAccountType) delete els.newAccountType.dataset.populated;
-    if (!state.monthsSorted.length) return;
+    if (!state.datesSorted.length) return;
     populateHistAccountSelect();
     renderHistoryTable();
     renderChart();
     renderOverview();
-    if (state.currentMonth) renderForm();
+    if (state.currentDate) renderForm();
     renderAccountsTable();
   });
+});
+
+// Migration button
+document.getElementById('run-migration-btn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('run-migration-btn');
+  const statusEl = document.getElementById('migration-status');
+  btn.disabled = true;
+  statusEl.textContent = '…';
+  try {
+    const n = await migrateMonthlyToDaily();
+    if (n > 0) {
+      await loadAll();
+      renderOverview();
+      renderHistoryTable();
+      renderChart();
+    }
+    statusEl.textContent = n > 0 ? tFn('migrate_daily_ok', n) : t('migrate_daily_none');
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + (err.result?.error?.message || err.message || err);
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 // Private mode toggle

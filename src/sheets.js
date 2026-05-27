@@ -1,6 +1,6 @@
 import seedData from '../seed/default-accounts.json';
 import { state, HEADERS, SHEET_TITLE } from './state.js';
-import { normalizeMonth, rebuildMonthsList, logCoverageDiagnostic } from './utils.js';
+import { normalizeDate, normalizeMonth, rebuildDatesList, logCoverageDiagnostic } from './utils.js';
 import { setStatus } from './dom.js';
 
 const cfg = window.PFS_CONFIG || {};
@@ -105,19 +105,21 @@ export async function loadSnapshots() {
   const headers = rows[0];
 
   const dataRows = rows.slice(1);
-  const dropped = { noMonth: 0, noAccount: 0, badMonth: 0 };
+  const dropped = { noDate: 0, noAccount: 0, badDate: 0 };
 
   const seen = new Map();
   dataRows.forEach((r, idx) => {
     const obj = {};
     headers.forEach((h, i) => { obj[h] = r[i] ?? ''; });
-    const monthRaw = obj.month;
-    obj.month = normalizeMonth(obj.month);
+    // Support both old 'month' column name and new 'date' column name
+    const dateRaw = obj.date ?? obj.month ?? '';
+    obj.date = normalizeDate(dateRaw);
+    delete obj.month;
     obj.balance_raw = Number(obj.balance_raw);
-    if (!obj.month) { dropped.noMonth++; if (monthRaw) dropped.badMonth++; return; }
+    if (!obj.date) { dropped.noDate++; if (dateRaw) dropped.badDate++; return; }
     if (!obj.account_id) { dropped.noAccount++; return; }
     if (!Number.isFinite(obj.balance_raw)) obj.balance_raw = 0;
-    const key = `${obj.month}|${obj.account_id}`;
+    const key = `${obj.date}|${obj.account_id}`;
     const prev = seen.get(key);
     if (!prev) { seen.set(key, { ...obj, _idx: idx }); return; }
     const ta = obj.entered_at || '';
@@ -127,12 +129,12 @@ export async function loadSnapshots() {
   });
   state.snapshots = [...seen.values()].map(({ _idx, ...rest }) => rest);
 
-  const collapsed = dataRows.length - state.snapshots.length - dropped.noMonth - dropped.noAccount;
+  const collapsed = dataRows.length - state.snapshots.length - dropped.noDate - dropped.noAccount;
   console.log('[pfs] snapshots loaded:', {
     sheetRows: dataRows.length,
     kept: state.snapshots.length,
-    droppedNoMonth: dropped.noMonth,
-    droppedBadMonth: dropped.badMonth,
+    droppedNoDate: dropped.noDate,
+    droppedBadDate: dropped.badDate,
     droppedNoAccount: dropped.noAccount,
     collapsedDuplicates: Math.max(0, collapsed),
   });
@@ -147,6 +149,33 @@ export async function loadCategoryMeta() {
 export async function loadAll() {
   setStatus('Loading accounts and snapshots…');
   await Promise.all([loadAccounts(), loadSnapshots(), loadCategoryMeta()]);
-  rebuildMonthsList();
+  rebuildDatesList();
   logCoverageDiagnostic();
+}
+
+export async function migrateMonthlyToDaily() {
+  const resp = await gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: state.sheetId,
+    range: 'snapshots!A:A',
+    valueRenderOption: 'FORMATTED_VALUE',
+  });
+  const cells = resp.result.values || [];
+  if (!cells.length) return 0;
+
+  const updates = [];
+  cells.forEach((cell, rowIdx) => {
+    if (rowIdx === 0) return; // skip header
+    const val = String(cell[0] || '').trim();
+    if (/^\d{4}-\d{2}$/.test(val)) {
+      updates.push({ range: `snapshots!A${rowIdx + 1}`, values: [[`${val}-01`]] });
+    }
+  });
+
+  if (!updates.length) return 0;
+
+  await gapi.client.sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: state.sheetId,
+    resource: { valueInputOption: 'RAW', data: updates },
+  });
+  return updates.length;
 }

@@ -1,7 +1,7 @@
 import { state, HEADERS, OWNERS, KINDS } from './state.js';
 import { t, tr } from './i18n.js';
 import { fmtMoney, parseMoney } from './format.js';
-import { categoriesInOrder, activeAccounts, normalizeMonth, rebuildMonthsList, parseMonthLabel, parseDelimited, suggestAccount, rememberMapping } from './utils.js';
+import { categoriesInOrder, activeAccounts, normalizeDate, rebuildDatesList, parseMonthLabel, parseDelimited, suggestAccount, rememberMapping } from './utils.js';
 import { els, setStatus } from './dom.js';
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
@@ -324,7 +324,7 @@ export async function executeMigrate() {
     });
 
     if (affected > 0) {
-      const snapshotRows = [HEADERS.snapshots, ...state.snapshots.map(s => [s.month, s.account_id, s.balance_raw, s.comment || '', s.entered_at || ''])];
+      const snapshotRows = [HEADERS.snapshots, ...state.snapshots.map(s => [s.date, s.account_id, s.balance_raw, s.comment || '', s.entered_at || ''])];
       await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'snapshots!A:Z' });
       await gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: state.sheetId, range: 'snapshots!A1',
@@ -357,7 +357,7 @@ export function onParseImport() {
   let headerIdx = -1, monthCols = null;
   for (let i = 0; i < Math.min(grid.length, 10); i++) {
     const row = grid[i];
-    const cols = row.map((c, idx) => ({ idx, month: parseMonthLabel(c) })).filter(x => x.month);
+    const cols = row.map((c, idx) => ({ idx, date: parseMonthLabel(c) ? `${parseMonthLabel(c)}-01` : null })).filter(x => x.date);
     if (cols.length >= 2) { headerIdx = i; monthCols = cols; break; }
   }
   if (headerIdx < 0) {
@@ -375,23 +375,23 @@ export function onParseImport() {
     }
     if (!label) continue;
     const values = monthCols.map(mc => ({
-      month: mc.month, raw: r[mc.idx] || '',
+      date: mc.date, raw: r[mc.idx] || '',
       num: parseMoney(r[mc.idx]),
     }));
     if (!values.some(v => v.num !== null)) continue;
     rows.push({ label, values, mapping: suggestAccount(label) || '__skip__' });
   }
 
-  state.importParsed = { months: monthCols.map(m => m.month), rows };
+  state.importParsed = { dates: monthCols.map(m => m.date), rows };
   renderImportPreview();
 }
 
 export function renderImportPreview() {
   if (!state.importParsed) { els.importPreview.hidden = true; return; }
-  const { months, rows } = state.importParsed;
+  const { dates, rows } = state.importParsed;
 
   els.importSummary.textContent =
-    `${rows.length} source rows · ${months.length} months (${months[0]} → ${months[months.length - 1]})`;
+    `${rows.length} source rows · ${dates.length} months (${dates[0]} → ${dates[dates.length - 1]})`;
 
   const tbody = els.mappingTableBody;
   tbody.innerHTML = '';
@@ -405,7 +405,7 @@ export function renderImportPreview() {
     const tdSample = document.createElement('td');
     tdSample.className = 'sample';
     const sample = row.values.find(v => v.num !== null);
-    tdSample.textContent = sample ? `${sample.month}: ${sample.raw}` : '(empty)';
+    tdSample.textContent = sample ? `${sample.date}: ${sample.raw}` : '(empty)';
 
     const tdMap = document.createElement('td');
     const sel = document.createElement('select');
@@ -450,21 +450,21 @@ export async function onConfirmImport() {
 
   const enteredAt = new Date().toISOString();
   const importedRows = [];
-  const monthsTouched = new Set();
+  const datesTouched = new Set();
   for (const r of mapped) {
     for (const v of r.values) {
       if (v.num === null) continue;
-      monthsTouched.add(v.month);
-      const acct = r.mapping === '__month__' ? null : state.accounts.find(a => a.id === r.mapping);
+      datesTouched.add(v.date);
+      const acct = r.mapping === '__day__' ? null : state.accounts.find(a => a.id === r.mapping);
       let balance = v.num;
       if (acct && acct.kind === 'debt' && balance < 0) balance = -balance;
 
-      if (r.mapping === '__month__') {
+      if (r.mapping === '__day__') {
         if (v.raw && String(v.raw).trim()) {
-          importedRows.push([v.month, '__month__', 0, String(v.raw).trim(), enteredAt]);
+          importedRows.push([v.date, '__day__', 0, String(v.raw).trim(), enteredAt]);
         }
       } else {
-        importedRows.push([v.month, r.mapping, balance, '', enteredAt]);
+        importedRows.push([v.date, r.mapping, balance, '', enteredAt]);
       }
     }
   }
@@ -473,17 +473,17 @@ export async function onConfirmImport() {
 
   const overwrite = els.overwriteExisting.checked;
   const keep = state.snapshots.filter(s => {
-    if (!monthsTouched.has(s.month)) return true;
+    if (!datesTouched.has(s.date)) return true;
     return !overwrite;
   });
-  const existingKeys = new Set(state.snapshots.map(s => `${s.month}|${s.account_id}`));
+  const existingKeys = new Set(state.snapshots.map(s => `${s.date}|${s.account_id}`));
   const finalImported = overwrite
     ? importedRows
     : importedRows.filter(r => !existingKeys.has(`${r[0]}|${r[1]}`));
 
   const allRows = [
     HEADERS.snapshots,
-    ...keep.map(s => [s.month, s.account_id, s.balance_raw, s.comment || '', s.entered_at || '']),
+    ...keep.map(s => [s.date, s.account_id, s.balance_raw, s.comment || '', s.entered_at || '']),
     ...finalImported,
   ];
 
@@ -497,16 +497,16 @@ export async function onConfirmImport() {
     });
 
     state.snapshots = allRows.slice(1).map(r => ({
-      month: normalizeMonth(r[0]), account_id: r[1], balance_raw: Number(r[2]) || 0,
+      date: normalizeDate(r[0]), account_id: r[1], balance_raw: Number(r[2]) || 0,
       comment: r[3] || '', entered_at: r[4] || '',
     }));
-    rebuildMonthsList();
+    rebuildDatesList();
     renderForm();
     renderHistoryTable();
     renderChart();
     renderOverview();
     onCancelImport();
-    setStatus(`Imported ${finalImported.length} rows across ${monthsTouched.size} months.`, 'ok');
+    setStatus(`Imported ${finalImported.length} rows across ${datesTouched.size} dates.`, 'ok');
   } catch (err) {
     console.error(err);
     setStatus('Import failed: ' + (err.result?.error?.message || err.message || err), 'warn');

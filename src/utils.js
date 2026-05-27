@@ -15,31 +15,31 @@ export function accountsForCategory(catId) {
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 }
 
-export function snapshotForMonth(month) {
-  const rows = state.snapshots.filter(s => s.month === month);
+export function snapshotForDate(date) {
+  const rows = state.snapshots.filter(s => s.date === date);
   const balances = {};
   const comments = {};
-  let monthComment = '';
+  let dayComment = '';
   for (const r of rows) {
-    if (r.account_id === '__month__') {
-      monthComment = r.comment || '';
+    if (r.account_id === '__day__') {
+      dayComment = r.comment || '';
     } else {
       balances[r.account_id] = r.balance_raw;
       if (r.comment) comments[r.account_id] = r.comment;
     }
   }
-  return { balances, comments, monthComment };
+  return { balances, comments, dayComment };
 }
 
-export function prevMonth(month) {
-  const idx = state.monthsSorted.indexOf(month);
-  if (idx > 0) return state.monthsSorted[idx - 1];
-  const earlier = state.monthsSorted.filter(m => m < month);
+export function prevDate(date) {
+  const idx = state.datesSorted.indexOf(date);
+  if (idx > 0) return state.datesSorted[idx - 1];
+  const earlier = state.datesSorted.filter(d => d < date);
   return earlier.length ? earlier[earlier.length - 1] : null;
 }
 
-export function computeNetWorthFromSnapshots(month) {
-  const rows = state.snapshots.filter(s => s.month === month && s.account_id !== '__month__');
+export function computeNetWorthFromSnapshots(date) {
+  const rows = state.snapshots.filter(s => s.date === date && s.account_id !== '__day__');
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
   let total = 0;
   for (const r of rows) {
@@ -50,8 +50,8 @@ export function computeNetWorthFromSnapshots(month) {
   return total;
 }
 
-export function computeMonthStats(month) {
-  const rows = state.snapshots.filter(s => s.month === month && s.account_id !== '__month__');
+export function computeDateStats(date) {
+  const rows = state.snapshots.filter(s => s.date === date && s.account_id !== '__day__');
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
   let netWorth = 0;
   const byCategory = {};
@@ -65,38 +65,38 @@ export function computeMonthStats(month) {
   return { netWorth, byCategory };
 }
 
-export function getMonthsForPeriod(period) {
-  const all = state.monthsSorted;
+export function getDatesForPeriod(period) {
+  const all = state.datesSorted;
   if (!all.length || period === 'all') return all;
   const latest = all[all.length - 1];
-  const [yr, mo] = latest.split('-').map(Number);
+  const [yr] = latest.split('-').map(Number);
   if (period === 'YTD') {
-    return all.filter(m => m >= `${yr}-01`);
+    return all.filter(d => d >= `${yr}-01-01`);
   }
   const nMonths = { '3M': 3, '6M': 6, '1Y': 12, '5Y': 60 }[period];
   if (!nMonths) return all;
-  const from = new Date(yr, mo - 1);
-  from.setMonth(from.getMonth() - nMonths + 1);
-  const fromStr = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}`;
-  return all.filter(m => m >= fromStr);
+  const fromDate = new Date(latest);
+  fromDate.setMonth(fromDate.getMonth() - nMonths);
+  const fromStr = fromDate.toISOString().slice(0, 10);
+  return all.filter(d => d >= fromStr);
 }
 
-export function rebuildMonthsList() {
-  const set = new Set(state.snapshots.map(s => s.month));
-  state.monthsSorted = [...set].sort();
+export function rebuildDatesList() {
+  const set = new Set(state.snapshots.map(s => s.date));
+  state.datesSorted = [...set].filter(Boolean).sort();
 }
 
 export function logCoverageDiagnostic() {
   const perAccount = {};
-  let monthRows = 0;
+  let dayRows = 0;
   for (const s of state.snapshots) {
-    if (s.account_id === '__month__') { monthRows++; continue; }
+    if (s.account_id === '__day__') { dayRows++; continue; }
     perAccount[s.account_id] = perAccount[s.account_id] || { all: 0, zero: 0, nonzero: 0, first: null, last: null };
     perAccount[s.account_id].all++;
     if (s.balance_raw === 0) perAccount[s.account_id].zero++;
     else perAccount[s.account_id].nonzero++;
-    if (!perAccount[s.account_id].first || s.month < perAccount[s.account_id].first) perAccount[s.account_id].first = s.month;
-    if (!perAccount[s.account_id].last  || s.month > perAccount[s.account_id].last)  perAccount[s.account_id].last  = s.month;
+    if (!perAccount[s.account_id].first || s.date < perAccount[s.account_id].first) perAccount[s.account_id].first = s.date;
+    if (!perAccount[s.account_id].last  || s.date > perAccount[s.account_id].last)  perAccount[s.account_id].last  = s.date;
   }
   const knownIds = new Set(state.accounts.map(a => a.id));
   const summary = [];
@@ -107,17 +107,17 @@ export function logCoverageDiagnostic() {
   for (const id of Object.keys(perAccount)) {
     if (!knownIds.has(id)) {
       const p = perAccount[id];
-      summary.push({ account_id: id, name: '(no matching account in accounts tab)', all: p.all, nonzero: p.nonzero, zero: p.zero, first: p.first, last: p.last });
+      summary.push({ account_id: id, name: '(no matching account)', all: p.all, nonzero: p.nonzero, zero: p.zero, first: p.first, last: p.last });
     }
   }
-  console.log(`[pfs] snapshots per account (months row count: ${monthRows}):`);
+  console.log(`[pfs] snapshots per account (day comment rows: ${dayRows}):`);
   console.table(summary);
   window.__pfs = state;
-  window.__pfsMonth = (m) => {
-    const rows = state.snapshots.filter(s => s.month === m);
+  window.__pfsDate = (d) => {
+    const rows = state.snapshots.filter(s => s.date === d);
     const byAcct = Object.fromEntries(state.accounts.map(a => [a.id, a]));
     console.table(rows.map(r => ({
-      month: r.month,
+      date: r.date,
       account_id: r.account_id,
       name: byAcct[r.account_id]?.name_fr || '(unknown)',
       balance: r.balance_raw,
@@ -159,6 +159,26 @@ export function parseMonthLabel(raw) {
   return null;
 }
 
+export function normalizeDate(raw) {
+  if (raw == null) return '';
+  const s = String(raw).trim();
+  if (!s) return '';
+  // YYYY-MM-DD
+  const m1 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m1) return `${m1[1]}-${String(+m1[2]).padStart(2, '0')}-${String(+m1[3]).padStart(2, '0')}`;
+  // YYYY-MM (old monthly format — treated as first of month)
+  const m2 = s.match(/^(\d{4})-(\d{1,2})$/);
+  if (m2) return `${m2[1]}-${String(+m2[2]).padStart(2, '0')}-01`;
+  // Google Sheets serial number
+  const num = Number(s);
+  if (Number.isFinite(num) && num > 25000 && num < 80000) {
+    const d = new Date(Math.round((num - 25569) * 86400000));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  }
+  return s;
+}
+
+// Kept for migration code only — returns YYYY-MM
 export function normalizeMonth(raw) {
   if (raw == null) return '';
   const s = String(raw).trim();

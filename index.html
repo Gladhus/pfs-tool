@@ -68,12 +68,6 @@
               <button class="period-btn" data-period="YTD">YTD</button>
               <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
             </div>
-            <div class="period-custom">
-              <span data-i18n="from">From</span>
-              <input type="month" id="ov-from">
-              <span data-i18n="to">to</span>
-              <input type="month" id="ov-to">
-            </div>
           </div>
           <div class="chart-wrap ov-chart-wrap">
             <canvas id="overview-chart"></canvas>
@@ -86,19 +80,19 @@
         <section id="entry-form" class="entry-form" hidden>
           <header class="entry-header">
             <label>
-              <span data-i18n="month">Month</span>
-              <input id="month-input" type="month" required>
+              <span data-i18n="date_label">Date</span>
+              <input id="date-input" type="date" required>
             </label>
-            <span id="month-badge" class="badge" hidden></span>
-            <button id="copy-prev-btn" type="button" class="link-btn" data-i18n="copy_prev_month">Copy prev. month</button>
+            <span id="date-badge" class="badge" hidden></span>
+            <button id="copy-prev-btn" type="button" class="link-btn" data-i18n="copy_prev_day">Copy prev. day</button>
           </header>
 
           <div id="categories"></div>
 
           <div class="month-comment">
             <label>
-              <span data-i18n="month_comment">Month comment</span>
-              <textarea id="month-comment-input" rows="2"></textarea>
+              <span data-i18n="day_comment">Day comment</span>
+              <textarea id="day-comment-input" rows="2"></textarea>
             </label>
           </div>
 
@@ -222,6 +216,19 @@
             <button id="save-accounts-btn" type="button" class="primary" data-i18n="save_changes">Save changes</button>
             <button id="reload-accounts-btn" type="button" class="link-btn" data-i18n="discard">Discard</button>
             <span id="accounts-status" class="hint"></span>
+          </div>
+        </section>
+
+        <section id="migrate-section" class="migrate-section">
+          <header class="section-header">
+            <h2 data-i18n="migrate_daily_title">Migrate to daily format</h2>
+          </header>
+          <p class="hint" data-i18n="migrate_daily_hint">
+            Convert old monthly entries (YYYY-MM) to daily format (YYYY-MM-01). Run once after updating the app.
+          </p>
+          <div class="actions">
+            <button id="run-migration-btn" type="button" data-i18n="migrate_daily_btn">Run migration</button>
+            <span id="migration-status" class="hint"></span>
           </div>
         </section>
 

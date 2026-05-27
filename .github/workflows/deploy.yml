@@ -16,7 +16,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fail if version tag already exists
+        run: |
+          VERSION="v$(node -p "require('./package.json').version")"
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "❌ Tag $VERSION already exists — bump the version in package.json before pushing to main."
+            exit 1
+          fi
+          echo "✅ $VERSION is new, proceeding."
+
   build:
+    needs: check-version
+    if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,15 +64,13 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Tag from package.json version
         run: |
           VERSION="v$(node -p "require('./package.json').version")"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git rev-parse "$VERSION" >/dev/null 2>&1; then
-            echo "Tag $VERSION already exists, skipping."
-          else
-            git tag "$VERSION"
-            git push origin "$VERSION"
-            echo "Tagged $VERSION"
-          fi
+          git tag "$VERSION"
+          git push origin "$VERSION"
+          echo "Tagged $VERSION"

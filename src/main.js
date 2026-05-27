@@ -6,6 +6,7 @@ import { toast } from './toast.js';
 _setToastFn(toast);
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
+import { renderDetailTable } from './detail.js';
 import { renderForm, saveSnapshot, onCopyPrev } from './entry.js';
 import {
   renderAccountsList, onAddAccount, onToggleArchived,
@@ -78,6 +79,15 @@ els.ovViewToggle?.querySelectorAll('.ov-view-btn').forEach(btn => {
   });
 });
 
+// Detail period pills
+document.querySelectorAll('#detail-period-pills .period-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#detail-period-pills .period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderDetailTable();
+  });
+});
+
 // History chart period pills + account select
 document.querySelectorAll('#hist-period-pills .period-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -135,6 +145,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
     renderHistoryTable();
     renderChart();
     renderOverview();
+    renderDetailTable();
     if (state.currentDate) renderForm();
     renderAccountsList();
   });
@@ -228,12 +239,11 @@ document.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase();
   if (key === '1') { document.querySelector('.tab-btn[data-tab="overview"]')?.click(); e.preventDefault(); }
   else if (key === '2') { document.querySelector('.tab-btn[data-tab="history"]')?.click(); e.preventDefault(); }
-  else if (key === '3') { document.querySelector('.tab-btn[data-tab="entry"]')?.click(); e.preventDefault(); }
-  else if (key === '4') { document.querySelector('.tab-btn[data-tab="settings"]')?.click(); e.preventDefault(); }
+  else if (key === '3') { document.querySelector('.tab-btn[data-tab="detail"]')?.click(); e.preventDefault(); }
   else if (key === 'n') { document.querySelector('.tab-btn[data-tab="entry"]')?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
   else if (key === 's' && !els.saveSnapshotBtn.disabled && !document.getElementById('tab-entry').hidden) { els.saveSnapshotBtn?.click(); e.preventDefault(); }
   else if (key === 'p') { els.privateModeBtn?.click(); e.preventDefault(); }
-  else if (key === '?') { toast('Shortcuts: 1-4 tabs · n new · s save · p private · ? help', { timeout: 5000 }); e.preventDefault(); }
+  else if (key === '?') { toast('Shortcuts: 1-3 tabs · n entry · s save · p private · ? help', { timeout: 5000 }); e.preventDefault(); }
 });
 
 // --- Bootstrap: poll for Google APIs (both load async via CDN) ---

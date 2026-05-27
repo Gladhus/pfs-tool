@@ -28,10 +28,18 @@
 
     <section id="signed-in-state" hidden>
       <nav id="tab-bar" class="tab-bar" hidden>
-        <button type="button" class="tab-btn" data-tab="overview" data-i18n="tab_overview">Overview</button>
-        <button type="button" class="tab-btn" data-tab="history" data-i18n="tab_history">History</button>
-        <button type="button" class="tab-btn" data-tab="entry" data-i18n="tab_entry">Entry</button>
-        <button type="button" class="tab-btn" data-tab="settings" data-i18n="tab_settings">Settings</button>
+        <div class="tab-group">
+          <button type="button" class="tab-btn" data-tab="overview" data-i18n="tab_overview">Overview</button>
+          <button type="button" class="tab-btn" data-tab="history" data-i18n="tab_history">History</button>
+          <button type="button" class="tab-btn" data-tab="detail" data-i18n="tab_detail">Detail</button>
+        </div>
+        <span class="tab-spacer"></span>
+        <button type="button" class="tab-btn tab-icon-btn" data-tab="entry" title="New entry" aria-label="New entry">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button type="button" class="tab-btn tab-icon-btn" data-tab="settings" title="Settings" aria-label="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </nav>
 
       <!-- ── Overview tab ─────────────────────────────────── -->
@@ -154,6 +162,18 @@
           </header>
           <div id="history-cards" class="history-cards"></div>
         </section>
+      </div>
+
+      <!-- ── Detail tab ─────────────────────────────────────── -->
+      <div id="tab-detail" class="tab-panel" hidden>
+        <div class="detail-controls">
+          <div class="period-pills" id="detail-period-pills">
+            <button class="period-btn" data-period="3Y">3Y</button>
+            <button class="period-btn" data-period="5Y">5Y</button>
+            <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
+          </div>
+        </div>
+        <div class="detail-table-wrap" id="detail-table-wrap"></div>
       </div>
 
       <div id="tab-settings" class="tab-panel" hidden>

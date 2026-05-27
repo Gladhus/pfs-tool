@@ -317,15 +317,22 @@ svg { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
 .site-header .link-btn { color: rgba(255,255,255,.35); font-size: 0.72rem; }
 .site-header .link-btn:hover { color: rgba(255,255,255,.65); }
 
-/* ── Segmented tab bar ───────────────────────────────────── */
+/* ── Tab bar ─────────────────────────────────────────────── */
 #tab-bar {
+  display: flex;
+  align-items: center;
+  margin: 1.25rem 0 0.25rem;
+}
+
+.tab-group {
   display: inline-flex;
   background: var(--border);
   border-radius: 10px;
   padding: 3px;
-  margin: 1.25rem 0 0.25rem;
   gap: 2px;
 }
+
+.tab-spacer { flex: 1; }
 
 .tab-btn {
   background: transparent;
@@ -346,6 +353,20 @@ svg { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(15,23,42,.12), 0 0 0 1px rgba(15,23,42,.05);
 }
+
+.tab-icon-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.tab-icon-btn:hover { background: var(--border); color: var(--fg-2); }
+.tab-icon-btn.active { background: var(--border); color: var(--fg); }
 
 /* ── Focus ring for all inputs ───────────────────────────── */
 input:focus-visible,
@@ -1218,6 +1239,149 @@ button.danger:hover { background: #dc2626; }
   font-size: 0.9375rem;
 }
 
+/* ── Detail tab ─────────────────────────────────────────── */
+.detail-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.detail-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  min-width: 420px;
+}
+
+.detail-table thead th {
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--surface-2, var(--surface));
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.detail-table thead th:first-child {
+  text-align: left;
+  min-width: 160px;
+}
+.detail-table thead th:not(:first-child) {
+  text-align: right;
+  min-width: 110px;
+}
+.detail-table thead .detail-delta-col {
+  min-width: 130px;
+}
+
+/* Sticky first column */
+.detail-table thead th:first-child,
+.detail-acct-row td:first-child,
+.detail-cat-total td:first-child,
+.detail-net-row td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.detail-table thead th:first-child { background: var(--surface-2, var(--surface)); z-index: 2; }
+.detail-acct-row td:first-child   { background: var(--surface); }
+.detail-cat-total td:first-child  { background: var(--surface); }
+.detail-net-row td:first-child    { background: var(--surface-2, var(--surface)); }
+
+/* Category header rows */
+.detail-cat-header td {
+  padding: 0.55rem 1rem 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  background: var(--surface-2, var(--surface));
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.detail-cat-header:first-child td { border-top: none; }
+.detail-cat-header .cat-icon { opacity: 0.7; display: flex; }
+
+/* Category color accents */
+.detail-cat-header.cat-investments { color: var(--cat-investments, var(--muted)); }
+.detail-cat-header.cat-real-estate { color: var(--cat-real-estate, var(--muted)); }
+.detail-cat-header.cat-debts       { color: var(--cat-debts, var(--muted)); }
+.detail-cat-header.cat-cash        { color: var(--cat-cash, var(--muted)); }
+
+/* Account rows */
+.detail-acct-row td {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-2);
+}
+.detail-acct-row:last-child td { border-bottom: none; }
+.detail-acct-row .detail-acct-name {
+  color: var(--fg);
+  padding-left: 1.5rem;
+}
+
+/* Category total rows */
+.detail-cat-total td {
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  color: var(--fg);
+  border-top: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
+}
+.detail-cat-total .detail-acct-name {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-left: 1.5rem;
+}
+
+/* Net worth row */
+.detail-net-row td {
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--fg);
+  border-top: 2px solid var(--border);
+  background: var(--surface-2, var(--surface));
+}
+.detail-net-row .detail-acct-name {
+  background: var(--surface-2, var(--surface));
+}
+
+/* Value cells */
+.detail-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.detail-value.negative { color: var(--cat-debts, #f43f5e); }
+
+/* Delta cell */
+.detail-delta-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.detail-delta-cell.up   { color: var(--delta-up,   #10b981); }
+.detail-delta-cell.down { color: var(--delta-down,  #f43f5e); }
+
 /* ── Footer ──────────────────────────────────────────────── */
 footer {
   text-align: center;
@@ -1838,18 +2002,21 @@ dialog::backdrop {
   }
 
   #tab-bar {
-    display: flex;
     width: 100%;
     margin-top: 1rem;
+  }
+  .tab-group {
+    flex: 1;
+    min-width: 0;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
-  #tab-bar::-webkit-scrollbar { display: none; }
+  .tab-group::-webkit-scrollbar { display: none; }
 
-  .tab-btn {
+  .tab-btn:not(.tab-icon-btn) {
     flex: 1 0 auto;
-    min-width: 5.8rem;
+    min-width: 5rem;
     text-align: center;
     padding: 0.55rem 0.85rem;
   }
@@ -2075,8 +2242,8 @@ dialog::backdrop {
 
   main { padding-inline: 0.55rem; }
 
-  .tab-btn {
-    min-width: 5.3rem;
+  .tab-btn:not(.tab-icon-btn) {
+    min-width: 4.5rem;
     font-size: 0.76rem;
     padding-inline: 0.65rem;
   }

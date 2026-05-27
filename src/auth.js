@@ -6,6 +6,7 @@ import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
 import { renderForm } from './entry.js';
 import { renderAccountsList } from './accounts.js';
+import { renderDetailTable } from './detail.js';
 
 const cfg = window.PFS_CONFIG || {};
 
@@ -225,16 +226,17 @@ export async function loadAndRenderForm() {
 }
 
 export function setActiveTab(name) {
-  const tabs = ['overview', 'history', 'entry', 'settings'];
+  const tabs = ['overview', 'history', 'detail', 'entry', 'settings'];
   if (!tabs.includes(name)) name = 'overview';
   for (const tab of tabs) {
     const btn = els.tabBar.querySelector(`[data-tab="${tab}"]`);
     const panel = document.getElementById(`tab-${tab}`);
-    btn.classList.toggle('active', tab === name);
-    panel.hidden = (tab !== name);
+    btn?.classList.toggle('active', tab === name);
+    if (panel) panel.hidden = (tab !== name);
   }
   localStorage.setItem(LS_KEY_ACTIVE_TAB, name);
   if (name === 'overview') renderOverview();
+  if (name === 'detail') renderDetailTable();
   if (name === 'settings') renderAccountsList();
 }
 

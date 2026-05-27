@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [0.9.4] — 2026-05-27
+
+### Fixed
+- Pre-commit hook now runs `git fetch --tags` before checking, catching tags created by CI on the remote
+
 ## [0.9.3] — 2026-05-27
 
 ### Changed

@@ -5,7 +5,7 @@ import { loadAll, verifySheet, findSheetByName, createSheet, seedNewSheet } from
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
 import { renderForm } from './entry.js';
-import { renderAccountsTable, populateTypePicker } from './accounts.js';
+import { renderAccountsList } from './accounts.js';
 
 const cfg = window.PFS_CONFIG || {};
 
@@ -209,8 +209,6 @@ export async function bootstrapSheet() {
 export async function loadAndRenderForm() {
   await loadAll();
 
-  populateTypePicker();
-
   const now = new Date();
   state.currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   els.dateInput.value = state.currentDate;
@@ -237,7 +235,7 @@ export function setActiveTab(name) {
   }
   localStorage.setItem(LS_KEY_ACTIVE_TAB, name);
   if (name === 'overview') renderOverview();
-  if (name === 'settings') renderAccountsTable();
+  if (name === 'settings') renderAccountsList();
 }
 
 export function showTabBar() {

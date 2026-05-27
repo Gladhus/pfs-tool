@@ -6,7 +6,10 @@ export const els = {
   signedIn:          document.getElementById('signed-in-state'),
   sheetInfo:         document.getElementById('sheet-info'),
   sheetLink:         document.getElementById('sheet-link'),
+  sheetLink2:        document.getElementById('sheet-link-2'),
   resetSheetBtn:     document.getElementById('reset-sheet-btn'),
+  exportCsvBtn:      document.getElementById('export-csv-btn'),
+  settingsSubtabs:   document.getElementById('settings-subtabs'),
   status:            document.getElementById('status'),
   entryForm:         document.getElementById('entry-form'),
   dateInput:         document.getElementById('date-input'),
@@ -29,12 +32,34 @@ export const els = {
   showRealEstate:    document.getElementById('show-realestate'),
   tabBar:            document.getElementById('tab-bar'),
   accountsSection:   document.getElementById('accounts-section'),
-  accountsTableBody: document.querySelector('#accounts-table tbody'),
+  accountsList:      document.getElementById('accounts-list'),
+  accountsArchived:  document.getElementById('accounts-archived-list'),
+  toggleArchivedBtn: document.getElementById('toggle-archived-btn'),
   addAccountBtn:     document.getElementById('add-account-btn'),
-  saveAccountsBtn:   document.getElementById('save-accounts-btn'),
-  reloadAccountsBtn: document.getElementById('reload-accounts-btn'),
   accountsStatus:    document.getElementById('accounts-status'),
-  newAccountType:    document.getElementById('new-account-type'),
+  // Account edit dialog
+  acctDialog:        document.getElementById('account-edit-dialog'),
+  acctDlgTitle:      document.getElementById('acct-dlg-title'),
+  acctDlgClose:      document.getElementById('acct-dlg-close'),
+  acctTypeWrap:      document.getElementById('acct-type-wrap'),
+  acctTypeSelect:    document.getElementById('acct-type-select'),
+  acctNameFr:        document.getElementById('acct-name-fr'),
+  acctNameEn:        document.getElementById('acct-name-en'),
+  acctCategory:      document.getElementById('acct-category'),
+  acctKind:          document.getElementById('acct-kind'),
+  acctOwner:         document.getElementById('acct-owner'),
+  acctShare:         document.getElementById('acct-share'),
+  acctOrder:         document.getElementById('acct-order'),
+  acctIdField:       document.getElementById('acct-id-field'),
+  acctId:            document.getElementById('acct-id'),
+  acctRenameBtn:     document.getElementById('acct-rename-btn'),
+  acctActive:        document.getElementById('acct-active'),
+  acctTagsChips:     document.getElementById('acct-tags-chips'),
+  acctTagsInput:     document.getElementById('acct-tags-input'),
+  acctTagsSuggest:   document.getElementById('acct-tags-suggest'),
+  acctSaveBtn:       document.getElementById('acct-save-btn'),
+  acctCancelBtn:     document.getElementById('acct-cancel-btn'),
+  acctDeleteBtn:     document.getElementById('acct-delete-btn'),
   importSection:     document.getElementById('import-section'),
   importInput:       document.getElementById('import-input'),
   parseImportBtn:    document.getElementById('parse-import-btn'),
@@ -50,26 +75,43 @@ export const els = {
   ovAsOf:            document.getElementById('ov-as-of'),
   ovCards:           document.getElementById('ov-cards'),
   ovChartCanvas:     document.getElementById('overview-chart'),
+  ovDonutWrap:       document.getElementById('ov-donut-wrap'),
+  ovDonutCanvas:     document.getElementById('overview-donut'),
+  ovAllocLegend:     document.getElementById('ov-allocation-legend'),
+  ovSeriesToggles:   document.getElementById('ov-series-toggles'),
+  ovViewToggle:      document.getElementById('ov-view-toggle'),
   privateModeBtn:    document.getElementById('private-mode-btn'),
+  // Groups editor
+  addGroupBtn:       document.getElementById('add-group-btn'),
+  groupsList:        document.getElementById('groups-list'),
   histAccountSelect: document.getElementById('hist-account-select'),
   histChartToggles:  document.getElementById('hist-chart-toggles'),
 };
 
 let _statusTimer = null;
+let _toastFn = null;
+export function _setToastFn(fn) { _toastFn = fn; }
+
 export function setStatus(msg, level = '') {
   if (_statusTimer) { clearTimeout(_statusTimer); _statusTimer = null; }
   els.status.textContent = msg;
   els.status.className = 'status' + (level ? ' ' + level : '');
-  if (level === 'ok') {
-    _statusTimer = setTimeout(() => {
-      els.status.textContent = '';
-      els.status.className = 'status';
-      _statusTimer = null;
-    }, 3000);
+  if (level === 'ok' || level === 'warn') {
+    // Surface ok/warn as toasts too — easier to notice
+    _toastFn?.(msg, { level });
+    if (level === 'ok') {
+      _statusTimer = setTimeout(() => {
+        els.status.textContent = '';
+        els.status.className = 'status';
+        _statusTimer = null;
+      }, 3000);
+    }
   }
 }
 
 export function showSheetLink(id) {
   els.sheetInfo.hidden = false;
-  els.sheetLink.href = `https://docs.google.com/spreadsheets/d/${id}/edit`;
+  const url = `https://docs.google.com/spreadsheets/d/${id}/edit`;
+  els.sheetLink.href = url;
+  if (els.sheetLink2) els.sheetLink2.href = url;
 }

@@ -4,6 +4,7 @@ import { t, tFn, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct } from './format.js';
 import { getDatesForPeriod } from './utils.js';
 import { els } from './dom.js';
+import { icon } from './icons.js';
 
 export function getHistFilteredDates() {
   const btn = document.querySelector('#hist-period-pills .period-btn.active');
@@ -98,7 +99,17 @@ export function renderHistoryTable() {
   }
 
   const allDates = [...byDate.keys()].sort();
-  if (!allDates.length) { els.historySection.hidden = true; return; }
+  if (!allDates.length) {
+    els.historySection.hidden = false;
+    els.historySummary.textContent = '';
+    els.historyCards.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-state-icon">${icon('database', { size: 26 })}</span>
+        <h3 class="empty-state-title">${t('empty_history_title')}</h3>
+        <p class="empty-state-body">${t('empty_history_body')}</p>
+      </div>`;
+    return;
+  }
   els.historySection.hidden = false;
   els.historySummary.textContent = tFn('history_summary', allDates.length, allDates[0], allDates[allDates.length - 1]);
 
@@ -174,15 +185,15 @@ export function renderHistoryTable() {
     const stats = document.createElement('div');
     stats.className = 'hist-card-stats';
 
-    const mkStat = (label, val) => {
+    const mkStat = (label, val, catKey) => {
       const el = document.createElement('span');
-      el.className = 'hist-stat';
-      el.innerHTML = `<span class="hist-stat-label">${label}</span> ${fmtMoney(val)}`;
+      el.className = 'hist-stat cat-' + catKey;
+      el.innerHTML = `<span class="cat-dot"></span><span class="hist-stat-label">${label}</span> ${fmtMoney(val)}`;
       return el;
     };
-    stats.appendChild(mkStat(t('investments'), latest.investments));
-    stats.appendChild(mkStat(t('real_estate_net'), reNet));
-    stats.appendChild(mkStat(t('debts'), latest.debts));
+    stats.appendChild(mkStat(t('investments'),     latest.investments, 'investments'));
+    stats.appendChild(mkStat(t('real_estate_net'), reNet,              'real-estate'));
+    stats.appendChild(mkStat(t('debts'),           latest.debts,       'debts'));
 
     card.appendChild(main);
     card.appendChild(stats);
@@ -252,30 +263,41 @@ export function renderChart() {
 
   if (els.histChartToggles) els.histChartToggles.hidden = !isOverview;
 
+  const cs = getComputedStyle(document.documentElement);
+  const color = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
+  const COLOR_NET   = color('--fg', '#0f172a');
+  const COLOR_INVEST = color('--cat-investments', '#3b82f6');
+  const COLOR_RE     = color('--cat-real-estate', '#f59e0b');
+  const COLOR_ASSET  = color('--accent', '#10b981');
+  const COLOR_DEBT   = color('--cat-debts', '#f43f5e');
+  const COLOR_MUTED  = color('--subtle', '#94a3b8');
+  const COLOR_GRID   = color('--border', 'rgba(15,23,42,.06)');
+  const COLOR_FG2    = color('--fg-2', '#475569');
+
   const datasets = [];
   const chartCtx = els.chartCanvas.getContext('2d');
-  const makeGradient = (r, g, b) => {
+  const makeGradient = (hex) => {
     const h = els.chartCanvas.offsetHeight || 300;
     const gr = chartCtx.createLinearGradient(0, 0, 0, h);
-    gr.addColorStop(0, `rgba(${r},${g},${b},0.18)`);
-    gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    gr.addColorStop(0, hexToRgba(hex, 0.18));
+    gr.addColorStop(1, hexToRgba(hex, 0));
     return gr;
   };
+  const lineDataset = (label, data, hex) => ({
+    label, data, borderColor: hex, backgroundColor: makeGradient(hex),
+    borderWidth: 2, fill: true, tension: 0.35,
+    pointRadius: 0, pointHoverRadius: 5,
+    pointHoverBackgroundColor: hex, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+  });
 
   let chartDates;
   if (isOverview) {
     const data = computeSeries(filteredDates);
     if (!data.dates.length) { els.chartSection.hidden = true; return; }
     chartDates = data.dates;
-    if (els.showNet?.checked) {
-      datasets.push({ label: t('net_worth_chart'), data: data.net, borderColor: '#0f172a', backgroundColor: makeGradient(15, 23, 42), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#0f172a', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2 });
-    }
-    if (els.showInvestments?.checked) {
-      datasets.push({ label: t('investments'), data: data.investments, borderColor: '#059669', backgroundColor: makeGradient(5, 150, 105), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#059669', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2 });
-    }
-    if (els.showRealEstate?.checked) {
-      datasets.push({ label: t('real_estate_net'), data: data.realEstateNet, borderColor: '#0284c7', backgroundColor: makeGradient(2, 132, 199), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#0284c7', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2 });
-    }
+    if (els.showNet?.checked)         datasets.push(lineDataset(t('net_worth_chart'), data.net,           COLOR_NET));
+    if (els.showInvestments?.checked) datasets.push(lineDataset(t('investments'),     data.investments,    COLOR_INVEST));
+    if (els.showRealEstate?.checked)  datasets.push(lineDataset(t('real_estate_net'), data.realEstateNet,  COLOR_RE));
   } else {
     const acct = state.accounts.find(a => a.id === selectedAccount);
     if (!acct) { els.chartSection.hidden = true; return; }
@@ -287,9 +309,8 @@ export function renderChart() {
     chartDates = filteredDates.filter(d => snapByDate[d] !== undefined);
     if (!chartDates.length) { els.chartSection.hidden = true; return; }
     const values = chartDates.map(d => snapByDate[d]);
-    const color = acct.kind === 'debt' ? '#e11d48' : '#059669';
-    const [r, g, b] = acct.kind === 'debt' ? [225, 29, 72] : [5, 150, 105];
-    datasets.push({ label: tr(acct), data: values, borderColor: color, backgroundColor: makeGradient(r, g, b), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: color, pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2 });
+    const hex = acct.kind === 'debt' ? COLOR_DEBT : COLOR_ASSET;
+    datasets.push(lineDataset(tr(acct), values, hex));
   }
 
   if (!datasets.length) { els.chartSection.hidden = true; return; }
@@ -303,22 +324,22 @@ export function renderChart() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { color: '#475569', font: { size: 12, family: "'Inter', sans-serif" }, padding: 24, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8 } },
+        legend: { position: 'bottom', labels: { color: COLOR_FG2, font: { size: 12, family: "'Inter', sans-serif" }, padding: 24, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8 } },
         tooltip: {
           backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
           padding: 12, cornerRadius: 10, titleFont: { size: 11 },
           bodyFont: { size: 13, weight: '600' },
-          callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}` },
+          callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(ctx.parsed.y)}` },
         },
       },
       scales: {
         y: {
-          grid: { color: 'rgba(15,23,42,.04)', drawTicks: false }, border: { display: false },
-          ticks: { color: '#94a3b8', font: { size: 11, family: "'Inter', sans-serif" }, padding: 10, maxTicksLimit: 6,
-            callback: (v) => { const abs = Math.abs(v); if (abs >= 1000000) return (v/1000000).toFixed(1)+'M $'; if (abs >= 1000) return (v/1000).toFixed(0)+'k $'; return v+' $'; },
+          grid: { color: COLOR_GRID, drawTicks: false }, border: { display: false },
+          ticks: { color: COLOR_MUTED, font: { size: 11, family: "'Inter', sans-serif" }, padding: 10, maxTicksLimit: 6,
+            callback: (v) => { if (state.privateMode) return '••••'; const abs = Math.abs(v); if (abs >= 1000000) return (v/1000000).toFixed(1)+'M $'; if (abs >= 1000) return (v/1000).toFixed(0)+'k $'; return v+' $'; },
           },
         },
-        x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 12, color: '#94a3b8', font: { size: 11, family: "'Inter', sans-serif" }, maxRotation: 0 } },
+        x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 12, color: COLOR_MUTED, font: { size: 11, family: "'Inter', sans-serif" }, maxRotation: 0 } },
       },
     },
   };
@@ -330,4 +351,15 @@ export function renderChart() {
   } else {
     state.chart = new Chart(els.chartCanvas, config);
   }
+}
+
+function hexToRgba(hex, a) {
+  const m = hex.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);
+  if (!m) return hex;
+  let h = m[1];
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
 }

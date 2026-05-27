@@ -3,6 +3,7 @@ import { t, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct, parseMoney } from './format.js';
 import { categoriesInOrder, accountsForCategory, activeAccounts, snapshotForDate, prevDate, computeNetWorthFromSnapshots, normalizeDate, rebuildDatesList } from './utils.js';
 import { els, setStatus } from './dom.js';
+import { icon, categoryIcon, categoryKey } from './icons.js';
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart } from './history.js';
 
@@ -19,17 +20,24 @@ export function renderForm() {
 
   els.dayCommentEl.value = existing.dayComment || '';
 
+  // Ensure progress strip exists (created lazily, once)
+  ensureProgressStrip();
+
   els.categoriesEl.innerHTML = '';
   for (const cat of categoriesInOrder()) {
     const block = document.createElement('div');
-    block.className = 'category';
+    block.className = `category cat-${categoryKey(cat.id)}`;
     block.dataset.categoryId = cat.id;
 
     const h = document.createElement('h3');
+    const iconWrap = document.createElement('span');
+    iconWrap.className = 'cat-icon';
+    iconWrap.innerHTML = icon(categoryIcon(cat.id), { size: 14 });
     const lbl = document.createElement('span');
     lbl.textContent = tr(cat);
     const sub = document.createElement('span');
     sub.className = 'subtotal';
+    h.appendChild(iconWrap);
     h.appendChild(lbl);
     h.appendChild(sub);
     block.appendChild(h);
@@ -72,6 +80,14 @@ export function renderForm() {
         recomputeTotals();
       });
       bal.addEventListener('input', recomputeTotals);
+      bal.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const all = [...els.categoriesEl.querySelectorAll('input.balance')];
+        const idx = all.indexOf(bal);
+        const next = all[(idx + 1) % all.length];
+        next?.focus();
+      });
 
       const balWrap = document.createElement('div');
       balWrap.className = 'bal-wrap';
@@ -80,7 +96,13 @@ export function renderForm() {
       if (prevVal !== undefined) {
         const hint = document.createElement('span');
         hint.className = 'prev-val';
-        hint.textContent = fmtMoney(prevVal);
+        hint.dataset.prev = String(prevVal);
+        const arrow = document.createElement('span');
+        arrow.className = 'prev-arrow';
+        hint.appendChild(arrow);
+        const txt = document.createElement('span');
+        txt.textContent = fmtMoney(prevVal);
+        hint.appendChild(txt);
         balWrap.appendChild(hint);
       }
 
@@ -117,10 +139,14 @@ export function recomputeTotals() {
   const values = readFormValues();
   const byCategory = {};
   let netWorth = 0;
+  let filledCount = 0;
+  let totalCount = 0;
 
   for (const a of activeAccounts()) {
+    totalCount++;
     const v = values[a.id];
     if (!v || v.balance === null || Number.isNaN(v.balance)) continue;
+    filledCount++;
     const signed = v.balance * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
     byCategory[a.category] = (byCategory[a.category] || 0) + signed;
     netWorth += signed;
@@ -130,6 +156,27 @@ export function recomputeTotals() {
     const catId = block.dataset.categoryId;
     block.querySelector('.subtotal').textContent = fmtMoney(byCategory[catId] || 0);
   });
+
+  // Update direction arrows next to prev-val hints
+  els.categoriesEl.querySelectorAll('.account-row').forEach(row => {
+    const id = row.dataset.accountId;
+    const hint = row.querySelector('.prev-val');
+    if (!hint) return;
+    const arrow = hint.querySelector('.prev-arrow');
+    if (!arrow) return;
+    const prev = Number(hint.dataset.prev);
+    const cur = values[id]?.balance;
+    if (cur === null || Number.isNaN(cur)) {
+      arrow.textContent = '';
+      arrow.className = 'prev-arrow';
+      return;
+    }
+    if (cur > prev) { arrow.textContent = '▲'; arrow.className = 'prev-arrow up'; }
+    else if (cur < prev) { arrow.textContent = '▼'; arrow.className = 'prev-arrow down'; }
+    else { arrow.textContent = '='; arrow.className = 'prev-arrow flat'; }
+  });
+
+  updateProgressStrip(filledCount, totalCount);
 
   els.totalsGrid.innerHTML = '';
   for (const cat of categoriesInOrder()) {
@@ -215,6 +262,31 @@ export async function saveSnapshot() {
   } finally {
     els.saveSnapshotBtn.disabled = false;
   }
+}
+
+function ensureProgressStrip() {
+  if (document.getElementById('entry-progress')) return;
+  const strip = document.createElement('div');
+  strip.id = 'entry-progress';
+  strip.className = 'entry-progress';
+  strip.innerHTML = `
+    <span class="entry-progress-label"></span>
+    <div class="entry-progress-bar"><div class="entry-progress-fill"></div></div>
+    <span class="entry-progress-pct"></span>
+  `;
+  // Insert after entry-header
+  const header = document.querySelector('.entry-header');
+  header?.parentNode?.insertBefore(strip, header.nextSibling);
+}
+
+function updateProgressStrip(filled, total) {
+  const strip = document.getElementById('entry-progress');
+  if (!strip) return;
+  const pct = total ? Math.round((filled / total) * 100) : 0;
+  strip.querySelector('.entry-progress-label').textContent = `${filled} / ${total}`;
+  strip.querySelector('.entry-progress-fill').style.width = `${pct}%`;
+  strip.querySelector('.entry-progress-pct').textContent = `${pct}%`;
+  strip.classList.toggle('complete', filled === total && total > 0);
 }
 
 export function onCopyPrev() {

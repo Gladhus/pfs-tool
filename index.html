@@ -13,7 +13,6 @@
     <div id="auth-area">
       <div id="sheet-info" class="sheet-info" hidden>
         <a id="sheet-link" href="#" target="_blank" rel="noopener" class="header-sheet-link" data-i18n="open_in_sheets">Open in Google Sheets</a>
-        <button id="reset-sheet-btn" type="button" class="link-btn" data-i18n="reset_link">Reset link</button>
       </div>
       <span id="user-email" hidden></span>
       <button id="signin-btn" type="button" data-i18n="sign_in">Sign in with Google</button>
@@ -51,7 +50,16 @@
           </div>
           <div class="ov-hero-right">
             <button id="private-mode-btn" type="button" class="private-mode-btn"></button>
+            <div class="ov-donut-wrap" id="ov-donut-wrap" hidden>
+              <canvas id="overview-donut"></canvas>
+            </div>
+            <div id="ov-allocation-legend" class="ov-allocation-legend"></div>
           </div>
+        </div>
+
+        <div class="ov-view-toggle" id="ov-view-toggle">
+          <button type="button" class="ov-view-btn active" data-view="group" data-i18n="view_by_group">By group</button>
+          <button type="button" class="ov-view-btn" data-view="category" data-i18n="view_by_category">By category</button>
         </div>
 
         <div id="ov-cards" class="ov-cards"></div>
@@ -67,6 +75,7 @@
               <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
             </div>
           </div>
+          <div id="ov-series-toggles" class="chart-toggles"></div>
           <div class="chart-wrap ov-chart-wrap">
             <canvas id="overview-chart"></canvas>
           </div>
@@ -146,107 +155,258 @@
       </div>
 
       <div id="tab-settings" class="tab-panel" hidden>
+        <nav class="subtab-bar" id="settings-subtabs">
+          <button type="button" class="subtab-btn active" data-subtab="accounts" data-i18n="manage_accounts">Accounts</button>
+          <button type="button" class="subtab-btn" data-subtab="groups" data-i18n="groups_label">Groups</button>
+          <button type="button" class="subtab-btn" data-subtab="preferences" data-i18n="app_settings">Preferences</button>
+          <button type="button" class="subtab-btn" data-subtab="data" data-i18n="data_settings">Data</button>
+        </nav>
 
-        <section class="pref-section">
-          <header class="section-header">
-            <h2 data-i18n="app_settings">Preferences</h2>
-          </header>
-          <div class="setting-row">
-            <span class="setting-label" data-i18n="language_label">Language</span>
-            <div class="lang-toggle">
-              <button type="button" class="lang-btn" data-lang="fr">FR</button>
-              <button type="button" class="lang-btn" data-lang="en">EN</button>
+        <div class="subtab-panel" data-subtab="accounts">
+          <section id="accounts-section" class="accounts-section">
+            <header class="section-header">
+              <h2 data-i18n="manage_accounts">Manage accounts</h2>
+              <button id="add-account-btn" type="button" class="primary" data-i18n="add_account">+ Add account</button>
+            </header>
+            <p class="hint" data-i18n="manage_accounts_hint">
+              Click an account to edit. Archive an account to retire it without losing its history.
+            </p>
+
+            <div id="accounts-list" class="accounts-list"></div>
+
+            <button id="toggle-archived-btn" type="button" class="link-btn archived-toggle" hidden></button>
+            <div id="accounts-archived-list" class="accounts-list archived" hidden></div>
+
+            <div id="accounts-status" class="hint"></div>
+          </section>
+        </div>
+
+        <div class="subtab-panel" data-subtab="groups" hidden>
+          <section class="accounts-section">
+            <header class="section-header">
+              <h2 data-i18n="groups_label">Groups</h2>
+              <button id="add-group-btn" type="button" class="primary" data-i18n="add_group">+ Add group</button>
+            </header>
+            <p class="hint" data-i18n="groups_hint">Groups let you combine accounts by tag combinations and view them in the Overview. Each group appears as a stat card and a chart line.</p>
+            <div id="groups-list" class="groups-list"></div>
+          </section>
+        </div>
+
+        <div class="subtab-panel" data-subtab="preferences" hidden>
+          <section class="pref-section">
+            <header class="section-header">
+              <h2 data-i18n="app_settings">Preferences</h2>
+            </header>
+            <div class="setting-row">
+              <span class="setting-label" data-i18n="language_label">Language</span>
+              <div class="lang-toggle">
+                <button type="button" class="lang-btn" data-lang="fr">FR</button>
+                <button type="button" class="lang-btn" data-lang="en">EN</button>
+              </div>
             </div>
-          </div>
-        </section>
+            <div class="setting-row">
+              <span class="setting-label" data-i18n="theme_label">Theme</span>
+              <div class="theme-toggle">
+                <button type="button" class="theme-btn" data-theme="light" data-i18n="theme_light">Light</button>
+                <button type="button" class="theme-btn" data-theme="dark" data-i18n="theme_dark">Dark</button>
+                <button type="button" class="theme-btn active" data-theme="system" data-i18n="theme_system">System</button>
+              </div>
+            </div>
+          </section>
+        </div>
 
-        <section id="accounts-section" class="accounts-section">
-          <header class="section-header">
-            <h2 data-i18n="manage_accounts">Manage accounts</h2>
-          </header>
-          <p class="hint" data-i18n="manage_accounts_hint">
-            Edit names, ownership %, category, kind, or uncheck Active to retire an account without losing its history. The <code>id</code> field is immutable — historical snapshots reference it.
-          </p>
+        <div class="subtab-panel" data-subtab="data" hidden>
+          <section class="pref-section">
+            <header class="section-header">
+              <h2 data-i18n="data_sheet">Spreadsheet</h2>
+            </header>
+            <p class="hint">
+              <span data-i18n="your_pfs_sheet">Your PFS sheet:</span>
+              <a id="sheet-link-2" href="#" target="_blank" rel="noopener" data-i18n="open_in_sheets">Open in Google Sheets</a>
+            </p>
+            <div class="actions">
+              <button id="reset-sheet-btn" type="button" data-i18n="reset_link">Reset link</button>
+              <button id="export-csv-btn" type="button" data-i18n="export_csv">Export snapshots (CSV)</button>
+            </div>
+          </section>
 
-          <div class="accounts-wrap">
-            <table id="accounts-table" class="accounts-table">
-              <thead>
-                <tr>
-                  <th data-i18n="id_col">ID</th>
-                  <th data-i18n="name_fr_col">Name (FR)</th>
-                  <th data-i18n="name_en_col">Name (EN)</th>
-                  <th data-i18n="category_col">Category</th>
-                  <th data-i18n="kind_col">Kind</th>
-                  <th data-i18n="owner_col">Owner</th>
-                  <th class="num" data-i18n="share_col">Share %</th>
-                  <th data-i18n="active_col">Active</th>
-                  <th class="num" data-i18n="order_col">Order</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
+          <section id="import-section" class="import-section">
+            <header class="section-header">
+              <h2 data-i18n="import_historical">Import historical data</h2>
+            </header>
 
-          <div class="add-account-control">
-            <label class="add-type-label">
-              <span data-i18n="account_type_label">Account type</span>
-              <select id="new-account-type"></select>
-            </label>
-            <button id="add-account-btn" type="button" data-i18n="add_account">+ Add account</button>
-          </div>
+            <p class="hint" data-i18n="import_hint">
+              Paste your existing monthly tracking sheet (wide format: account names down the first column, months across the top). Copy/paste from Google Sheets works (tab-separated). The app will auto-detect months and let you map source rows to your accounts before importing.
+            </p>
 
-          <div class="actions">
-            <button id="save-accounts-btn" type="button" class="primary" data-i18n="save_changes">Save changes</button>
-            <button id="reload-accounts-btn" type="button" class="link-btn" data-i18n="discard">Discard</button>
-            <span id="accounts-status" class="hint"></span>
-          </div>
-        </section>
-
-<section id="import-section" class="import-section">
-          <header class="section-header">
-            <h2 data-i18n="import_historical">Import historical data</h2>
-          </header>
-
-          <p class="hint" data-i18n="import_hint">
-            Paste your existing monthly tracking sheet (wide format: account names down the first column, months across the top). Copy/paste from Google Sheets works (tab-separated). The app will auto-detect months and let you map source rows to your accounts before importing.
-          </p>
-
-          <textarea id="import-input" rows="8"></textarea>
-
-          <div class="actions">
-            <button id="parse-import-btn" type="button" data-i18n="parse">Parse</button>
-            <button id="clear-import-btn" type="button" class="link-btn" data-i18n="clear">Clear</button>
-          </div>
-
-          <div id="import-preview" hidden>
-            <h3 data-i18n="preview_label">Preview</h3>
-            <p id="import-summary" class="hint"></p>
-            <table id="mapping-table" class="mapping-table">
-              <thead>
-                <tr>
-                  <th data-i18n="source_row">Source row</th>
-                  <th data-i18n="sample_value">Sample value</th>
-                  <th data-i18n="map_to_account">Map to account</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-
-            <label class="overwrite-toggle">
-              <input id="overwrite-existing" type="checkbox">
-              <span data-i18n="overwrite_toggle">Overwrite existing snapshots for the months in this paste (otherwise skip months already in the sheet)</span>
-            </label>
+            <textarea id="import-input" rows="8"></textarea>
 
             <div class="actions">
-              <button id="confirm-import-btn" type="button" class="primary" data-i18n="import_btn">Import</button>
-              <button id="cancel-import-btn" type="button" class="link-btn" data-i18n="cancel">Cancel</button>
+              <button id="parse-import-btn" type="button" data-i18n="parse">Parse</button>
+              <button id="clear-import-btn" type="button" class="link-btn" data-i18n="clear">Clear</button>
             </div>
-          </div>
-        </section>
+
+            <div id="import-preview" hidden>
+              <h3 data-i18n="preview_label">Preview</h3>
+              <p id="import-summary" class="hint"></p>
+              <table id="mapping-table" class="mapping-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="source_row">Source row</th>
+                    <th data-i18n="sample_value">Sample value</th>
+                    <th data-i18n="map_to_account">Map to account</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+
+              <label class="overwrite-toggle">
+                <input id="overwrite-existing" type="checkbox">
+                <span data-i18n="overwrite_toggle">Overwrite existing snapshots for the months in this paste (otherwise skip months already in the sheet)</span>
+              </label>
+
+              <div class="actions">
+                <button id="confirm-import-btn" type="button" class="primary" data-i18n="import_btn">Import</button>
+                <button id="cancel-import-btn" type="button" class="link-btn" data-i18n="cancel">Cancel</button>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </section>
   </main>
+
+  <!-- ── Account edit dialog ───────────────────────────────── -->
+  <dialog id="account-edit-dialog" class="form-dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header">
+        <h2 id="acct-dlg-title">Edit account</h2>
+        <button type="button" class="dialog-close" id="acct-dlg-close" aria-label="Close">✕</button>
+      </div>
+
+      <div class="dialog-field" id="acct-type-wrap" hidden>
+        <label class="dialog-field-label" for="acct-type-select" data-i18n="account_type_label">Account type</label>
+        <select id="acct-type-select"></select>
+      </div>
+
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="acct-name-fr" data-i18n="name_fr_col">Name (FR)</label>
+          <input type="text" id="acct-name-fr" autocomplete="off">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="acct-name-en" data-i18n="name_en_col">Name (EN)</label>
+          <input type="text" id="acct-name-en" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="acct-category" data-i18n="category_col">Category</label>
+          <select id="acct-category"></select>
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="acct-kind" data-i18n="kind_col">Kind</label>
+          <select id="acct-kind"></select>
+        </div>
+      </div>
+
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="acct-owner" data-i18n="owner_col">Owner</label>
+          <select id="acct-owner"></select>
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="acct-share" data-i18n="share_col">Ownership %</label>
+          <input type="number" id="acct-share" min="0" max="100" step="1">
+        </div>
+      </div>
+
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="acct-order" data-i18n="order_col">Sort order</label>
+          <input type="number" id="acct-order" step="1">
+        </div>
+        <div class="dialog-field" id="acct-id-field">
+          <span class="dialog-field-label" data-i18n="id_col">ID</span>
+          <div class="acct-id-row">
+            <code id="acct-id" class="dialog-code"></code>
+            <button type="button" class="link-btn" id="acct-rename-btn">Rename ID…</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="acct-tags-input" data-i18n="tags_label">Tags</label>
+        <div class="tag-input-wrap" id="acct-tags-wrap">
+          <div id="acct-tags-chips" class="tag-chips"></div>
+          <input type="text" id="acct-tags-input" autocomplete="off" placeholder="Add tag…">
+          <div id="acct-tags-suggest" class="tag-suggest-list" hidden></div>
+        </div>
+      </div>
+
+      <label class="dialog-checkbox">
+        <input type="checkbox" id="acct-active">
+        <span>Active</span>
+      </label>
+
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="acct-save-btn">Save</button>
+        <button type="button" class="link-btn" id="acct-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button type="button" class="link-btn danger" id="acct-delete-btn" hidden>Delete</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ── Group edit dialog ────────────────────────────────── -->
+  <dialog id="group-edit-dialog" class="form-dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header">
+        <h2 id="group-dlg-title">Edit group</h2>
+        <button type="button" class="dialog-close" id="group-dlg-close" aria-label="Close">✕</button>
+      </div>
+
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="group-name" data-i18n="group_name_label">Name</label>
+        <input type="text" id="group-name" autocomplete="off">
+      </div>
+
+      <div class="dialog-field">
+        <span class="dialog-field-label" data-i18n="group_color_label">Color</span>
+        <div id="group-color-swatches" class="color-swatches"></div>
+      </div>
+
+      <div class="dialog-field">
+        <label class="dialog-field-label" data-i18n="group_all_label">All of these tags</label>
+        <div class="tag-input-wrap" id="group-all-wrap">
+          <div id="group-all-chips" class="tag-chips"></div>
+          <input type="text" id="group-all-input" autocomplete="off" placeholder="Add tag…">
+        </div>
+      </div>
+
+      <div class="dialog-field">
+        <label class="dialog-field-label" data-i18n="group_any_label">Any of these tags</label>
+        <div class="tag-input-wrap" id="group-any-wrap">
+          <div id="group-any-chips" class="tag-chips"></div>
+          <input type="text" id="group-any-input" autocomplete="off" placeholder="Add tag…">
+        </div>
+      </div>
+
+      <div class="dialog-field">
+        <label class="dialog-field-label" data-i18n="group_exclude_label">Exclude these tags</label>
+        <div class="tag-input-wrap" id="group-exclude-wrap">
+          <div id="group-exclude-chips" class="tag-chips"></div>
+          <input type="text" id="group-exclude-input" autocomplete="off" placeholder="Add tag…">
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="group-save-btn" data-i18n="save_changes">Save</button>
+        <button type="button" class="link-btn" id="group-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button type="button" class="link-btn danger" id="group-delete-btn" hidden data-i18n="delete">Delete</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- ── Migrate ID dialog ──────────────────────────────── -->
   <dialog id="migrate-id-dialog">

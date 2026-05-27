@@ -32,6 +32,8 @@ export async function createSheet() {
         { properties: { title: 'accounts' } },
         { properties: { title: 'snapshots' } },
         { properties: { title: 'config' } },
+        { properties: { title: 'tags' } },
+        { properties: { title: 'groups' } },
       ],
     },
     fields: 'spreadsheetId',
@@ -61,6 +63,8 @@ export async function seedNewSheet(sheetId) {
         { range: 'accounts!A1',  values: accountRows },
         { range: 'snapshots!A1', values: snapshotRows },
         { range: 'config!A1',    values: configRows },
+        { range: 'tags!A1',      values: [HEADERS.tags] },
+        { range: 'groups!A1',    values: [HEADERS.groups] },
       ],
     },
   });
@@ -89,8 +93,15 @@ export async function loadAccounts() {
     obj.ownership_share = parseNum(obj.ownership_share, 1);
     obj.sort_order      = parseNum(obj.sort_order, 0);
     obj.active = obj.active === true || String(obj.active).toUpperCase() === 'TRUE';
+    obj.tags = parseTags(obj.tags);
     return obj;
   }).filter(a => a.id);
+}
+
+function parseTags(raw) {
+  if (Array.isArray(raw)) return raw.map(t => String(t).trim()).filter(Boolean);
+  if (!raw) return [];
+  return String(raw).split(',').map(t => t.trim()).filter(Boolean);
 }
 
 export async function loadSnapshots() {
@@ -146,9 +157,150 @@ export async function loadCategoryMeta() {
   state.accountTypes = seedData.account_types || [];
 }
 
+export async function loadTagsCatalog() {
+  try {
+    const resp = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: state.sheetId,
+      range: 'tags!A:Z',
+      valueRenderOption: 'UNFORMATTED_VALUE',
+    });
+    const rows = resp.result.values || [];
+    if (rows.length < 2) { state.tagsCatalog = []; return; }
+    const headers = rows[0];
+    const nameIdx = headers.indexOf('name');
+    if (nameIdx < 0) { state.tagsCatalog = []; return; }
+    const seen = new Set();
+    state.tagsCatalog = [];
+    for (const r of rows.slice(1)) {
+      const name = (r[nameIdx] ?? '').toString().trim();
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      state.tagsCatalog.push({ name });
+    }
+  } catch (err) {
+    console.log('[pfs] tags tab missing — creating');
+    await ensureTagsTab();
+    state.tagsCatalog = [];
+  }
+}
+
+async function ensureTagsTab() {
+  try {
+    await gapi.client.sheets.spreadsheets.batchUpdate({
+      spreadsheetId: state.sheetId,
+      resource: { requests: [{ addSheet: { properties: { title: 'tags' } } }] },
+    });
+  } catch (e) {
+    // Already exists — fine
+  }
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: state.sheetId, range: 'tags!A1',
+    valueInputOption: 'RAW',
+    resource: { values: [HEADERS.tags] },
+  });
+}
+
+export async function writeTagsCatalog(tags) {
+  await ensureTagsTab();
+  const rows = [HEADERS.tags, ...tags.map(t => [t.name])];
+  await gapi.client.sheets.spreadsheets.values.clear({
+    spreadsheetId: state.sheetId, range: 'tags!A:Z',
+  });
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: state.sheetId, range: 'tags!A1',
+    valueInputOption: 'RAW', resource: { values: rows },
+  });
+}
+
+// Union of catalog + any tag found on accounts (so manual edits to the
+// accounts sheet still surface). Persists the merged set if it grew.
+export async function mergeAndSyncTagsCatalog() {
+  const names = new Set(state.tagsCatalog.map(t => t.name));
+  let grew = false;
+  for (const a of state.accounts) {
+    if (!Array.isArray(a.tags)) continue;
+    for (const t of a.tags) {
+      if (t && !names.has(t)) { names.add(t); state.tagsCatalog.push({ name: t }); grew = true; }
+    }
+  }
+  if (grew) {
+    try { await writeTagsCatalog(state.tagsCatalog); }
+    catch (err) { console.warn('[pfs] tags catalog sync failed', err); }
+  }
+}
+
+async function ensureGroupsTab() {
+  try {
+    await gapi.client.sheets.spreadsheets.batchUpdate({
+      spreadsheetId: state.sheetId,
+      resource: { requests: [{ addSheet: { properties: { title: 'groups' } } }] },
+    });
+  } catch (e) { /* Already exists */ }
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: state.sheetId, range: 'groups!A1',
+    valueInputOption: 'RAW',
+    resource: { values: [HEADERS.groups] },
+  });
+}
+
+export async function loadGroupsCatalog() {
+  try {
+    const resp = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: state.sheetId,
+      range: 'groups!A:Z',
+      valueRenderOption: 'UNFORMATTED_VALUE',
+    });
+    const rows = resp.result.values || [];
+    if (rows.length < 2) { state.groupsCatalog = []; return; }
+    const headers = rows[0];
+    const ni = headers.indexOf('name');
+    const ci = headers.indexOf('color');
+    const ai = headers.indexOf('all');
+    const ayi = headers.indexOf('any');
+    const ei = headers.indexOf('exclude');
+    if (ni < 0) { state.groupsCatalog = []; return; }
+    const splitTags = (raw) => raw ? String(raw).split(',').map(t => t.trim()).filter(Boolean) : [];
+    state.groupsCatalog = [];
+    for (const r of rows.slice(1)) {
+      const name = (r[ni] ?? '').toString().trim();
+      if (!name) continue;
+      state.groupsCatalog.push({
+        name,
+        color:   ci >= 0  ? (r[ci]  ?? '').toString().trim() : '',
+        all:     ai >= 0  ? splitTags(r[ai])  : [],
+        any:     ayi >= 0 ? splitTags(r[ayi]) : [],
+        exclude: ei >= 0  ? splitTags(r[ei])  : [],
+      });
+    }
+  } catch (err) {
+    console.log('[pfs] groups tab missing — creating');
+    await ensureGroupsTab();
+    state.groupsCatalog = [];
+  }
+}
+
+export async function writeGroupsCatalog(groups) {
+  await ensureGroupsTab();
+  const rows = [HEADERS.groups, ...groups.map(g => [
+    g.name,
+    g.color || '',
+    (g.all || []).join(', '),
+    (g.any || []).join(', '),
+    (g.exclude || []).join(', '),
+  ])];
+  await gapi.client.sheets.spreadsheets.values.clear({
+    spreadsheetId: state.sheetId, range: 'groups!A:Z',
+  });
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: state.sheetId, range: 'groups!A1',
+    valueInputOption: 'RAW', resource: { values: rows },
+  });
+}
+
 export async function loadAll() {
   setStatus('Loading accounts and snapshots…');
-  await Promise.all([loadAccounts(), loadSnapshots(), loadCategoryMeta()]);
+  await Promise.all([loadAccounts(), loadSnapshots(), loadCategoryMeta(), loadTagsCatalog(), loadGroupsCatalog()]);
+  await mergeAndSyncTagsCatalog();
   rebuildDatesList();
   logCoverageDiagnostic();
 }

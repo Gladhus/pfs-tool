@@ -1,247 +1,462 @@
 import { state, HEADERS, OWNERS, KINDS } from './state.js';
-import { t, tr } from './i18n.js';
+import { t, tr, lang } from './i18n.js';
 import { fmtMoney, parseMoney } from './format.js';
 import { categoriesInOrder, activeAccounts, normalizeDate, rebuildDatesList, parseMonthLabel, parseDelimited, suggestAccount, rememberMapping } from './utils.js';
 import { els, setStatus } from './dom.js';
+import { icon, iconEl, categoryIcon, categoryKey } from './icons.js';
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
 import { renderForm } from './entry.js';
-import { loadAccounts as loadAccountsFromSheet } from './sheets.js';
+import { loadAccounts as loadAccountsFromSheet, writeTagsCatalog } from './sheets.js';
+import { attachAutocomplete } from './autocomplete.js';
 
-// --- Accounts table ---
+// --- Helpers ---
 
-export function populateTypePicker() {
-  const sel = els.newAccountType;
-  if (!state.accountTypes.length) return;
-  if (sel.dataset.populated === '1') return;
+function setStatusMsg(msg, level = '') {
+  els.accountsStatus.textContent = msg;
+  els.accountsStatus.style.color =
+    level === 'ok'   ? 'var(--ok)' :
+    level === 'warn' ? 'var(--warn)' : 'var(--muted)';
+}
+
+function latestBalanceFor(accountId) {
+  let best = null;
+  for (const s of state.snapshots) {
+    if (s.account_id !== accountId) continue;
+    if (!best || s.date > best.date) best = s;
+  }
+  return best;
+}
+
+function sortedAccounts(list) {
+  const catOrder = Object.fromEntries(state.categoryMeta.map(c => [c.id, c.sort_order || 0]));
+  return [...list].sort((a, b) => {
+    const co = (catOrder[a.category] ?? 99) - (catOrder[b.category] ?? 99);
+    if (co !== 0) return co;
+    return (a.sort_order || 0) - (b.sort_order || 0);
+  });
+}
+
+function ownerLabel(o) {
+  return { self: t('owner_self'), partner: t('owner_partner'), joint: t('owner_joint') }[o] || o;
+}
+
+// --- Account list rendering ---
+
+export function renderAccountsTable() { renderAccountsList(); } // back-compat alias
+
+export function renderAccountsList() {
+  const list = els.accountsList;
+  const archived = els.accountsArchived;
+  list.innerHTML = '';
+  archived.innerHTML = '';
+
+  const active = sortedAccounts(state.accounts.filter(a => a.active));
+  const inactive = sortedAccounts(state.accounts.filter(a => !a.active));
+
+  // Group active accounts by category
+  let lastCat = null;
+  for (const a of active) {
+    if (a.category !== lastCat) {
+      const header = document.createElement('div');
+      header.className = `accounts-group-header cat-${categoryKey(a.category)}`;
+      const cat = state.categoryMeta.find(c => c.id === a.category);
+      header.innerHTML = `
+        <span class="cat-icon">${icon(categoryIcon(a.category), { size: 16 })}</span>
+        <span class="accounts-group-name">${cat ? tr(cat) : a.category}</span>
+      `;
+      list.appendChild(header);
+      lastCat = a.category;
+    }
+    list.appendChild(buildAccountCard(a));
+  }
+
+  if (inactive.length) {
+    els.toggleArchivedBtn.hidden = false;
+    updateArchivedToggleLabel(inactive.length);
+    for (const a of inactive) {
+      archived.appendChild(buildAccountCard(a));
+    }
+  } else {
+    els.toggleArchivedBtn.hidden = true;
+    archived.hidden = true;
+  }
+}
+
+function updateArchivedToggleLabel(n) {
+  const isOpen = !els.accountsArchived.hidden;
+  els.toggleArchivedBtn.textContent = isOpen
+    ? `Hide archived (${n})`
+    : `Show archived (${n})`;
+}
+
+export function onToggleArchived() {
+  const nextHidden = !els.accountsArchived.hidden;
+  els.accountsArchived.hidden = nextHidden;
+  const n = state.accounts.filter(a => !a.active).length;
+  updateArchivedToggleLabel(n);
+}
+
+function buildAccountCard(a) {
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = `account-card cat-${categoryKey(a.category)}`;
+  if (!a.active) card.classList.add('inactive');
+  card.dataset.id = a.id;
+
+  const latest = latestBalanceFor(a.id);
+  const sharePct = Math.round((a.ownership_share || 1) * 100);
+  const metaBits = [ownerLabel(a.owner)];
+  if (sharePct !== 100) metaBits.push(`${sharePct}%`);
+
+  card.innerHTML = `
+    <span class="cat-icon">${icon(categoryIcon(a.category), { size: 16 })}</span>
+    <div class="account-card-main">
+      <div class="account-card-name">${escapeHtml(tr(a))}</div>
+      <div class="account-card-meta">${metaBits.map(escapeHtml).join(' · ')}</div>
+    </div>
+    <div class="account-card-balance">
+      ${latest ? `<div class="account-card-amount">${fmtMoney(latest.balance_raw)}</div>
+                  <div class="account-card-date">${latest.date}</div>`
+               : `<div class="account-card-empty">No data</div>`}
+    </div>
+    <span class="account-card-chevron">${icon('chevronRight', { size: 16 })}</span>
+  `;
+  card.addEventListener('click', () => openAccountDialog(a.id));
+  return card;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// --- Account edit dialog ---
+
+let _editingId = null;  // id of account being edited, or null when creating
+let _typesPopulated = false;
+
+function populateAcctTypeSelect() {
+  const sel = els.acctTypeSelect;
   sel.innerHTML = '';
   const byCat = {};
   for (const type of state.accountTypes) (byCat[type.category] ||= []).push(type);
   for (const cat of state.categoryMeta) {
     const types = byCat[cat.id];
-    if (!types || !types.length) continue;
+    if (!types?.length) continue;
     const og = document.createElement('optgroup');
     og.label = tr(cat);
     for (const type of types) {
       const opt = document.createElement('option');
       opt.value = type.id_prefix;
-      opt.textContent = `${type.name_fr} / ${type.name_en}`;
+      opt.textContent = lang() === 'fr' ? type.name_fr : type.name_en;
       og.appendChild(opt);
     }
     sel.appendChild(og);
   }
-  sel.dataset.populated = '1';
 }
 
-export function renderAccountsTable() {
-  populateTypePicker();
-  const tbody = els.accountsTableBody;
-  tbody.innerHTML = '';
-  const catOrder = Object.fromEntries(state.categoryMeta.map(c => [c.id, c.sort_order || 0]));
-  const sorted = [...state.accounts].sort((a, b) => {
-    const co = (catOrder[a.category] || 99) - (catOrder[b.category] || 99);
-    if (co !== 0) return co;
-    return (a.sort_order || 0) - (b.sort_order || 0);
-  });
-  for (const a of sorted) {
-    tbody.appendChild(buildAccountRow(a, false));
+function populateSelect(sel, options, value) {
+  sel.innerHTML = '';
+  for (const o of options) {
+    const opt = document.createElement('option');
+    opt.value = o.value;
+    opt.textContent = o.label;
+    if (o.value === value) opt.selected = true;
+    sel.appendChild(opt);
   }
 }
 
-export function buildAccountRow(a, isNew) {
-  const rowEl = document.createElement('tr');
-  if (isNew) rowEl.classList.add('new-row');
-  if (!a.active) rowEl.classList.add('inactive');
-  rowEl.dataset.originalId = a.id;
-  rowEl.dataset.isNew = isNew ? '1' : '0';
-  rowEl.dataset.type = a.type || '';
+let _dialogTags = [];
+let _tagsAC = null;
 
-  const td = (cls, label) => {
-    const x = document.createElement('td');
-    if (cls) x.className = cls;
-    if (label) x.dataset.label = label;
-    rowEl.appendChild(x);
-    return x;
-  };
-  const txt = (v, cls) => {
-    const i = document.createElement('input'); i.type = 'text'; i.value = v ?? ''; if (cls) i.className = cls;
-    return i;
-  };
-  const num = (v, step = 1) => {
-    const i = document.createElement('input'); i.type = 'number'; i.value = v ?? 0; i.step = step;
-    return i;
-  };
-  const mkSel = (v, options) => {
-    const s = document.createElement('select');
-    for (const o of options) {
-      const opt = document.createElement('option'); opt.value = o.value; opt.textContent = o.label;
-      if (o.value === v) opt.selected = true;
-      s.appendChild(opt);
-    }
-    return s;
-  };
+function setupTagsAutocomplete() {
+  if (_tagsAC) return;
+  _tagsAC = attachAutocomplete(els.acctTagsInput, {
+    getOptions: () => allKnownTags().filter(t => !_dialogTags.includes(t)),
+    onPick: (tag) => {
+      if (!_dialogTags.includes(tag)) {
+        _dialogTags.push(tag);
+        renderDialogTagChips();
+      }
+    },
+  });
+}
 
-  const idInput = txt(a.id, 'id');
-  if (!isNew) idInput.readOnly = true;
-  td(null, 'ID').appendChild(idInput);
+function fillDialogFromAccount(a, { isNew }) {
+  els.acctDlgTitle.textContent = isNew ? '+ Add account' : 'Edit account';
+  els.acctTypeWrap.hidden = !isNew;
+  els.acctIdField.hidden = isNew;
+  els.acctDeleteBtn.hidden = isNew || hasHistory(a.id);
 
-  td(null, 'Name (FR)').appendChild(txt(a.name_fr));
-  td(null, 'Name (EN)').appendChild(txt(a.name_en));
+  if (isNew) populateAcctTypeSelect();
+  if (isNew && a.type) els.acctTypeSelect.value = a.type;
+
+  els.acctNameFr.value = a.name_fr || '';
+  els.acctNameEn.value = a.name_en || '';
 
   const catOpts = state.categoryMeta.map(c => ({ value: c.id, label: tr(c) }));
-  td(null, 'Category').appendChild(mkSel(a.category, catOpts));
+  populateSelect(els.acctCategory, catOpts, a.category);
+  populateSelect(els.acctKind,     KINDS.map(k => ({ value: k, label: k })), a.kind);
+  populateSelect(els.acctOwner,    OWNERS.map(o => ({ value: o, label: ownerLabel(o) })), a.owner);
 
-  td(null, 'Kind').appendChild(mkSel(a.kind, KINDS.map(k => ({ value: k, label: k }))));
-  td(null, 'Owner').appendChild(mkSel(a.owner, OWNERS.map(o => ({ value: o, label: o }))));
+  els.acctShare.value = Math.round((a.ownership_share || 1) * 100);
+  els.acctOrder.value = a.sort_order || 0;
+  els.acctId.textContent = a.id || '—';
+  els.acctActive.checked = a.active !== false;
 
-  const share = num(Math.round((a.ownership_share || 0) * 100), 1);
-  share.min = 0; share.max = 100; share.style.width = '4rem';
-  td('num', 'Share %').appendChild(share);
-
-  const activeBox = document.createElement('input');
-  activeBox.type = 'checkbox'; activeBox.checked = !!a.active;
-  activeBox.addEventListener('change', () => rowEl.classList.toggle('inactive', !activeBox.checked));
-  td(null, 'Active').appendChild(activeBox);
-
-  const order = num(a.sort_order || 0);
-  order.style.width = '4.5rem';
-  td('num', 'Order').appendChild(order);
-
-  const actionsTd = td('actions-col');
-  if (!isNew) {
-    const renameBtn = document.createElement('button');
-    renameBtn.type = 'button';
-    renameBtn.className = 'rename-btn';
-    renameBtn.textContent = 'Rename ID';
-    renameBtn.title = "Rename this account's ID — also updates every historical snapshot that references it";
-    renameBtn.addEventListener('click', () => onRenameAccountId(a.id));
-    actionsTd.appendChild(renameBtn);
-  }
-
-  return rowEl;
+  _dialogTags = Array.isArray(a.tags) ? [...a.tags] : [];
+  els.acctTagsInput.value = '';
+  renderDialogTagChips();
+  setupTagsAutocomplete();
 }
 
-function readAccountsTable() {
-  const rows = [...els.accountsTableBody.querySelectorAll('tr')];
-  const out = [];
-  const seenIds = new Set();
-  for (const rowEl of rows) {
-    const inputs = rowEl.querySelectorAll('input, select');
-    const [idEl, nameFr, nameEn, cat, kind, owner, share, active, order] = inputs;
-    const id = (idEl.value || '').trim();
-    if (!id) continue;
-    if (seenIds.has(id)) throw new Error(`Duplicate account id: "${id}"`);
-    seenIds.add(id);
-    out.push({
-      id,
-      type: rowEl.dataset.type || '',
-      name_fr: nameFr.value.trim(),
-      name_en: nameEn.value.trim(),
-      category: cat.value,
-      kind: kind.value,
-      owner: owner.value,
-      ownership_share: Math.max(0, Math.min(100, Number(share.value) || 0)) / 100,
-      active: active.checked,
-      sort_order: Number(order.value) || 0,
+function renderDialogTagChips() {
+  const wrap = els.acctTagsChips;
+  wrap.innerHTML = '';
+  for (const tag of _dialogTags) {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.innerHTML = `${escapeHtml(tag)}<button type="button" aria-label="Remove">&times;</button>`;
+    chip.querySelector('button').addEventListener('click', () => {
+      _dialogTags = _dialogTags.filter(t => t !== tag);
+      renderDialogTagChips();
     });
+    wrap.appendChild(chip);
   }
-  return out;
 }
 
-export function onAddAccount() {
-  const prefix = els.newAccountType.value;
-  if (!prefix) { els.accountsStatus.textContent = 'Pick an account type first.'; els.accountsStatus.style.color = 'var(--warn)'; return; }
-  const type = state.accountTypes.find(t => t.id_prefix === prefix);
-  if (!type) { els.accountsStatus.textContent = 'Unknown account type.'; els.accountsStatus.style.color = 'var(--warn)'; return; }
+function allKnownTags() {
+  // Pulled from the catalog (canonical source), supplemented with anything
+  // currently assigned to an account that might not yet be in the catalog.
+  const set = new Set((state.tagsCatalog || []).map(t => t.name));
+  for (const a of state.accounts) {
+    if (Array.isArray(a.tags)) a.tags.forEach(t => t && set.add(t));
+  }
+  return [...set].sort();
+}
 
+function commitTagInput() {
+  const raw = els.acctTagsInput.value.trim();
+  if (!raw) return;
+  const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+  for (const p of parts) if (!_dialogTags.includes(p)) _dialogTags.push(p);
+  els.acctTagsInput.value = '';
+  renderDialogTagChips();
+}
+
+export function onAcctTagsKeydown(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    commitTagInput();
+  } else if (e.key === 'Backspace' && !els.acctTagsInput.value && _dialogTags.length) {
+    _dialogTags.pop();
+    renderDialogTagChips();
+  }
+}
+
+export function onAcctTagsBlur() {
+  commitTagInput();
+}
+
+function hasHistory(id) {
+  return state.snapshots.some(s => s.account_id === id);
+}
+
+export function openAccountDialog(id) {
+  const a = state.accounts.find(x => x.id === id);
+  if (!a) return;
+  _editingId = id;
+  fillDialogFromAccount(a, { isNew: false });
+  els.acctDialog.showModal();
+  setTimeout(() => els.acctNameFr.focus(), 0);
+}
+
+export function openNewAccountDialog() {
+  if (!state.accountTypes.length) {
+    setStatusMsg('Account types not loaded yet.', 'warn');
+    return;
+  }
+  _editingId = null;
+  const firstType = state.accountTypes[0];
+  const blank = {
+    id: '', type: firstType.id_prefix,
+    name_fr: '', name_en: '',
+    category: firstType.category, kind: firstType.kind,
+    owner: firstType.default_owner || 'self',
+    ownership_share: firstType.default_ownership_share ?? 1,
+    active: true, sort_order: 0,
+  };
+  fillDialogFromAccount(blank, { isNew: true });
+  applyTypeDefaultsToDialog(); // sync category/kind/share/order from selected type
+  els.acctDialog.showModal();
+  setTimeout(() => els.acctNameFr.focus(), 0);
+}
+
+// When user picks a different type while creating, pre-fill category/kind/share/order
+function applyTypeDefaultsToDialog() {
+  const prefix = els.acctTypeSelect.value;
+  const type = state.accountTypes.find(t => t.id_prefix === prefix);
+  if (!type) return;
+  els.acctCategory.value = type.category;
+  els.acctKind.value = type.kind;
+  els.acctOwner.value = type.default_owner || 'self';
+  els.acctShare.value = Math.round((type.default_ownership_share ?? 1) * 100);
+  // Suggest a default name based on next-available index
   const existingIds = new Set(state.accounts.map(a => a.id));
-  els.accountsTableBody.querySelectorAll('tr').forEach(rowEl => {
-    const v = rowEl.querySelector('input.id')?.value;
-    if (v) existingIds.add(v);
-  });
   let n = 1;
   while (existingIds.has(`${prefix}_${n}`)) n++;
-  const newId = `${prefix}_${n}`;
-
+  if (!els.acctNameFr.value) els.acctNameFr.value = `${type.name_fr} ${n}`;
+  if (!els.acctNameEn.value) els.acctNameEn.value = `${type.name_en} ${n}`;
+  // Suggest next sort_order in this category
   const orderInCat = state.accounts.filter(a => a.category === type.category).map(a => a.sort_order || 0);
-  const nextOrder = (orderInCat.length ? Math.max(...orderInCat) : 0) + 10;
-
-  const blank = {
-    id: newId, type: prefix,
-    name_fr: `${type.name_fr} ${n}`, name_en: `${type.name_en} ${n}`,
-    category: type.category, kind: type.kind,
-    owner: type.default_owner || 'self',
-    ownership_share: type.default_ownership_share ?? 1,
-    active: true, sort_order: nextOrder,
-  };
-  els.accountsTableBody.appendChild(buildAccountRow(blank, true));
-  els.accountsStatus.style.color = 'var(--muted)';
-  els.accountsStatus.textContent = `Added ${newId} — remember to Save changes.`;
-  const newRow = els.accountsTableBody.lastElementChild;
-  const inputs = newRow.querySelectorAll('input');
-  inputs[1].focus(); inputs[1].select();
-  newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  els.acctOrder.value = (orderInCat.length ? Math.max(...orderInCat) : 0) + 10;
 }
 
-export async function onSaveAccounts() {
+export function closeAccountDialog() {
+  els.acctDialog.close();
+  _editingId = null;
+}
+
+export async function saveAccountDialog() {
   if (!state.sheetId) return;
-  let next;
-  try {
-    next = readAccountsTable();
-  } catch (err) {
-    els.accountsStatus.textContent = err.message;
-    els.accountsStatus.style.color = 'var(--warn)';
-    return;
-  }
-  if (!next.length) {
-    els.accountsStatus.textContent = 'Add at least one account.';
-    els.accountsStatus.style.color = 'var(--warn)';
-    return;
-  }
-  const newIds = new Set(next.map(a => a.id));
-  const removed = state.accounts.filter(a => !newIds.has(a.id));
-  const usedRemoved = removed.filter(a => state.snapshots.some(s => s.account_id === a.id));
-  if (usedRemoved.length) {
-    const names = usedRemoved.map(a => a.id).join(', ');
-    els.accountsStatus.textContent = `Cannot remove accounts with history: ${names}. Mark them inactive instead.`;
-    els.accountsStatus.style.color = 'var(--warn)';
+  const isNew = _editingId === null;
+  const nameFr = els.acctNameFr.value.trim();
+  const nameEn = els.acctNameEn.value.trim();
+  if (!nameFr && !nameEn) {
+    setStatusMsg('Add at least one name.', 'warn');
     return;
   }
 
-  els.accountsStatus.style.color = 'var(--muted)';
-  els.accountsStatus.textContent = 'Saving…';
-  els.saveAccountsBtn.disabled = true;
+  let id = _editingId;
+  let type = '';
+  if (isNew) {
+    const prefix = els.acctTypeSelect.value;
+    type = prefix;
+    const existingIds = new Set(state.accounts.map(a => a.id));
+    let n = 1;
+    while (existingIds.has(`${prefix}_${n}`)) n++;
+    id = `${prefix}_${n}`;
+  } else {
+    type = state.accounts.find(a => a.id === id)?.type || '';
+  }
+
+  // Flush any text still in the tag input
+  commitTagInput();
+
+  const next = {
+    id, type,
+    name_fr: nameFr || nameEn,
+    name_en: nameEn || nameFr,
+    category: els.acctCategory.value,
+    kind: els.acctKind.value,
+    owner: els.acctOwner.value,
+    ownership_share: Math.max(0, Math.min(100, Number(els.acctShare.value) || 0)) / 100,
+    active: els.acctActive.checked,
+    sort_order: Number(els.acctOrder.value) || 0,
+    tags: [..._dialogTags],
+  };
+
+  const nextAll = isNew
+    ? [...state.accounts, next]
+    : state.accounts.map(a => a.id === id ? { ...a, ...next } : a);
+
+  // Persist any new tags to the catalog
+  const existingNames = new Set((state.tagsCatalog || []).map(t => t.name));
+  const newCatalogEntries = [];
+  for (const t of next.tags) if (!existingNames.has(t)) {
+    existingNames.add(t);
+    newCatalogEntries.push({ name: t });
+  }
+
+  els.acctSaveBtn.disabled = true;
+  setStatusMsg('Saving…');
   try {
-    const rows = [HEADERS.accounts, ...next.map(a => HEADERS.accounts.map(h => a[h] ?? ''))];
-    await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'accounts!A:Z' });
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: state.sheetId, range: 'accounts!A1',
-      valueInputOption: 'RAW', resource: { values: rows },
-    });
-    state.accounts = next;
-    renderAccountsTable();
+    await writeAccountsToSheet(nextAll);
+    if (newCatalogEntries.length) {
+      state.tagsCatalog = [...state.tagsCatalog, ...newCatalogEntries];
+      try { await writeTagsCatalog(state.tagsCatalog); }
+      catch (err) { console.warn('[pfs] tags catalog write failed', err); }
+    }
+    state.accounts = nextAll;
+    renderAccountsList();
     renderForm();
     renderHistoryTable();
     renderChart();
     renderOverview();
-    els.accountsStatus.textContent = `Saved ${next.length} accounts.`;
-    els.accountsStatus.style.color = 'var(--ok)';
+    populateHistAccountSelect();
+    setStatusMsg(isNew ? `Created ${id}.` : `Saved ${id}.`, 'ok');
+    closeAccountDialog();
   } catch (err) {
     console.error(err);
-    els.accountsStatus.textContent = 'Save failed: ' + (err.result?.error?.message || err.message || err);
-    els.accountsStatus.style.color = 'var(--warn)';
+    setStatusMsg('Save failed: ' + (err.result?.error?.message || err.message || err), 'warn');
   } finally {
-    els.saveAccountsBtn.disabled = false;
+    els.acctSaveBtn.disabled = false;
   }
 }
 
-export async function onReloadAccounts() {
-  els.accountsStatus.textContent = 'Reloading from sheet…';
-  await loadAccountsFromSheet();
-  renderAccountsTable();
-  els.accountsStatus.textContent = 'Reverted to last saved.';
-  els.accountsStatus.style.color = 'var(--muted)';
+export async function deleteAccountFromDialog() {
+  if (_editingId === null) return;
+  const id = _editingId;
+  if (hasHistory(id)) {
+    setStatusMsg('Cannot delete an account with history — archive it instead.', 'warn');
+    return;
+  }
+  if (!confirm(`Delete account "${id}"? This cannot be undone.`)) return;
+  const nextAll = state.accounts.filter(a => a.id !== id);
+  els.acctDeleteBtn.disabled = true;
+  setStatusMsg('Deleting…');
+  try {
+    await writeAccountsToSheet(nextAll);
+    state.accounts = nextAll;
+    renderAccountsList();
+    renderForm();
+    populateHistAccountSelect();
+    setStatusMsg(`Deleted ${id}.`, 'ok');
+    closeAccountDialog();
+  } catch (err) {
+    console.error(err);
+    setStatusMsg('Delete failed: ' + (err.result?.error?.message || err.message || err), 'warn');
+  } finally {
+    els.acctDeleteBtn.disabled = false;
+  }
 }
+
+async function writeAccountsToSheet(rows) {
+  const sheetRows = [HEADERS.accounts, ...rows.map(a => HEADERS.accounts.map(h => {
+    if (h === 'tags') return Array.isArray(a.tags) ? a.tags.join(', ') : (a.tags || '');
+    return a[h] ?? '';
+  }))];
+  await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'accounts!A:Z' });
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: state.sheetId, range: 'accounts!A1',
+    valueInputOption: 'RAW', resource: { values: sheetRows },
+  });
+}
+
+export function onAddAccount() {
+  openNewAccountDialog();
+}
+
+export function onAcctTypeChange() {
+  applyTypeDefaultsToDialog();
+}
+
+export function onAcctRenameClick() {
+  if (_editingId === null) return;
+  const id = _editingId;
+  closeAccountDialog();
+  openMigrateDialog(id);
+}
+
+// Legacy aliases that other modules may still reference
+export async function onSaveAccounts() { /* no-op: per-card save now */ }
+export async function onReloadAccounts() {
+  setStatusMsg('Reloading from sheet…');
+  await loadAccountsFromSheet();
+  renderAccountsList();
+  setStatusMsg('Reloaded.', 'ok');
+}
+export function populateTypePicker() { /* no-op: handled by dialog open */ }
 
 // --- Migrate ID dialog ---
 

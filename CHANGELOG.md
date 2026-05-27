@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [0.9.3] — 2026-05-27
+
+### Changed
+- README rewritten as a product overview — removed setup/deployment sections, focused on features and data model
+- Backfilled changelog entries for 0.9.1 and 0.9.2
+
+## [0.9.2] — 2026-05-27
+
+### Added
+- MIT license
+- README fully rewritten with version/deploy badges, features list, architecture overview, and data model table
+
+## [0.9.1] — 2026-05-27
+
+### Added
+- Pre-commit hook in `.githooks/pre-commit` blocks commits to `main` if version tag already exists
+- `npm prepare` script wires up `.githooks/` automatically on `npm install`
+- `check-version` CI job fails fast if version tag already exists, before build/deploy runs
+
 ## [0.9.0] — 2026-05-27
 
 ### Added

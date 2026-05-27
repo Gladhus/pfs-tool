@@ -144,17 +144,30 @@ main {
 .status.ok   { color: #6ee7b7; }
 .status.warn { color: #fca5a5; }
 
-/* ── Sheet info ──────────────────────────────────────────── */
+/* ── Sheet info (in header) ──────────────────────────────── */
 .sheet-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--muted);
+  gap: 0.5rem;
 }
-.sheet-info a { color: var(--accent); text-decoration: none; font-weight: 600; }
-.sheet-info a:hover { text-decoration: underline; }
+.header-sheet-link {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.85);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 100ms;
+}
+.header-sheet-link::after { content: ' ↗'; opacity: 0.6; }
+.header-sheet-link:hover { background: rgba(255,255,255,.15); }
+.site-header .link-btn { color: rgba(255,255,255,.35); font-size: 0.72rem; }
+.site-header .link-btn:hover { color: rgba(255,255,255,.65); }
 
 /* ── Segmented tab bar ───────────────────────────────────── */
 #tab-bar {
@@ -1243,11 +1256,6 @@ dialog::backdrop {
     min-width: 5.8rem;
     text-align: center;
     padding: 0.55rem 0.85rem;
-  }
-
-  .sheet-info {
-    flex-wrap: wrap;
-    row-gap: 0.2rem;
   }
 
   .entry-header {

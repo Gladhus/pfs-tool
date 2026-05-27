@@ -5,10 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [0.9.5](https://github.com/Gladhus/pfs-tool/releases/tag/v0.9.5) — 2026-05-27
+## [0.9.6] — 2026-05-27
+
+### Added
+- **2Y period button** added to both Overview and History period pill bars
 
 ### Changed
-- Deploy workflow: removed `check-version` hard gate; `release` job now skips gracefully when version tag already exists — CSS/doc-only pushes no longer require a version bump
+- **Chart x-axis labels**: smarter tick selection — year-only labels for ranges ≥2 years, "Mon YYYY" for shorter ranges; tick count scales to canvas width (3 on mobile, up to 7 on desktop); replaces the previous fixed `maxTicksLimit` approach
+- **Chart series start from first data point**: series lines (by category/group in Overview; investments and real estate in History) now begin at their first actual entry rather than showing $0 from the start of time
+- **Overview chart x-axis range**: when toggling to a series that starts later (e.g. a group added in 2025), the x-axis now trims to that series' first data point rather than showing blank space back to 2020
+- **History month-card delta**: now shows the latest net worth for the current month vs the latest net worth for the prior month (month-over-month), rather than day-over-day delta
+
+## [0.9.5](https://github.com/Gladhus/pfs-tool/releases/tag/v0.9.5) — 2026-05-27
+
+### Fixed
+- Overview "By group" mode caused the page to be narrower than the viewport on Safari (mobile and desktop) — `position: absolute` checkboxes inside series chip toggles were escaping their containing block and inflating the document width; fixed by adding `position: relative` to chips and zeroing the hidden input size
+
+### Changed
+- Deploy workflow: removed `check-version` hard gate; `release` job now skips gracefully when version tag already exists — CSS/doc-only pushes no longer require a version bump; check-version now gates only when UX files changed; enforces CHANGELOG entry for new versions
 - Removed pre-commit hook and `npm prepare` hook wiring
 
 ## [0.9.4] — 2026-05-27

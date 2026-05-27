@@ -109,12 +109,50 @@ export function getDatesForPeriod(period) {
   if (period === 'YTD') {
     return all.filter(d => d >= `${yr}-01-01`);
   }
-  const nMonths = { '3M': 3, '6M': 6, '1Y': 12, '5Y': 60 }[period];
+  const nMonths = { '3M': 3, '6M': 6, '1Y': 12, '2Y': 24, '5Y': 60 }[period];
   if (!nMonths) return all;
   const fromDate = new Date(latest);
   fromDate.setMonth(fromDate.getMonth() - nMonths);
   const fromStr = fromDate.toISOString().slice(0, 10);
   return all.filter(d => d >= fromStr);
+}
+
+export function buildXAxisTicks(dates, canvasWidth, locale) {
+  if (dates.length < 2) return { tickSet: new Set([0]), xFmt: () => '' };
+
+  const first = new Date(dates[0] + 'T12:00:00');
+  const last  = new Date(dates[dates.length - 1] + 'T12:00:00');
+  const rangeYears = (last - first) / (365.25 * 24 * 3600 * 1000);
+  const useYearOnly = rangeYears >= 2;
+
+  const targetTicks = canvasWidth < 400 ? 3 : canvasWidth < 700 ? 5 : 7;
+
+  let tickIndices = [];
+  if (useYearOnly) {
+    const seen = new Set();
+    dates.forEach((d, i) => {
+      const y = new Date(d + 'T12:00:00').getFullYear();
+      if (!seen.has(y)) { seen.add(y); tickIndices.push(i); }
+    });
+  } else {
+    const seen = new Set();
+    dates.forEach((d, i) => {
+      const dt = new Date(d + 'T12:00:00');
+      const key = `${dt.getFullYear()}-${dt.getMonth()}`;
+      if (!seen.has(key)) { seen.add(key); tickIndices.push(i); }
+    });
+  }
+
+  if (tickIndices.length > targetTicks) {
+    const step = Math.ceil(tickIndices.length / targetTicks);
+    tickIndices = tickIndices.filter((_, i) => i % step === 0);
+  }
+
+  const xFmt = useYearOnly
+    ? d => String(d.getFullYear())
+    : d => d.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+
+  return { tickSet: new Set(tickIndices), xFmt };
 }
 
 export function rebuildDatesList() {

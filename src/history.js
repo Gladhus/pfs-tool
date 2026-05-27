@@ -1,8 +1,8 @@
 import Chart from 'chart.js/auto';
 import { state } from './state.js';
-import { t, tFn, tr } from './i18n.js';
+import { t, tFn, tr, lang } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { getDatesForPeriod, buildBalanceSweep, activeAccounts } from './utils.js';
+import { getDatesForPeriod, buildBalanceSweep, activeAccounts, buildXAxisTicks } from './utils.js';
 import { els } from './dom.js';
 import { icon } from './icons.js';
 
@@ -35,7 +35,11 @@ export function computeSeries(filteredDates) {
     investments.push(inv);
     realEstateNet.push(re + red);
   }
-  return { dates: outDates, net, investments, realEstateNet };
+  const nullBeforeFirst = arr => {
+    const first = arr.findIndex(v => v !== 0);
+    return first <= 0 ? arr : arr.map((v, i) => i < first ? null : v);
+  };
+  return { dates: outDates, net, investments: nullBeforeFirst(investments), realEstateNet: nullBeforeFirst(realEstateNet) };
 }
 
 export function populateHistAccountSelect() {
@@ -149,9 +153,10 @@ export function renderHistoryTable() {
     const latest = byDate.get(latestDate);
     const reNet = latest.realEstate + latest.realEstateDebts;
 
-    // Delta for the latest entry vs the chronologically previous entry overall
-    const prevIdx = dateDates.indexOf(latestDate) - 1;
-    const prevDateKey = prevIdx >= 0 ? dateDates[prevIdx] : null;
+    // Delta: latest in this month vs latest in the previous month
+    const prevMoKey = monthsDesc[monthsDesc.indexOf(mo) + 1];
+    const prevMoLatest = prevMoKey ? byMonth.get(prevMoKey).slice().sort().pop() : null;
+    const prevDateKey = prevMoLatest || null;
     const delta = prevDateKey ? latest.net - byDate.get(prevDateKey).net : null;
 
     // ── Card ──────────────────────────────────────────────
@@ -350,6 +355,9 @@ export function renderChart() {
   if (!datasets.length) { els.chartSection.hidden = true; return; }
   els.chartSection.hidden = false;
 
+  const locale = lang() === 'fr' ? 'fr-CA' : 'en-CA';
+  const { tickSet: xTickSet, xFmt } = buildXAxisTicks(chartDates, els.chartCanvas.parentElement?.offsetWidth || 600, locale);
+
   const config = {
     type: 'line',
     data: { labels: chartDates, datasets },
@@ -373,7 +381,17 @@ export function renderChart() {
             callback: (v) => { if (state.privateMode) return '••••'; const abs = Math.abs(v); if (abs >= 1000000) return (v/1000000).toFixed(1)+'M $'; if (abs >= 1000) return (v/1000).toFixed(0)+'k $'; return v+' $'; },
           },
         },
-        x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 12, color: COLOR_MUTED, font: { size: 11, family: "'Inter', sans-serif" }, maxRotation: 0 } },
+        x: {
+          grid: { display: false }, border: { display: false },
+          ticks: {
+            color: COLOR_MUTED, font: { size: 11, family: "'Inter', sans-serif" }, maxRotation: 0,
+            autoSkip: false,
+            callback: (_, idx) => {
+              if (!xTickSet.has(idx)) return null;
+              return xFmt(new Date(chartDates[idx] + 'T12:00:00'));
+            },
+          },
+        },
       },
     },
   };

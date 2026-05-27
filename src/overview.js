@@ -2,7 +2,7 @@ import Chart from 'chart.js/auto';
 import { state } from './state.js';
 import { lang, t, tFn, tr } from './i18n.js';
 import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { computeDateStats, getDatesForPeriod, buildEffectiveBalances, buildBalanceSweep } from './utils.js';
+import { computeDateStats, getDatesForPeriod, buildEffectiveBalances, buildBalanceSweep, buildXAxisTicks } from './utils.js';
 import { els } from './dom.js';
 import { icon, categoryIcon, categoryKey } from './icons.js';
 
@@ -433,6 +433,7 @@ export function renderOverviewChart() {
   const seriesArr = buckets.map(() => new Array(dates.length).fill(0));
   const net = new Array(dates.length).fill(0);
   const hasAny = new Array(dates.length).fill(false);
+  const bucketFirstSeen = new Array(buckets.length).fill(-1);
 
   const sweep = buildBalanceSweep(dates);
   for (let i = 0; i < dates.length; i++) {
@@ -445,14 +446,35 @@ export function renderOverviewChart() {
       const signed = balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
       net[i] += signed;
       for (let b = 0; b < buckets.length; b++) {
-        if (buckets[b].match(a)) seriesArr[b][i] += signed;
+        if (buckets[b].match(a)) {
+          seriesArr[b][i] += signed;
+          if (bucketFirstSeen[b] === -1) bucketFirstSeen[b] = i;
+        }
       }
     }
     hasAny[i] = dayHasAny;
   }
-  const finalize = arr => arr.map((v, i) => hasAny[i] ? v : null);
-  const netData = finalize(net);
-  const bucketData = seriesArr.map(finalize);
+  const netData = net.map((v, i) => hasAny[i] ? v : null);
+  const bucketData = seriesArr.map((arr, b) =>
+    arr.map((v, i) => (!hasAny[i] || i < bucketFirstSeen[b]) ? null : v)
+  );
+
+  // Trim x-axis: skip leading dates where no visible series has data yet
+  let trimStart = 0;
+  {
+    const candidates = [];
+    if (isSeriesVisible('net')) candidates.push(netData);
+    for (let b = 0; b < buckets.length; b++) {
+      if (isSeriesVisible(buckets[b].key)) candidates.push(bucketData[b]);
+    }
+    if (candidates.length) {
+      const firstIndices = candidates.map(arr => arr.findIndex(v => v !== null)).filter(i => i >= 0);
+      if (firstIndices.length) trimStart = Math.min(...firstIndices);
+    }
+  }
+  const chartDates = trimStart ? dates.slice(trimStart) : dates;
+  const trimmedNetData = trimStart ? netData.slice(trimStart) : netData;
+  const trimmedBucketData = trimStart ? bucketData.map(arr => arr.slice(trimStart)) : bucketData;
 
   const ctx = canvas.getContext('2d');
   const h = canvas.parentElement?.offsetHeight || 280;
@@ -476,7 +498,7 @@ export function renderOverviewChart() {
   if (isSeriesVisible('net')) {
     datasets.push({
       label: t('net_worth_chart'),
-      data: netData,
+      data: trimmedNetData,
       borderColor: netColor,
       backgroundColor: netGrad,
       borderWidth: 2.5,
@@ -492,7 +514,7 @@ export function renderOverviewChart() {
     });
   }
   for (let b = 0; b < buckets.length; b++) {
-    const data = bucketData[b];
+    const data = trimmedBucketData[b];
     if (!data.some(v => v !== null && v !== 0)) continue;
     if (!isSeriesVisible(buckets[b].key)) continue;
     const col = buckets[b].color;
@@ -522,13 +544,16 @@ export function renderOverviewChart() {
     return v;
   };
 
+  const locale = lang() === 'fr' ? 'fr-CA' : 'en-CA';
+  const { tickSet: xTickSet, xFmt } = buildXAxisTicks(chartDates, canvas.parentElement?.offsetWidth || 600, locale);
+
   if (state.overviewChart) {
     state.overviewChart.destroy();
     state.overviewChart = null;
   }
   state.overviewChart = new Chart(canvas, {
     type: 'line',
-    data: { labels: dates, datasets },
+    data: { labels: chartDates, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -550,7 +575,14 @@ export function renderOverviewChart() {
         },
         x: {
           grid: { display: false }, border: { display: false },
-          ticks: { color: muted, font: { size: 11 }, maxRotation: 0, maxTicksLimit: dates.length <= 6 ? dates.length : 12 },
+          ticks: {
+            color: muted, font: { size: 11 }, maxRotation: 0,
+            autoSkip: false,
+            callback: (_, idx) => {
+              if (!xTickSet.has(idx)) return null;
+              return xFmt(new Date(chartDates[idx] + 'T12:00:00'));
+            },
+          },
         },
       },
     },

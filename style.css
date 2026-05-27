@@ -1271,6 +1271,9 @@ button.danger:hover { background: #dc2626; }
   background: var(--surface-2, var(--surface));
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 .detail-table thead th:first-child {
   text-align: left;
@@ -1282,7 +1285,6 @@ button.danger:hover { background: #dc2626; }
 }
 
 /* Sticky first column */
-.detail-table thead th:first-child,
 .detail-acct-row td:first-child,
 .detail-cat-total td:first-child,
 .detail-net-row td:first-child {
@@ -1290,7 +1292,13 @@ button.danger:hover { background: #dc2626; }
   left: 0;
   z-index: 1;
 }
-.detail-table thead th:first-child { background: var(--surface-2, var(--surface)); z-index: 2; }
+/* Corner cell: sticks both to top and left */
+.detail-table thead th:first-child {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+}
 .detail-acct-row td:first-child   { background: var(--surface); }
 .detail-cat-total td:first-child  { background: var(--surface); }
 .detail-net-row td:first-child    { background: var(--surface-2, var(--surface)); }

@@ -30,6 +30,7 @@
 
 /* ── Reset ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -734,7 +735,6 @@ footer {
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-md);
   padding: 2rem 2rem 1.75rem;
-  margin-top: 1.25rem;
   margin-bottom: 1rem;
   display: flex;
   align-items: flex-start;
@@ -781,14 +781,16 @@ footer {
 .ov-deltas .delta.up   { background: var(--accent-light); color: #065f46; }
 .ov-deltas .delta.down { background: var(--red-light);    color: #991b1b; }
 
+.ov-hero-above {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  margin-bottom: 0.3rem;
+}
+
 .ov-as-of {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--subtle);
-  background: var(--bg);
-  border-radius: var(--r-sm);
-  padding: 0.3rem 0.7rem;
-  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 /* ── Stat cards ──────────────────────────────────────────── */
@@ -1025,12 +1027,6 @@ dialog::backdrop {
 #tab-overview.pfs-private .private-mode-btn { border-color: var(--accent); color: var(--accent); }
 
 /* ── Private mode ────────────────────────────────────────── */
-#tab-overview.pfs-private #ov-net-worth,
-#tab-overview.pfs-private .ov-card-value {
-  filter: blur(7px);
-  user-select: none;
-}
-#tab-overview.pfs-private .ov-chart-wrap { filter: blur(10px); }
 
 /* ── Preferences / language toggle ──────────────────────── */
 .pref-section {

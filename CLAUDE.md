@@ -4,30 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the app
 
-OAuth requires the app to be served over `http://localhost` — it will not work from `file://`.
-
 ```bash
-python3 -m http.server 8080
-# or: npx http-server -p 8080
+npm install        # first time only
+npm run dev        # dev server at http://localhost:5173/pfs-tool/ with HMR
+npm run build      # production build → dist/
 ```
 
-Then open `http://localhost:8080`. There is no build step, no bundler, no package manager, and no test suite.
+Before the app will work, `public/config.js` must have a valid `CLIENT_ID` (see `docs/SETUP.md` for the one-time Google Cloud setup).
 
-Before the app will work, `config.js` must have a valid `CLIENT_ID` (see `docs/SETUP.md` for the one-time Google Cloud setup).
+## Deployment
+
+Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds with Vite and deploys `dist/` to GitHub Pages. In the repo settings, Pages source must be set to **GitHub Actions**.
 
 ## Architecture
 
-The app is a **static SPA** with no framework and no build tooling — just three files the browser loads directly:
+The app is a **Vite-built SPA** with no framework. Entry point is `src/main.js`; all modules are under `src/`. The legacy `app.js` at the root is the old single-file version kept for reference only — it is not loaded.
 
-- `index.html` — full app shell; all tabs and sections exist in the DOM at load time, shown/hidden by JS
-- `app.js` — **all runtime logic** in one IIFE; handles OAuth, Google Sheets/Drive API calls, and every UI interaction
+- `index.html` — app shell; all tabs exist in the DOM at load time, shown/hidden by JS
+- `src/main.js` — event wiring and startup polling for Google APIs
+- `src/auth.js` — OAuth flow, session restore, sheet bootstrap, tab routing
+- `src/sheets.js` — all Google Sheets/Drive API calls; imports seed JSON at build time
+- `src/overview.js` — Overview tab rendering + chart
+- `src/history.js` — History table + chart + account select dropdown
+- `src/entry.js` — Entry form, recompute totals, save snapshot
+- `src/accounts.js` — Accounts table, import flow, migrate ID dialog
+- `src/state.js` — shared `state` object, LS keys, HEADERS
+- `src/i18n.js` — I18N dictionaries, `t()`, `tr()`, `applyI18n()`, `setLang()`
+- `src/format.js` — `fmtMoney()`, `fmtDelta()`, `fmtPct()`, `parseMoney()`
+- `src/utils.js` — month/CSV parsing, similarity, account helpers
+- `src/dom.js` — `els` object (all DOM refs), `setStatus()`
 - `style.css` — all styles
-- `config.js` — user-editable runtime config (`CLIENT_ID`, `LANGUAGE`, `CURRENCY`, `SHEET_TITLE`)
-- `seed/default-accounts.json` — seed data (accounts, categories, account types) written to a new Google Sheet on first run
+- `public/config.js` — user-editable runtime config (`CLIENT_ID`, `LANGUAGE`, `CURRENCY`, `SHEET_TITLE`)
+- `seed/default-accounts.json` — seed data bundled at build time (imported by `sheets.js`)
 
-### Key objects in `app.js`
+### Key objects in `src/state.js`
 
-- **`els`** — map of every DOM element looked up once at startup
+- **`els`** (in `dom.js`) — map of every DOM element looked up once at startup
 - **`state`** — all mutable runtime state: token, sheet ID, loaded accounts/snapshots, chart instances, etc.
 - **`HEADERS`** — canonical column order for each sheet tab (`accounts`, `snapshots`, `config`); controls read/write layout
 
@@ -60,4 +72,4 @@ Derived totals (per-category sums, net worth, MoM/YoY deltas) are computed in JS
 
 Four tabs rendered by `app.js`: **Overview** (hero net-worth + chart), **History** (snapshot table), **Entry** (monthly data entry form), **Settings** (accounts management + CSV import).
 
-Chart rendering uses **Chart.js** loaded from CDN.
+Chart rendering uses **Chart.js** (npm package, bundled by Vite).

@@ -40,17 +40,18 @@
       <!-- ── Overview tab ─────────────────────────────────── -->
       <div id="tab-overview" class="tab-panel" hidden>
 
+        <div class="ov-hero-above">
+          <div id="ov-as-of" class="ov-as-of"></div>
+        </div>
         <div id="ov-hero" class="ov-hero">
           <div class="ov-hero-left">
             <div class="ov-hero-label" data-i18n="net_worth">Net worth</div>
             <div id="ov-net-worth" class="ov-big-number">—</div>
             <div class="ov-deltas">
-              <span id="ov-delta-mom"></span>
-              <span id="ov-delta-yoy"></span>
+              <span id="ov-delta"></span>
             </div>
           </div>
           <div class="ov-hero-right">
-            <div id="ov-as-of" class="ov-as-of"></div>
             <button id="private-mode-btn" type="button" class="private-mode-btn"></button>
           </div>
         </div>
@@ -307,8 +308,7 @@
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,30 +11,30 @@
     <h1>PFS <span>Tool</span></h1>
     <div id="auth-area">
       <span id="user-email" hidden></span>
-      <button id="signin-btn" type="button">Sign in with Google</button>
-      <button id="signout-btn" type="button" hidden>Sign out</button>
+      <button id="signin-btn" type="button" data-i18n="sign_in">Sign in with Google</button>
+      <button id="signout-btn" type="button" hidden data-i18n="sign_out">Sign out</button>
     </div>
   </header>
 
   <main id="app">
     <section id="signed-out-state">
-      <p>Sign in with your Google account to read and write your personal financial statement spreadsheet.</p>
-      <p class="hint">Your data lives in your own Google Drive. This app never sees or stores it on any server.</p>
+      <p data-i18n="signed_out_p1">Sign in with your Google account to read and write your personal financial statement spreadsheet.</p>
+      <p class="hint" data-i18n="signed_out_p2">Your data lives in your own Google Drive. This app never sees or stores it on any server.</p>
     </section>
 
     <section id="signed-in-state" hidden>
       <div id="sheet-info" class="sheet-info" hidden>
-        <span>Your PFS sheet:</span>
-        <a id="sheet-link" href="#" target="_blank" rel="noopener">Open in Google Sheets</a>
-        <button id="reset-sheet-btn" type="button" class="link-btn" title="Forget the cached sheet ID and look again (or create a new one)">Reset link</button>
+        <span data-i18n="your_pfs_sheet">Your PFS sheet:</span>
+        <a id="sheet-link" href="#" target="_blank" rel="noopener" data-i18n="open_in_sheets">Open in Google Sheets</a>
+        <button id="reset-sheet-btn" type="button" class="link-btn" data-i18n="reset_link">Reset link</button>
       </div>
       <div id="status" class="status"></div>
 
       <nav id="tab-bar" class="tab-bar" hidden>
-        <button type="button" class="tab-btn" data-tab="overview">Overview</button>
-        <button type="button" class="tab-btn" data-tab="history">History</button>
-        <button type="button" class="tab-btn" data-tab="entry">Entry</button>
-        <button type="button" class="tab-btn" data-tab="settings">Settings</button>
+        <button type="button" class="tab-btn" data-tab="overview" data-i18n="tab_overview">Overview</button>
+        <button type="button" class="tab-btn" data-tab="history" data-i18n="tab_history">History</button>
+        <button type="button" class="tab-btn" data-tab="entry" data-i18n="tab_entry">Entry</button>
+        <button type="button" class="tab-btn" data-tab="settings" data-i18n="tab_settings">Settings</button>
       </nav>
 
       <!-- ── Overview tab ─────────────────────────────────── -->
@@ -42,14 +42,17 @@
 
         <div id="ov-hero" class="ov-hero">
           <div class="ov-hero-left">
-            <div class="ov-hero-label">Net worth</div>
+            <div class="ov-hero-label" data-i18n="net_worth">Net worth</div>
             <div id="ov-net-worth" class="ov-big-number">—</div>
             <div class="ov-deltas">
               <span id="ov-delta-mom"></span>
               <span id="ov-delta-yoy"></span>
             </div>
           </div>
-          <div id="ov-as-of" class="ov-as-of"></div>
+          <div class="ov-hero-right">
+            <div id="ov-as-of" class="ov-as-of"></div>
+            <button id="private-mode-btn" type="button" class="private-mode-btn"></button>
+          </div>
         </div>
 
         <div id="ov-cards" class="ov-cards"></div>
@@ -61,12 +64,13 @@
               <button class="period-btn" data-period="6M">6M</button>
               <button class="period-btn" data-period="1Y">1Y</button>
               <button class="period-btn" data-period="5Y">5Y</button>
-              <button class="period-btn active" data-period="all">All</button>
+              <button class="period-btn" data-period="YTD">YTD</button>
+              <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
             </div>
             <div class="period-custom">
-              <span>From</span>
+              <span data-i18n="from">From</span>
               <input type="month" id="ov-from">
-              <span>to</span>
+              <span data-i18n="to">to</span>
               <input type="month" id="ov-to">
             </div>
           </div>
@@ -85,7 +89,7 @@
               <input id="month-input" type="month" required>
             </label>
             <span id="month-badge" class="badge" hidden></span>
-            <button id="copy-prev-btn" type="button" class="link-btn" title="Replace all values in the form with values from the previous month">Copy prev. month</button>
+            <button id="copy-prev-btn" type="button" class="link-btn" data-i18n="copy_prev_month">Copy prev. month</button>
           </header>
 
           <div id="categories"></div>
@@ -93,7 +97,7 @@
           <div class="month-comment">
             <label>
               <span data-i18n="month_comment">Month comment</span>
-              <textarea id="month-comment-input" rows="2" placeholder="Notes for this month (optional)"></textarea>
+              <textarea id="month-comment-input" rows="2"></textarea>
             </label>
           </div>
 
@@ -107,8 +111,8 @@
           </div>
 
           <div class="actions">
-            <button id="save-snapshot-btn" type="button" class="primary">Save snapshot</button>
-            <button id="reload-btn" type="button" class="link-btn">Reload from sheet</button>
+            <button id="save-snapshot-btn" type="button" class="primary" data-i18n="save_snapshot">Save snapshot</button>
+            <button id="reload-btn" type="button" class="link-btn" data-i18n="reload_from_sheet">Reload from sheet</button>
           </div>
         </section>
       </div>
@@ -117,12 +121,23 @@
         <section id="chart-section" class="chart-section" hidden>
           <header class="section-header">
             <h2 data-i18n="progression">Progression</h2>
-            <div class="chart-toggles">
-              <label><input type="checkbox" id="show-net" checked> <span>Net worth</span></label>
-              <label><input type="checkbox" id="show-investments" checked> <span>Investments</span></label>
-              <label><input type="checkbox" id="show-realestate" checked> <span>Real Estate (net)</span></label>
-            </div>
           </header>
+          <div class="chart-controls">
+            <div class="period-pills" id="hist-period-pills">
+              <button class="period-btn" data-period="3M">3M</button>
+              <button class="period-btn" data-period="6M">6M</button>
+              <button class="period-btn" data-period="1Y">1Y</button>
+              <button class="period-btn" data-period="5Y">5Y</button>
+              <button class="period-btn" data-period="YTD">YTD</button>
+              <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
+            </div>
+            <select id="hist-account-select" class="hist-account-select"></select>
+          </div>
+          <div id="hist-chart-toggles" class="chart-toggles">
+            <label><input type="checkbox" id="show-net" checked> <span data-i18n="show_net_worth">Net worth</span></label>
+            <label><input type="checkbox" id="show-investments" checked> <span data-i18n="show_investments">Investments</span></label>
+            <label><input type="checkbox" id="show-realestate" checked> <span data-i18n="show_real_estate">Real Estate (net)</span></label>
+          </div>
           <div class="chart-wrap">
             <canvas id="net-worth-chart"></canvas>
           </div>
@@ -152,11 +167,25 @@
       </div>
 
       <div id="tab-settings" class="tab-panel" hidden>
+
+        <section class="pref-section">
+          <header class="section-header">
+            <h2 data-i18n="app_settings">Preferences</h2>
+          </header>
+          <div class="setting-row">
+            <span class="setting-label" data-i18n="language_label">Language</span>
+            <div class="lang-toggle">
+              <button type="button" class="lang-btn" data-lang="fr">FR</button>
+              <button type="button" class="lang-btn" data-lang="en">EN</button>
+            </div>
+          </div>
+        </section>
+
         <section id="accounts-section" class="accounts-section">
           <header class="section-header">
-            <h2>Manage accounts</h2>
+            <h2 data-i18n="manage_accounts">Manage accounts</h2>
           </header>
-          <p class="hint">
+          <p class="hint" data-i18n="manage_accounts_hint">
             Edit names, ownership %, category, kind, or uncheck Active to retire an account without losing its history. The <code>id</code> field is immutable — historical snapshots reference it.
           </p>
 
@@ -164,15 +193,15 @@
             <table id="accounts-table" class="accounts-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name (FR)</th>
-                  <th>Name (EN)</th>
-                  <th>Category</th>
-                  <th>Kind</th>
-                  <th>Owner</th>
-                  <th class="num">Share %</th>
-                  <th>Active</th>
-                  <th class="num">Order</th>
+                  <th data-i18n="id_col">ID</th>
+                  <th data-i18n="name_fr_col">Name (FR)</th>
+                  <th data-i18n="name_en_col">Name (EN)</th>
+                  <th data-i18n="category_col">Category</th>
+                  <th data-i18n="kind_col">Kind</th>
+                  <th data-i18n="owner_col">Owner</th>
+                  <th class="num" data-i18n="share_col">Share %</th>
+                  <th data-i18n="active_col">Active</th>
+                  <th class="num" data-i18n="order_col">Order</th>
                   <th></th>
                 </tr>
               </thead>
@@ -182,44 +211,44 @@
 
           <div class="add-account-control">
             <label class="add-type-label">
-              <span>Account type</span>
+              <span data-i18n="account_type_label">Account type</span>
               <select id="new-account-type"></select>
             </label>
-            <button id="add-account-btn" type="button">+ Add account</button>
+            <button id="add-account-btn" type="button" data-i18n="add_account">+ Add account</button>
           </div>
 
           <div class="actions">
-            <button id="save-accounts-btn" type="button" class="primary">Save changes</button>
-            <button id="reload-accounts-btn" type="button" class="link-btn">Discard</button>
+            <button id="save-accounts-btn" type="button" class="primary" data-i18n="save_changes">Save changes</button>
+            <button id="reload-accounts-btn" type="button" class="link-btn" data-i18n="discard">Discard</button>
             <span id="accounts-status" class="hint"></span>
           </div>
         </section>
 
         <section id="import-section" class="import-section">
           <header class="section-header">
-            <h2>Import historical data</h2>
+            <h2 data-i18n="import_historical">Import historical data</h2>
           </header>
 
-          <p class="hint">
+          <p class="hint" data-i18n="import_hint">
             Paste your existing monthly tracking sheet (wide format: account names down the first column, months across the top). Copy/paste from Google Sheets works (tab-separated). The app will auto-detect months and let you map source rows to your accounts before importing.
           </p>
 
-          <textarea id="import-input" rows="8" placeholder="Paste CSV or TSV here…"></textarea>
+          <textarea id="import-input" rows="8"></textarea>
 
           <div class="actions">
-            <button id="parse-import-btn" type="button">Parse</button>
-            <button id="clear-import-btn" type="button" class="link-btn">Clear</button>
+            <button id="parse-import-btn" type="button" data-i18n="parse">Parse</button>
+            <button id="clear-import-btn" type="button" class="link-btn" data-i18n="clear">Clear</button>
           </div>
 
           <div id="import-preview" hidden>
-            <h3>Preview</h3>
+            <h3 data-i18n="preview_label">Preview</h3>
             <p id="import-summary" class="hint"></p>
             <table id="mapping-table" class="mapping-table">
               <thead>
                 <tr>
-                  <th>Source row</th>
-                  <th>Sample value</th>
-                  <th>Map to account</th>
+                  <th data-i18n="source_row">Source row</th>
+                  <th data-i18n="sample_value">Sample value</th>
+                  <th data-i18n="map_to_account">Map to account</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -227,12 +256,12 @@
 
             <label class="overwrite-toggle">
               <input id="overwrite-existing" type="checkbox">
-              <span>Overwrite existing snapshots for the months in this paste (otherwise skip months already in the sheet)</span>
+              <span data-i18n="overwrite_toggle">Overwrite existing snapshots for the months in this paste (otherwise skip months already in the sheet)</span>
             </label>
 
             <div class="actions">
-              <button id="confirm-import-btn" type="button" class="primary">Import</button>
-              <button id="cancel-import-btn" type="button" class="link-btn">Cancel</button>
+              <button id="confirm-import-btn" type="button" class="primary" data-i18n="import_btn">Import</button>
+              <button id="cancel-import-btn" type="button" class="link-btn" data-i18n="cancel">Cancel</button>
             </div>
           </div>
         </section>
@@ -244,30 +273,30 @@
   <dialog id="migrate-id-dialog">
     <div class="dialog-body">
       <div class="dialog-header">
-        <h2>Migrate Account ID</h2>
+        <h2 data-i18n="migrate_title">Migrate Account ID</h2>
         <button type="button" class="dialog-close" id="migrate-close-btn" aria-label="Close">✕</button>
       </div>
 
       <div class="dialog-field">
-        <span class="dialog-field-label">Current ID</span>
+        <span class="dialog-field-label" data-i18n="current_id_label">Current ID</span>
         <code id="migrate-current-id" class="dialog-code"></code>
       </div>
 
       <div class="dialog-field">
-        <label class="dialog-field-label" for="migrate-type-select">New account type</label>
+        <label class="dialog-field-label" for="migrate-type-select" data-i18n="new_account_type_label">New account type</label>
         <select id="migrate-type-select"></select>
       </div>
 
       <div class="dialog-field">
-        <span class="dialog-field-label">New ID</span>
+        <span class="dialog-field-label" data-i18n="new_id_label">New ID</span>
         <code id="migrate-new-id" class="dialog-code accent"></code>
       </div>
 
       <p id="migrate-snapshots-note" class="hint"></p>
 
       <div class="dialog-actions">
-        <button type="button" class="primary" id="migrate-confirm-btn">Confirm rename</button>
-        <button type="button" class="link-btn" id="migrate-cancel-btn">Cancel</button>
+        <button type="button" class="primary" id="migrate-confirm-btn" data-i18n="confirm_rename">Confirm rename</button>
+        <button type="button" class="link-btn" id="migrate-cancel-btn" data-i18n="cancel">Cancel</button>
       </div>
     </div>
   </dialog>

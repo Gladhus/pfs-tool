@@ -1,0 +1,68 @@
+export const els = {
+  signinBtn:         document.getElementById('signin-btn'),
+  signoutBtn:        document.getElementById('signout-btn'),
+  userEmail:         document.getElementById('user-email'),
+  signedOut:         document.getElementById('signed-out-state'),
+  signedIn:          document.getElementById('signed-in-state'),
+  sheetInfo:         document.getElementById('sheet-info'),
+  sheetLink:         document.getElementById('sheet-link'),
+  resetSheetBtn:     document.getElementById('reset-sheet-btn'),
+  status:            document.getElementById('status'),
+  entryForm:         document.getElementById('entry-form'),
+  monthInput:        document.getElementById('month-input'),
+  monthBadge:        document.getElementById('month-badge'),
+  copyPrevBtn:       document.getElementById('copy-prev-btn'),
+  categoriesEl:      document.getElementById('categories'),
+  monthCommentEl:    document.getElementById('month-comment-input'),
+  totalsGrid:        document.getElementById('totals-grid'),
+  netWorthVal:       document.getElementById('net-worth-val'),
+  netWorthDelta:     document.getElementById('net-worth-delta'),
+  saveSnapshotBtn:   document.getElementById('save-snapshot-btn'),
+  reloadBtn:         document.getElementById('reload-btn'),
+  historySection:    document.getElementById('history-section'),
+  historySummary:    document.getElementById('history-summary'),
+  historyTableBody:  document.querySelector('#history-table tbody'),
+  chartSection:      document.getElementById('chart-section'),
+  chartCanvas:       document.getElementById('net-worth-chart'),
+  showNet:           document.getElementById('show-net'),
+  showInvestments:   document.getElementById('show-investments'),
+  showRealEstate:    document.getElementById('show-realestate'),
+  tabBar:            document.getElementById('tab-bar'),
+  accountsSection:   document.getElementById('accounts-section'),
+  accountsTableBody: document.querySelector('#accounts-table tbody'),
+  addAccountBtn:     document.getElementById('add-account-btn'),
+  saveAccountsBtn:   document.getElementById('save-accounts-btn'),
+  reloadAccountsBtn: document.getElementById('reload-accounts-btn'),
+  accountsStatus:    document.getElementById('accounts-status'),
+  newAccountType:    document.getElementById('new-account-type'),
+  importSection:     document.getElementById('import-section'),
+  importInput:       document.getElementById('import-input'),
+  parseImportBtn:    document.getElementById('parse-import-btn'),
+  clearImportBtn:    document.getElementById('clear-import-btn'),
+  importPreview:     document.getElementById('import-preview'),
+  importSummary:     document.getElementById('import-summary'),
+  mappingTableBody:  document.querySelector('#mapping-table tbody'),
+  overwriteExisting: document.getElementById('overwrite-existing'),
+  confirmImportBtn:  document.getElementById('confirm-import-btn'),
+  cancelImportBtn:   document.getElementById('cancel-import-btn'),
+  ovNetWorth:        document.getElementById('ov-net-worth'),
+  ovDelta:           document.getElementById('ov-delta'),
+  ovAsOf:            document.getElementById('ov-as-of'),
+  ovCards:           document.getElementById('ov-cards'),
+  ovFrom:            document.getElementById('ov-from'),
+  ovTo:              document.getElementById('ov-to'),
+  ovChartCanvas:     document.getElementById('overview-chart'),
+  privateModeBtn:    document.getElementById('private-mode-btn'),
+  histAccountSelect: document.getElementById('hist-account-select'),
+  histChartToggles:  document.getElementById('hist-chart-toggles'),
+};
+
+export function setStatus(msg, level = '') {
+  els.status.textContent = msg;
+  els.status.className = 'status' + (level ? ' ' + level : '');
+}
+
+export function showSheetLink(id) {
+  els.sheetInfo.hidden = false;
+  els.sheetLink.href = `https://docs.google.com/spreadsheets/d/${id}/edit`;
+}

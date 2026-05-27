@@ -13,6 +13,8 @@
   --accent-dark:   #047857;
   --accent-light:  #d1fae5;
   --accent-fg:     #ffffff;
+  --ok:            #065f46;
+  --warn:          #991b1b;
   --red:           #ef4444;
   --red-light:     #fee2e2;
   --border:        #e2e8f0;
@@ -28,6 +30,7 @@
 
 /* ── Reset ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -732,7 +735,6 @@ footer {
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-md);
   padding: 2rem 2rem 1.75rem;
-  margin-top: 1.25rem;
   margin-bottom: 1rem;
   display: flex;
   align-items: flex-start;
@@ -779,15 +781,16 @@ footer {
 .ov-deltas .delta.up   { background: var(--accent-light); color: #065f46; }
 .ov-deltas .delta.down { background: var(--red-light);    color: #991b1b; }
 
+.ov-hero-above {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  margin-bottom: 0.3rem;
+}
+
 .ov-as-of {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--subtle);
-  background: var(--bg);
-  border-radius: var(--r-sm);
-  padding: 0.3rem 0.7rem;
-  align-self: flex-start;
-  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 /* ── Stat cards ──────────────────────────────────────────── */
@@ -996,4 +999,576 @@ dialog::backdrop {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
+}
+
+/* ── Overview hero right (private mode btn + as-of) ─────── */
+.ov-hero-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.private-mode-btn {
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 100ms, color 100ms;
+  white-space: nowrap;
+}
+.private-mode-btn:hover { border-color: var(--fg); color: var(--fg); }
+#tab-overview.pfs-private .private-mode-btn { border-color: var(--accent); color: var(--accent); }
+
+/* ── Private mode ────────────────────────────────────────── */
+
+/* ── Preferences / language toggle ──────────────────────── */
+.pref-section {
+  margin-top: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.35rem 0;
+}
+
+.setting-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg);
+  flex: 1;
+}
+
+.lang-toggle {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--bg);
+  border-radius: 7px;
+  padding: 3px;
+}
+
+.lang-btn {
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.9rem;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: background 100ms, color 100ms, box-shadow 100ms;
+}
+.lang-btn:hover { color: var(--fg-2); }
+.lang-btn.active {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── History chart controls ──────────────────────────────── */
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.hist-account-select {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  min-width: 11rem;
+}
+
+/* ── Responsive / mobile-first refinements ─────────────── */
+@media (max-width: 980px) {
+  main {
+    max-width: 100%;
+    padding: 1.1rem 1rem 3.5rem;
+  }
+
+  .ov-big-number { font-size: 2.4rem; }
+  .account-row { grid-template-columns: 1fr 8.5rem 8rem; }
+}
+
+@media (max-width: 768px) {
+  .site-header {
+    height: auto;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0.7rem 1rem;
+  }
+
+  .site-header h1 {
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  #auth-area {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  #user-email {
+    width: 100%;
+    text-align: right;
+  }
+
+  main {
+    padding: 0.85rem 0.75rem 2.5rem;
+  }
+
+  button,
+  input[type="month"],
+  select {
+    min-height: 2.5rem;
+  }
+
+  #tab-bar {
+    display: flex;
+    width: 100%;
+    margin-top: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #tab-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex: 1 0 auto;
+    min-width: 5.8rem;
+    text-align: center;
+    padding: 0.55rem 0.85rem;
+  }
+
+  .sheet-info {
+    flex-wrap: wrap;
+    row-gap: 0.2rem;
+  }
+
+  .status {
+    min-height: unset;
+    line-height: 1.45;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .entry-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+  }
+
+  .entry-header > label { width: 100%; }
+  .entry-header > label input[type="month"] { width: 100%; }
+
+  .category { border-radius: 12px; }
+
+  .category h3 {
+    padding: 0.7rem 0.9rem;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .category h3 .subtotal {
+    font-size: 0.95rem;
+    margin-left: auto;
+  }
+
+  .account-row {
+    grid-template-columns: minmax(0, 1fr) minmax(7.8rem, 9.5rem);
+    grid-template-areas:
+      "name balance"
+      "comment comment";
+    gap: 0.55rem 0.6rem;
+    align-items: start;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .account-row .name {
+    grid-area: name;
+    min-width: 0;
+  }
+  .account-row .name > span:first-child {
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+  .account-row .name .meta { font-size: 0.7rem; }
+
+  .account-row input.balance {
+    grid-area: balance;
+    width: 100%;
+    min-height: 2.4rem;
+    padding-inline: 0.55rem;
+  }
+
+  .account-row input.comment {
+    grid-area: comment;
+    width: 100%;
+    border-color: var(--border);
+    background: var(--surface-2);
+    min-height: 2.25rem;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .month-comment { margin: 0.65rem 0; }
+
+  .totals {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .totals-grid {
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 0.3rem 1rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.8rem;
+  }
+
+  .net-worth {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .net-worth .lbl { width: 100%; }
+  .net-worth .val {
+    width: 100%;
+    margin-left: 0;
+    font-size: 1.9rem;
+    line-height: 1.05;
+  }
+
+  .actions { gap: 0.55rem; }
+
+  .chart-section,
+  .history-section,
+  .accounts-section,
+  .import-section,
+  .ov-hero,
+  .ov-chart-card {
+    margin-top: 0.85rem;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .chart-wrap { height: 260px; }
+
+  .chart-toggles {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: none;
+  }
+  .chart-toggles::-webkit-scrollbar { display: none; }
+  .chart-toggles label { white-space: nowrap; }
+
+  .history-wrap {
+    max-height: none;
+    margin: 0 -1rem;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .history-table { min-width: 620px; }
+
+  .history-table thead th,
+  .history-table tbody td {
+    padding: 0.58rem 0.85rem;
+  }
+
+  .accounts-wrap { margin-bottom: 0.8rem; }
+
+  .add-account-control {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+  .add-type-label {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  #accounts-status {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  #import-preview {
+    overflow-x: auto;
+  }
+  .mapping-table { min-width: 560px; }
+
+  .ov-hero {
+    display: flex;
+    gap: 0.65rem;
+  }
+
+  .ov-hero-left {
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .ov-big-number {
+    font-size: 2rem;
+    line-height: 1.05;
+  }
+
+  .ov-deltas { gap: 0.4rem; }
+  .ov-deltas .delta { font-size: 0.75rem; }
+
+  .ov-as-of { font-size: 0.74rem; }
+  .private-mode-btn { font-size: 0.68rem; padding: 0.18rem 0.55rem; }
+
+  .ov-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .ov-stat-card {
+    padding: 0.8rem 0.85rem;
+    border-radius: 12px;
+  }
+
+  .ov-card-value { font-size: 1.02rem; }
+
+  .ov-chart-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.7rem;
+  }
+
+  .period-pills {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .period-pills::-webkit-scrollbar { display: none; }
+
+  .period-btn {
+    min-height: 2rem;
+    flex: 1 0 auto;
+  }
+
+  .period-custom {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+  }
+
+  .period-custom input[type="month"] {
+    flex: 1 1 8.5rem;
+    min-width: 0;
+  }
+
+  .ov-chart-wrap { height: 250px; }
+
+  #signed-out-state {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+  }
+
+  dialog {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    margin: 0.5rem;
+  }
+
+  .dialog-body { padding: 1rem; }
+
+  .dialog-actions {
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header { padding: 0.65rem 0.75rem; }
+
+  #auth-area { justify-content: space-between; }
+  #user-email { text-align: left; }
+
+  main { padding-inline: 0.55rem; }
+
+  .tab-btn {
+    min-width: 5.3rem;
+    font-size: 0.76rem;
+    padding-inline: 0.65rem;
+  }
+
+  .account-row {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "name"
+      "balance"
+      "comment";
+  }
+
+  .account-row input.balance { text-align: left; }
+
+  .net-worth .val { font-size: 1.7rem; }
+
+  .ov-big-number { font-size: 1.75rem; }
+
+  .ov-cards { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .history-wrap {
+    margin: 0;
+    overflow: visible;
+  }
+
+  .history-table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .history-table thead {
+    display: none;
+  }
+
+  .history-table tbody {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.25rem 0;
+  }
+
+  .history-table tbody tr {
+    display: grid;
+    gap: 0.1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    padding: 0.55rem 0.7rem;
+  }
+
+  .history-table tbody tr.current {
+    background: var(--accent-light);
+    border-color: #6ee7b7;
+  }
+
+  .history-table tbody td {
+    border: none;
+    padding: 0.16rem 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .history-table tbody td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: .065em;
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+
+  .history-table td.num {
+    text-align: left;
+  }
+
+  .accounts-wrap {
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    margin: 0 0 0.8rem;
+  }
+
+  .accounts-table thead { display: none; }
+
+  .accounts-table tbody {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.1rem 0;
+  }
+
+  .accounts-table tbody tr {
+    display: grid;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    padding: 0.55rem 0.75rem;
+    gap: 0.05rem;
+  }
+
+  .accounts-table tr.new-row td { background: transparent; }
+  .accounts-table tr.new-row { background: #f0fdf9; border-color: #6ee7b7; }
+
+  .accounts-table tbody td {
+    border: none;
+    padding: 0.18rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+  }
+
+  .accounts-table tbody td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: .065em;
+    font-weight: 700;
+    flex: 0 0 5.5rem;
+  }
+
+  /* ID cell: card header, no label prefix */
+  .accounts-table tbody td:first-child {
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.15rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .accounts-table tbody td:first-child::before { display: none; }
+
+  .accounts-table td input,
+  .accounts-table td select {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.1rem;
+    border-color: var(--border);
+    background: var(--surface);
+  }
+
+  .accounts-table input[type="number"] { text-align: left; }
+
+  .accounts-table td.actions-col {
+    justify-content: flex-end;
+    padding-top: 0.35rem;
+    margin-top: 0.15rem;
+    border-top: 1px solid var(--border);
+  }
+  .accounts-table td.actions-col::before { display: none; }
 }

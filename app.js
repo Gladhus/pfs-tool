@@ -60,7 +60,15 @@
     ovFrom:           document.getElementById("ov-from"),
     ovTo:             document.getElementById("ov-to"),
     ovChartCanvas:    document.getElementById("overview-chart"),
+    privateModeBtn:   document.getElementById("private-mode-btn"),
+    histAccountSelect:document.getElementById("hist-account-select"),
+    histChartToggles: document.getElementById("hist-chart-toggles"),
   };
+
+  const LS_KEY_IMPORT_MAP = "pfs_import_mappings";
+  const LS_KEY_ACTIVE_TAB = "pfs_active_tab";
+  const LS_KEY_LANG       = "pfs_lang";
+  const LS_KEY_PRIVATE    = "pfs_private";
 
   const state = {
     tokenClient: null,
@@ -77,10 +85,9 @@
     importParsed: null, // last parsed import: {months, rows}
     chart: null,
     overviewChart: null,
+    lang:         localStorage.getItem(LS_KEY_LANG) || cfg.LANGUAGE || "fr",
+    privateMode:  localStorage.getItem(LS_KEY_PRIVATE) === "1",
   };
-
-  const LS_KEY_IMPORT_MAP = "pfs_import_mappings"; // remembered source-name -> account_id
-  const LS_KEY_ACTIVE_TAB = "pfs_active_tab";
 
   const SHEET_TITLE = cfg.SHEET_TITLE || "PFS Tool — Bilan financier";
   const LS_KEY_SHEET_ID = "pfs_sheet_id";
@@ -357,10 +364,12 @@
 
     renderForm();
     els.entryForm.hidden = false;
+    populateHistAccountSelect();
     renderHistoryTable();
     renderChart();
     renderOverview();
     showTabBar();
+    applyI18n();
     setStatus("Loaded.", "ok");
   }
 
@@ -552,12 +561,231 @@
 
   // --- Form rendering ---
 
-  const lang = () => (cfg.LANGUAGE === "en" ? "en" : "fr");
+  const lang = () => state.lang || "fr";
   const tr = (obj) => obj[`name_${lang()}`] || obj.name_en || obj.name_fr || obj.id;
   const fmtMoney = (n) => new Intl.NumberFormat(lang() === "fr" ? "fr-CA" : "en-CA", {
     style: "currency", currency: cfg.CURRENCY || "CAD", maximumFractionDigits: 2,
   }).format(n || 0);
   const fmtDelta = (n) => (n >= 0 ? "+" : "") + fmtMoney(n);
+  const fmtPct = (delta, ref) => {
+    if (!ref) return "";
+    const p = (delta / Math.abs(ref)) * 100;
+    return (p >= 0 ? "+" : "") + p.toFixed(1) + "%";
+  };
+
+  const I18N = {
+    fr: {
+      sign_in: "Se connecter avec Google",
+      sign_out: "Se déconnecter",
+      signed_out_p1: "Connectez-vous avec votre compte Google pour lire et modifier votre bilan financier personnel.",
+      signed_out_p2: "Vos données sont dans votre Google Drive — l'application n'y accède jamais depuis un serveur.",
+      your_pfs_sheet: "Votre feuille PFS :",
+      open_in_sheets: "Ouvrir dans Google Sheets",
+      reset_link: "Réinitialiser",
+      tab_overview: "Aperçu",
+      tab_history: "Historique",
+      tab_entry: "Saisie",
+      tab_settings: "Paramètres",
+      net_worth: "Valeur nette",
+      from: "De",
+      to: "à",
+      period_all: "Tout",
+      save_snapshot: "Enregistrer le bilan",
+      reload_from_sheet: "Recharger",
+      copy_prev_month: "Copier le mois préc.",
+      month: "Mois",
+      month_comment: "Commentaire du mois",
+      progression: "Progression",
+      show_net_worth: "Valeur nette",
+      show_investments: "Investissements",
+      show_real_estate: "Immobilier (net)",
+      history: "Historique",
+      investments: "Investissements",
+      real_estate_net: "Immobilier (net)",
+      debts: "Dettes",
+      delta: "Δ",
+      app_settings: "Préférences",
+      language_label: "Langue",
+      manage_accounts: "Gérer les comptes",
+      manage_accounts_hint: "Modifiez les noms, la part de propriété, la catégorie ou décochez Actif pour archiver un compte sans perdre l'historique. Le champ id est immuable.",
+      id_col: "ID",
+      name_fr_col: "Nom (FR)",
+      name_en_col: "Nom (EN)",
+      category_col: "Catégorie",
+      kind_col: "Type",
+      owner_col: "Propriétaire",
+      share_col: "Part %",
+      active_col: "Actif",
+      order_col: "Ordre",
+      account_type_label: "Type de compte",
+      add_account: "+ Ajouter un compte",
+      save_changes: "Enregistrer",
+      discard: "Annuler les modifications",
+      import_historical: "Importer des données historiques",
+      import_hint: "Collez votre feuille de suivi mensuelle (format large : comptes en colonne, mois en ligne). La copie depuis Google Sheets (TSV) fonctionne directement.",
+      parse: "Analyser",
+      clear: "Effacer",
+      preview_label: "Aperçu",
+      source_row: "Ligne source",
+      sample_value: "Valeur exemple",
+      map_to_account: "Associer au compte",
+      overwrite_toggle: "Écraser les bilans existants pour les mois de ce collage (sinon, ignorer les mois déjà dans la feuille)",
+      import_btn: "Importer",
+      cancel: "Annuler",
+      migrate_title: "Migrer l'ID du compte",
+      current_id_label: "ID actuel",
+      new_account_type_label: "Nouveau type de compte",
+      new_id_label: "Nouvel ID",
+      confirm_rename: "Confirmer",
+      private_mode: "Privé",
+      private_mode_off: "Afficher",
+      overview_option: "Aperçu",
+      comment_placeholder: "Commentaire (facultatif)",
+      month_comment_placeholder: "Notes pour ce mois (facultatif)",
+      import_placeholder: "Coller le CSV ou TSV ici…",
+      history_summary: (n, from, to) => `${n} mois · ${from} → ${to}`,
+      existing_month: "Mois existant (édition)",
+      new_prefilled: (mo) => `Nouveau — pré-rempli de ${mo}`,
+      new_month: "Nouveau mois",
+      net_worth_chart: "Valeur nette",
+      owner_self: "Vous",
+      owner_partner: "Conjoint",
+      owner_joint: "Joint",
+    },
+    en: {
+      sign_in: "Sign in with Google",
+      sign_out: "Sign out",
+      signed_out_p1: "Sign in with your Google account to read and write your personal financial statement spreadsheet.",
+      signed_out_p2: "Your data lives in your own Google Drive. This app never sees or stores it on any server.",
+      your_pfs_sheet: "Your PFS sheet:",
+      open_in_sheets: "Open in Google Sheets",
+      reset_link: "Reset link",
+      tab_overview: "Overview",
+      tab_history: "History",
+      tab_entry: "Entry",
+      tab_settings: "Settings",
+      net_worth: "Net worth",
+      from: "From",
+      to: "to",
+      period_all: "All",
+      save_snapshot: "Save snapshot",
+      reload_from_sheet: "Reload from sheet",
+      copy_prev_month: "Copy prev. month",
+      month: "Month",
+      month_comment: "Month comment",
+      progression: "Progression",
+      show_net_worth: "Net worth",
+      show_investments: "Investments",
+      show_real_estate: "Real Estate (net)",
+      history: "History",
+      investments: "Investments",
+      real_estate_net: "Real Estate (net)",
+      debts: "Debts",
+      delta: "Δ",
+      app_settings: "Preferences",
+      language_label: "Language",
+      manage_accounts: "Manage accounts",
+      manage_accounts_hint: "Edit names, ownership %, category, kind, or uncheck Active to retire an account without losing its history. The id field is immutable.",
+      id_col: "ID",
+      name_fr_col: "Name (FR)",
+      name_en_col: "Name (EN)",
+      category_col: "Category",
+      kind_col: "Kind",
+      owner_col: "Owner",
+      share_col: "Share %",
+      active_col: "Active",
+      order_col: "Order",
+      account_type_label: "Account type",
+      add_account: "+ Add account",
+      save_changes: "Save changes",
+      discard: "Discard",
+      import_historical: "Import historical data",
+      import_hint: "Paste your existing monthly tracking sheet (wide format: account names down the first column, months across the top). Copy/paste from Google Sheets works (tab-separated).",
+      parse: "Parse",
+      clear: "Clear",
+      preview_label: "Preview",
+      source_row: "Source row",
+      sample_value: "Sample value",
+      map_to_account: "Map to account",
+      overwrite_toggle: "Overwrite existing snapshots for the months in this paste (otherwise skip months already in the sheet)",
+      import_btn: "Import",
+      cancel: "Cancel",
+      migrate_title: "Migrate Account ID",
+      current_id_label: "Current ID",
+      new_account_type_label: "New account type",
+      new_id_label: "New ID",
+      confirm_rename: "Confirm rename",
+      private_mode: "Private",
+      private_mode_off: "Show",
+      overview_option: "Overview",
+      comment_placeholder: "Comment (optional)",
+      month_comment_placeholder: "Notes for this month (optional)",
+      import_placeholder: "Paste CSV or TSV here…",
+      history_summary: (n, from, to) => `${n} months · ${from} → ${to}`,
+      existing_month: "Existing month (editing)",
+      new_prefilled: (mo) => `New — pre-filled from ${mo}`,
+      new_month: "New month",
+      net_worth_chart: "Net worth",
+      owner_self: "You",
+      owner_partner: "Partner",
+      owner_joint: "Joint",
+    },
+  };
+
+  const t = (key) => {
+    const dict = I18N[lang()] || I18N.en;
+    const v = dict[key];
+    return typeof v === "string" ? v : ((I18N.en[key] && typeof I18N.en[key] === "string") ? I18N.en[key] : key);
+  };
+
+  const tFn = (key, ...args) => {
+    const dict = I18N[lang()] || I18N.en;
+    const fn = dict[key];
+    return typeof fn === "function" ? fn(...args) : key;
+  };
+
+  function applyI18n() {
+    document.documentElement.lang = lang();
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    // Update placeholders that are set inline
+    const monthComment = document.getElementById("month-comment-input");
+    if (monthComment) monthComment.placeholder = t("month_comment_placeholder");
+    const importInput = document.getElementById("import-input");
+    if (importInput) importInput.placeholder = t("import_placeholder");
+    // Mark active lang button
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === lang()));
+    // Update private mode button label
+    if (els.privateModeBtn) {
+      els.privateModeBtn.textContent = state.privateMode ? t("private_mode_off") : t("private_mode");
+    }
+  }
+
+  function setLang(l) {
+    state.lang = l;
+    try { localStorage.setItem(LS_KEY_LANG, l); } catch(_) {}
+    // Force type picker to rebuild with new language
+    if (els.newAccountType) delete els.newAccountType.dataset.populated;
+    applyI18n();
+    if (!state.monthsSorted.length) return;
+    populateHistAccountSelect();
+    renderHistoryTable();
+    renderChart();
+    renderOverview();
+    if (state.currentMonth) renderForm();
+    renderAccountsTable();
+  }
+
+  function togglePrivateMode() {
+    state.privateMode = !state.privateMode;
+    try { localStorage.setItem(LS_KEY_PRIVATE, state.privateMode ? "1" : "0"); } catch(_) {}
+    document.getElementById("tab-overview")?.classList.toggle("pfs-private", state.privateMode);
+    if (els.privateModeBtn) els.privateModeBtn.textContent = state.privateMode ? t("private_mode_off") : t("private_mode");
+  }
 
   // Parse a free-form money string ("$1,234.56", "1 234,56 $", "-500", "") into a number.
   // Returns null for empty/invalid. Handles both en-CA and fr-CA conventions.
@@ -632,13 +860,13 @@
     // Month badge
     if (isEditing) {
       els.monthBadge.hidden = false;
-      els.monthBadge.textContent = lang() === "fr" ? "Mois existant (édition)" : "Existing month (editing)";
+      els.monthBadge.textContent = t("existing_month");
     } else if (prevMo) {
       els.monthBadge.hidden = false;
-      els.monthBadge.textContent = lang() === "fr" ? `Nouveau — pré-rempli de ${prevMo}` : `New — pre-filled from ${prevMo}`;
+      els.monthBadge.textContent = tFn("new_prefilled", prevMo);
     } else {
       els.monthBadge.hidden = false;
-      els.monthBadge.textContent = lang() === "fr" ? "Nouveau mois" : "New month";
+      els.monthBadge.textContent = t("new_month");
     }
 
     // Month comment
@@ -672,7 +900,7 @@
         name.appendChild(nameMain);
         const meta = document.createElement("span");
         meta.className = "meta";
-        const ownerLbl = { self: "Vous", partner: "Conjoint", joint: "Joint" }[a.owner] || a.owner;
+        const ownerLbl = { self: t("owner_self"), partner: t("owner_partner"), joint: t("owner_joint") }[a.owner] || a.owner;
         const sharePct = Math.round((a.ownership_share || 1) * 100);
         meta.textContent = `${ownerLbl} · ${sharePct}%`;
         name.appendChild(meta);
@@ -707,7 +935,7 @@
         const com = document.createElement("input");
         com.type = "text";
         com.className = "comment";
-        com.placeholder = lang() === "fr" ? "Commentaire (facultatif)" : "Comment (optional)";
+        com.placeholder = t("comment_placeholder");
         com.value = existing.comments[a.id] || "";
         com.tabIndex = -1; // skip in Tab order — click to focus
 
@@ -770,7 +998,8 @@
     if (prevMo) {
       const prevNet = computeNetWorthFromSnapshots(prevMo);
       const delta = netWorth - prevNet;
-      els.netWorthDelta.textContent = `${fmtDelta(delta)} vs ${prevMo}`;
+      const pct = fmtPct(delta, prevNet);
+      els.netWorthDelta.textContent = `${fmtDelta(delta)}${pct ? ` (${pct})` : ""} vs ${prevMo}`;
       els.netWorthDelta.className = "delta " + (delta >= 0 ? "up" : "down");
     } else {
       els.netWorthDelta.textContent = "";
@@ -793,7 +1022,19 @@
 
   // --- History table ---
 
+  function historyLabels() {
+    return {
+      month: t("month"),
+      investments: t("investments"),
+      realEstateNet: t("real_estate_net"),
+      debts: t("debts"),
+      netWorth: t("net_worth"),
+      delta: t("delta"),
+    };
+  }
+
   function renderHistoryTable() {
+    const labels = historyLabels();
     const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
     const byMonth = new Map();
     for (const s of state.snapshots) {
@@ -821,7 +1062,7 @@
       return;
     }
     els.historySection.hidden = false;
-    els.historySummary.textContent = `${months.length} months · ${months[months.length - 1]} → ${months[0]}`;
+    els.historySummary.textContent = tFn("history_summary", months.length, months[months.length - 1], months[0]);
 
     const tbody = els.historyTableBody;
     tbody.innerHTML = "";
@@ -847,8 +1088,15 @@
       const cDebt  = document.createElement("td"); cDebt.className = "num"; cDebt.textContent = fmtMoney(m.debts);
       const cNet   = document.createElement("td"); cNet.className = "num"; cNet.textContent = fmtMoney(m.net);
       const cDelta = document.createElement("td"); cDelta.className = "num delta";
+      cMonth.dataset.label = labels.month;
+      cInv.dataset.label = labels.investments;
+      cRE.dataset.label = labels.realEstateNet;
+      cDebt.dataset.label = labels.debts;
+      cNet.dataset.label = labels.netWorth;
+      cDelta.dataset.label = labels.delta;
       if (delta !== null) {
-        cDelta.textContent = fmtDelta(delta);
+        const pct = fmtPct(delta, byMonth.get(prev).net);
+        cDelta.textContent = fmtDelta(delta) + (pct ? ` (${pct})` : "");
         cDelta.classList.add(delta >= 0 ? "up" : "down");
       } else {
         cDelta.textContent = "—";
@@ -874,13 +1122,20 @@
 
   // --- Chart ---
 
-  // Computes totals per month from snapshots. Returns:
-  // { months: [...], net: [...], investments: [...], realEstateNet: [...] }
-  function computeSeries() {
+  function getHistFilteredMonths() {
+    const btn = document.querySelector("#hist-period-pills .period-btn.active");
+    return getMonthsForPeriod(btn?.dataset.period || "all");
+  }
+
+  // Computes overview totals per month. filteredMonths limits which months are included.
+  function computeSeries(filteredMonths) {
+    const months = filteredMonths || state.monthsSorted;
+    const monthSet = new Set(months);
     const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
-    const byMonth = new Map(); // month -> { net, investments, realEstateAssets, realEstateDebts }
+    const byMonth = new Map();
     for (const s of state.snapshots) {
       if (s.account_id === "__month__") continue;
+      if (!monthSet.has(s.month)) continue;
       const a = acctById[s.account_id];
       if (!a) continue;
       const signed = s.balance_raw * (a.ownership_share || 1) * (a.kind === "debt" ? -1 : 1);
@@ -888,23 +1143,60 @@
       m.net += signed;
       if (a.category === "investments") m.investments += signed;
       else if (a.category === "real_estate") m.realEstateAssets += signed;
-      else if (a.category === "real_estate_debt") m.realEstateDebts += signed; // already negative
+      else if (a.category === "real_estate_debt") m.realEstateDebts += signed;
       byMonth.set(s.month, m);
     }
-    const months = [...byMonth.keys()].sort();
+    // Ensure all requested months appear (with zeros if no snapshots)
+    for (const mo of months) if (!byMonth.has(mo)) byMonth.set(mo, { net: 0, investments: 0, realEstateAssets: 0, realEstateDebts: 0 });
+    const sorted = months.filter(m => byMonth.has(m)).sort();
     return {
-      months,
-      net:           months.map(m => byMonth.get(m).net),
-      investments:   months.map(m => byMonth.get(m).investments),
-      realEstateNet: months.map(m => byMonth.get(m).realEstateAssets + byMonth.get(m).realEstateDebts),
+      months: sorted,
+      net:           sorted.map(m => byMonth.get(m).net),
+      investments:   sorted.map(m => byMonth.get(m).investments),
+      realEstateNet: sorted.map(m => byMonth.get(m).realEstateAssets + byMonth.get(m).realEstateDebts),
     };
   }
 
+  function populateHistAccountSelect() {
+    const sel = els.histAccountSelect;
+    if (!sel || !state.accounts.length) return;
+    const currentVal = sel.value;
+    sel.innerHTML = "";
+    const ovOpt = document.createElement("option");
+    ovOpt.value = "";
+    ovOpt.textContent = t("overview_option");
+    sel.appendChild(ovOpt);
+    const catOrder = Object.fromEntries(state.categoryMeta.map(c => [c.id, c.sort_order || 0]));
+    const sorted = [...state.accounts].filter(a => a.active).sort((a, b) => {
+      const co = (catOrder[a.category] || 99) - (catOrder[b.category] || 99);
+      return co !== 0 ? co : (a.sort_order || 0) - (b.sort_order || 0);
+    });
+    const byCat = {};
+    for (const a of sorted) (byCat[a.category] ||= []).push(a);
+    for (const cat of state.categoryMeta.sort((a,b) => (a.sort_order||0)-(b.sort_order||0))) {
+      const accts = byCat[cat.id];
+      if (!accts?.length) continue;
+      const og = document.createElement("optgroup");
+      og.label = tr(cat);
+      for (const a of accts) {
+        const opt = document.createElement("option");
+        opt.value = a.id;
+        opt.textContent = tr(a);
+        og.appendChild(opt);
+      }
+      sel.appendChild(og);
+    }
+    if (currentVal && [...sel.options].some(o => o.value === currentVal)) sel.value = currentVal;
+  }
+
   function renderChart() {
-    if (typeof Chart === "undefined") return; // CDN not loaded yet
-    const data = computeSeries();
-    if (!data.months.length) { els.chartSection.hidden = true; return; }
-    els.chartSection.hidden = false;
+    if (typeof Chart === "undefined") return;
+    const filteredMonths = getHistFilteredMonths();
+    const selectedAccount = els.histAccountSelect?.value || "";
+    const isOverview = selectedAccount === "";
+
+    // Show/hide series toggles based on mode
+    if (els.histChartToggles) els.histChartToggles.hidden = !isOverview;
 
     const datasets = [];
     const chartCtx = els.chartCanvas.getContext("2d");
@@ -916,121 +1208,72 @@
       return gr;
     };
 
-    if (els.showNet.checked) {
-      datasets.push({
-        label: lang() === "fr" ? "Valeur nette" : "Net worth",
-        data: data.net,
-        borderColor: "#0f172a",
-        backgroundColor: makeGradient(15, 23, 42),
-        borderWidth: 2,
-        fill: true,
-        tension: 0.35,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: "#0f172a",
-        pointHoverBorderColor: "#fff",
-        pointHoverBorderWidth: 2,
-      });
+    let chartMonths;
+    if (isOverview) {
+      const data = computeSeries(filteredMonths);
+      if (!data.months.length) { els.chartSection.hidden = true; return; }
+      chartMonths = data.months;
+      if (els.showNet.checked) {
+        datasets.push({ label: t("net_worth_chart"), data: data.net, borderColor: "#0f172a", backgroundColor: makeGradient(15,23,42), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: "#0f172a", pointHoverBorderColor: "#fff", pointHoverBorderWidth: 2 });
+      }
+      if (els.showInvestments.checked) {
+        datasets.push({ label: t("investments"), data: data.investments, borderColor: "#059669", backgroundColor: makeGradient(5,150,105), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: "#059669", pointHoverBorderColor: "#fff", pointHoverBorderWidth: 2 });
+      }
+      if (els.showRealEstate.checked) {
+        datasets.push({ label: t("real_estate_net"), data: data.realEstateNet, borderColor: "#0284c7", backgroundColor: makeGradient(2,132,199), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: "#0284c7", pointHoverBorderColor: "#fff", pointHoverBorderWidth: 2 });
+      }
+    } else {
+      // Single account view
+      const acct = state.accounts.find(a => a.id === selectedAccount);
+      if (!acct) { els.chartSection.hidden = true; return; }
+      const monthSet = new Set(filteredMonths);
+      const snapByMonth = Object.fromEntries(
+        state.snapshots.filter(s => s.account_id === selectedAccount && monthSet.has(s.month))
+          .map(s => [s.month, s.balance_raw])
+      );
+      chartMonths = filteredMonths.filter(m => snapByMonth[m] !== undefined);
+      if (!chartMonths.length) { els.chartSection.hidden = true; return; }
+      const values = chartMonths.map(m => snapByMonth[m]);
+      const color = acct.kind === "debt" ? "#e11d48" : "#059669";
+      const [r,g,b] = acct.kind === "debt" ? [225,29,72] : [5,150,105];
+      datasets.push({ label: tr(acct), data: values, borderColor: color, backgroundColor: makeGradient(r,g,b), borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: color, pointHoverBorderColor: "#fff", pointHoverBorderWidth: 2 });
     }
-    if (els.showInvestments.checked) {
-      datasets.push({
-        label: lang() === "fr" ? "Investissements" : "Investments",
-        data: data.investments,
-        borderColor: "#059669",
-        backgroundColor: makeGradient(5, 150, 105),
-        borderWidth: 2,
-        fill: true,
-        tension: 0.35,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: "#059669",
-        pointHoverBorderColor: "#fff",
-        pointHoverBorderWidth: 2,
-      });
-    }
-    if (els.showRealEstate.checked) {
-      datasets.push({
-        label: lang() === "fr" ? "Immobilier (net)" : "Real Estate (net)",
-        data: data.realEstateNet,
-        borderColor: "#0284c7",
-        backgroundColor: makeGradient(2, 132, 199),
-        borderWidth: 2,
-        fill: true,
-        tension: 0.35,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: "#0284c7",
-        pointHoverBorderColor: "#fff",
-        pointHoverBorderWidth: 2,
-      });
-    }
+
+    if (!datasets.length) { els.chartSection.hidden = true; return; }
+    els.chartSection.hidden = false;
 
     const config = {
       type: "line",
-      data: { labels: data.months, datasets },
+      data: { labels: chartMonths, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         plugins: {
-          legend: {
-            position: "bottom",
-            labels: {
-              color: "#475569",
-              font: { size: 12, family: "'Inter', sans-serif" },
-              padding: 24,
-              usePointStyle: true,
-              pointStyle: "circle",
-              boxWidth: 8,
-              boxHeight: 8,
-            },
-          },
+          legend: { position: "bottom", labels: { color: "#475569", font: { size: 12, family: "'Inter', sans-serif" }, padding: 24, usePointStyle: true, pointStyle: "circle", boxWidth: 8, boxHeight: 8 } },
           tooltip: {
-            backgroundColor: "#0f172a",
-            titleColor: "#94a3b8",
-            bodyColor: "#f1f5f9",
-            padding: 12,
-            cornerRadius: 10,
-            titleFont: { size: 11 },
+            backgroundColor: "#0f172a", titleColor: "#94a3b8", bodyColor: "#f1f5f9",
+            padding: 12, cornerRadius: 10, titleFont: { size: 11 },
             bodyFont: { size: 13, weight: "600" },
-            callbacks: {
-              label: (ctx) => `  ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}`,
-            },
+            callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}` },
           },
         },
         scales: {
           y: {
             grid: { color: "rgba(15,23,42,.04)", drawTicks: false },
             border: { display: false },
-            ticks: {
-              color: "#94a3b8",
-              font: { size: 11, family: "'Inter', sans-serif" },
-              padding: 10,
-              maxTicksLimit: 6,
-              callback: (v) => {
-                const abs = Math.abs(v);
-                if (abs >= 1000000) return (v / 1000000).toFixed(1) + "M $";
-                if (abs >= 1000) return (v / 1000).toFixed(0) + "k $";
-                return v + " $";
-              },
+            ticks: { color: "#94a3b8", font: { size: 11, family: "'Inter', sans-serif" }, padding: 10, maxTicksLimit: 6,
+              callback: (v) => { const abs = Math.abs(v); if (abs >= 1000000) return (v/1000000).toFixed(1)+"M $"; if (abs >= 1000) return (v/1000).toFixed(0)+"k $"; return v+" $"; },
             },
           },
-          x: {
-            grid: { display: false },
-            border: { display: false },
-            ticks: {
-              maxTicksLimit: 12,
-              color: "#94a3b8",
-              font: { size: 11, family: "'Inter', sans-serif" },
-              maxRotation: 0,
-            },
-          },
+          x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 12, color: "#94a3b8", font: { size: 11, family: "'Inter', sans-serif" }, maxRotation: 0 } },
         },
       },
     };
 
     if (state.chart) {
       state.chart.data = config.data;
+      state.chart.options = config.options;
       state.chart.update();
     } else {
       state.chart = new Chart(els.chartCanvas, config);
@@ -1503,7 +1746,7 @@
     tr.dataset.isNew = isNew ? "1" : "0";
     tr.dataset.type = a.type || "";
 
-    const td = (cls) => { const x = document.createElement("td"); if (cls) x.className = cls; tr.appendChild(x); return x; };
+    const td = (cls, label) => { const x = document.createElement("td"); if (cls) x.className = cls; if (label) x.dataset.label = label; tr.appendChild(x); return x; };
     const txt = (v, cls) => {
       const i = document.createElement("input"); i.type = "text"; i.value = v ?? ""; if (cls) i.className = cls;
       return i;
@@ -1525,29 +1768,29 @@
     // id (read-only for existing; editable for new)
     const idInput = txt(a.id, "id");
     if (!isNew) idInput.readOnly = true;
-    td().appendChild(idInput);
+    td(null, "ID").appendChild(idInput);
 
-    td().appendChild(txt(a.name_fr));
-    td().appendChild(txt(a.name_en));
+    td(null, "Name (FR)").appendChild(txt(a.name_fr));
+    td(null, "Name (EN)").appendChild(txt(a.name_en));
 
     const catOpts = state.categoryMeta.map(c => ({ value: c.id, label: tr_(c) }));
-    td().appendChild(sel(a.category, catOpts));
+    td(null, "Category").appendChild(sel(a.category, catOpts));
 
-    td().appendChild(sel(a.kind, KINDS.map(k => ({ value: k, label: k }))));
-    td().appendChild(sel(a.owner, OWNERS.map(o => ({ value: o, label: o }))));
+    td(null, "Kind").appendChild(sel(a.kind, KINDS.map(k => ({ value: k, label: k }))));
+    td(null, "Owner").appendChild(sel(a.owner, OWNERS.map(o => ({ value: o, label: o }))));
 
     const share = num(Math.round((a.ownership_share || 0) * 100), 1);
     share.min = 0; share.max = 100; share.style.width = "4rem";
-    td("num").appendChild(share);
+    td("num", "Share %").appendChild(share);
 
     const activeBox = document.createElement("input");
     activeBox.type = "checkbox"; activeBox.checked = !!a.active;
     activeBox.addEventListener("change", () => tr.classList.toggle("inactive", !activeBox.checked));
-    td().appendChild(activeBox);
+    td(null, "Active").appendChild(activeBox);
 
     const order = num(a.sort_order || 0);
     order.style.width = "4.5rem";
-    td("num").appendChild(order);
+    td("num", "Order").appendChild(order);
 
     const actionsTd = td("actions-col");
     if (!isNew) {
@@ -1904,6 +2147,9 @@
     if (!all.length || period === "all") return all;
     const latest = all[all.length - 1];
     const [yr, mo] = latest.split("-").map(Number);
+    if (period === "YTD") {
+      return all.filter(m => m >= `${yr}-01`);
+    }
     const nMonths = { "3M": 3, "6M": 6, "1Y": 12, "5Y": 60 }[period];
     if (!nMonths) return all;
     const from = new Date(yr, mo - 1);
@@ -1912,8 +2158,25 @@
     return all.filter(m => m >= fromStr);
   }
 
+  function getOvFilteredMonths() {
+    const fromVal = els.ovFrom?.value;
+    const toVal   = els.ovTo?.value;
+    if (fromVal || toVal) {
+      return state.monthsSorted.filter(m =>
+        (!fromVal || m >= fromVal) && (!toVal || m <= toVal)
+      );
+    }
+    const btn = document.querySelector("#ov-period-pills .period-btn.active");
+    return getMonthsForPeriod(btn?.dataset.period || "all");
+  }
+
   function renderOverview() {
     if (!els.ovNetWorth) return;
+
+    // Apply private mode
+    const ovTab = document.getElementById("tab-overview");
+    ovTab?.classList.toggle("pfs-private", state.privateMode);
+    if (els.privateModeBtn) els.privateModeBtn.textContent = state.privateMode ? t("private_mode_off") : t("private_mode");
 
     if (!state.monthsSorted.length) {
       els.ovNetWorth.textContent = "—";
@@ -1924,18 +2187,31 @@
       return;
     }
 
-    const latestMonth = state.monthsSorted[state.monthsSorted.length - 1];
-    const prevMoMonth = state.monthsSorted.length >= 2
-      ? state.monthsSorted[state.monthsSorted.length - 2] : null;
+    const filteredMonths = getOvFilteredMonths();
+    const periodBtn = document.querySelector("#ov-period-pills .period-btn.active");
+    const activePeriod = periodBtn?.dataset.period || "all";
 
-    // Year-ago: find the closest month <= 12 months back
-    const [yr, mo] = latestMonth.split("-").map(Number);
-    const yoyTarget = `${yr - 1}-${String(mo).padStart(2, "0")}`;
-    const yoyMonth = [...state.monthsSorted].reverse().find(m => m <= yoyTarget) || null;
+    const latestMonth = filteredMonths.length
+      ? filteredMonths[filteredMonths.length - 1]
+      : state.monthsSorted[state.monthsSorted.length - 1];
+
+    // MoM: previous month in the full sorted list
+    const latestIdx = state.monthsSorted.indexOf(latestMonth);
+    const prevMoMonth = latestIdx > 0 ? state.monthsSorted[latestIdx - 1] : null;
+
+    // Period reference: for "all" use YoY; otherwise use period start
+    let periodRefMonth = null;
+    if (activePeriod === "all" && !els.ovFrom?.value && !els.ovTo?.value) {
+      const [yr, mo] = latestMonth.split("-").map(Number);
+      const yoyTarget = `${yr - 1}-${String(mo).padStart(2, "0")}`;
+      periodRefMonth = [...state.monthsSorted].reverse().find(m => m <= yoyTarget) || null;
+    } else if (filteredMonths.length > 1) {
+      periodRefMonth = filteredMonths[0];
+    }
 
     const current = computeMonthStats(latestMonth);
     const prevMo  = prevMoMonth ? computeMonthStats(prevMoMonth) : null;
-    const prevYr  = yoyMonth    ? computeMonthStats(yoyMonth)    : null;
+    const periodRef = periodRefMonth ? computeMonthStats(periodRefMonth) : null;
 
     // Hero
     els.ovNetWorth.textContent = fmtMoney(current.netWorth);
@@ -1944,13 +2220,15 @@
     const applyDelta = (el, val, refVal, refLabel) => {
       if (!el || refVal == null) { if (el) el.textContent = ""; return; }
       const d = val - refVal;
-      el.textContent = `${fmtDelta(d)} vs ${refLabel}`;
+      const pct = fmtPct(d, refVal);
+      el.textContent = `${fmtDelta(d)}${pct ? ` (${pct})` : ""} vs ${refLabel}`;
       el.className = "delta " + (d >= 0 ? "up" : "down");
     };
     applyDelta(els.ovDeltaMom, current.netWorth, prevMo?.netWorth, prevMoMonth);
-    applyDelta(els.ovDeltaYoy, current.netWorth, prevYr?.netWorth, yoyMonth);
+    applyDelta(els.ovDeltaYoy, current.netWorth, periodRef?.netWorth, periodRefMonth);
 
-    // Stat cards
+    // Stat cards — delta vs period reference (or MoM if no period ref)
+    const cardRef = periodRef || prevMo;
     const cards = els.ovCards;
     cards.innerHTML = "";
     const sortedCats = [...state.categoryMeta].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -1971,13 +2249,14 @@
       card.appendChild(lbl);
       card.appendChild(valEl);
 
-      if (prevMo) {
-        const prev = prevMo.byCategory[cat.id] || 0;
+      if (cardRef) {
+        const prev = cardRef.byCategory[cat.id] || 0;
         const d = val - prev;
         if (d !== 0) {
           const deltaEl = document.createElement("div");
           deltaEl.className = "ov-card-delta " + (d >= 0 ? "up" : "down");
-          deltaEl.textContent = fmtDelta(d);
+          const pct = fmtPct(d, prev);
+          deltaEl.textContent = fmtDelta(d) + (pct ? ` (${pct})` : "");
           card.appendChild(deltaEl);
         }
       }
@@ -1993,19 +2272,7 @@
     const canvas = els.ovChartCanvas;
     if (!canvas) return;
 
-    // Determine filtered months
-    const activePeriodBtn = document.querySelector(".period-btn.active");
-    const period = activePeriodBtn?.dataset.period || "all";
-    let months;
-    const fromVal = els.ovFrom?.value;
-    const toVal   = els.ovTo?.value;
-    if (fromVal || toVal) {
-      months = state.monthsSorted.filter(m =>
-        (!fromVal || m >= fromVal) && (!toVal || m <= toVal)
-      );
-    } else {
-      months = getMonthsForPeriod(period);
-    }
+    const months = getOvFilteredMonths();
 
     // Compute net worth per filtered month
     const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
@@ -2030,7 +2297,7 @@
     const chartData = {
       labels: months,
       datasets: [{
-        label: lang() === "fr" ? "Valeur nette" : "Net worth",
+        label: t("net_worth_chart"),
         data: values,
         borderColor: "#059669",
         backgroundColor: grad,
@@ -2126,30 +2393,52 @@
   document.getElementById("migrate-type-select")?.addEventListener("change", updateMigratePreview);
   migrateDialog()?.addEventListener("click", (e) => { if (e.target === migrateDialog()) migrateDialog().close(); });
 
-  // Period pill buttons (overview chart)
-  document.querySelectorAll(".period-btn").forEach(btn => {
+  // Overview period pill buttons
+  document.querySelectorAll("#ov-period-pills .period-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll("#ov-period-pills .period-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       if (els.ovFrom) els.ovFrom.value = "";
       if (els.ovTo)   els.ovTo.value   = "";
-      renderOverviewChart();
+      renderOverview();
     });
   });
 
-  // Custom range inputs (overview chart)
+  // Overview custom range inputs
   if (els.ovFrom) {
     els.ovFrom.addEventListener("change", () => {
-      document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
-      renderOverviewChart();
+      document.querySelectorAll("#ov-period-pills .period-btn").forEach(b => b.classList.remove("active"));
+      renderOverview();
     });
   }
   if (els.ovTo) {
     els.ovTo.addEventListener("change", () => {
-      document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
-      renderOverviewChart();
+      document.querySelectorAll("#ov-period-pills .period-btn").forEach(b => b.classList.remove("active"));
+      renderOverview();
     });
   }
+
+  // History chart period pill buttons
+  document.querySelectorAll("#hist-period-pills .period-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#hist-period-pills .period-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderChart();
+    });
+  });
+
+  // History chart account select
+  if (els.histAccountSelect) {
+    els.histAccountSelect.addEventListener("change", renderChart);
+  }
+
+  // Language toggle
+  document.querySelectorAll(".lang-btn").forEach(btn => {
+    btn.addEventListener("click", () => setLang(btn.dataset.lang));
+  });
+
+  // Private mode toggle
+  els.privateModeBtn?.addEventListener("click", togglePrivateMode);
 
   // Both Google scripts load async. Poll until each is available, init once.
   let gapiStarted = false;
@@ -2167,4 +2456,5 @@
   }, 50);
 
   configError();
+  applyI18n();
 })();

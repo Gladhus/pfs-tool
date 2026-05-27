@@ -12,6 +12,8 @@ export function renderForm() {
 
   const existing = snapshotForDate(date);
   const isEditing = state.datesSorted.includes(date);
+  const prevD = prevDate(date);
+  const prevData = prevD ? snapshotForDate(prevD) : null;
   els.dateBadge.hidden = false;
   els.dateBadge.textContent = isEditing ? t('existing_date') : t('new_date');
 
@@ -54,7 +56,8 @@ export function renderForm() {
       bal.inputMode = 'decimal';
       bal.autocomplete = 'off';
       bal.className = 'balance';
-      bal.placeholder = fmtMoney(0);
+      const prevVal = prevData?.balances[a.id];
+      bal.placeholder = prevVal !== undefined ? fmtMoney(prevVal) : fmtMoney(0);
 
       const seedVal = existing.balances[a.id];
       if (seedVal !== undefined) bal.value = fmtMoney(seedVal);

@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [0.9.6] — 2026-05-27
+## [0.9.6](https://github.com/Gladhus/pfs-tool/releases/tag/v0.9.6) — 2026-05-27
 
 ### Added
 - **2Y period button** added to both Overview and History period pill bars

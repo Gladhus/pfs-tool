@@ -338,6 +338,19 @@ textarea:focus {
 .account-row .name > span:first-child { font-size: 0.875rem; font-weight: 500; display: block; }
 .account-row .name .meta { font-size: 0.72rem; color: var(--subtle); margin-top: 1px; }
 
+.bal-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.prev-val {
+  font-size: 0.68rem;
+  color: var(--subtle);
+  font-feature-settings: "tnum";
+  padding-right: 0.25rem;
+}
+
 .account-row input.balance {
   text-align: right;
   font-weight: 600;

@@ -56,8 +56,7 @@ export function renderForm() {
       bal.inputMode = 'decimal';
       bal.autocomplete = 'off';
       bal.className = 'balance';
-      const prevVal = prevData?.balances[a.id];
-      bal.placeholder = prevVal !== undefined ? fmtMoney(prevVal) : fmtMoney(0);
+      bal.placeholder = fmtMoney(0);
 
       const seedVal = existing.balances[a.id];
       if (seedVal !== undefined) bal.value = fmtMoney(seedVal);
@@ -74,6 +73,17 @@ export function renderForm() {
       });
       bal.addEventListener('input', recomputeTotals);
 
+      const balWrap = document.createElement('div');
+      balWrap.className = 'bal-wrap';
+      balWrap.appendChild(bal);
+      const prevVal = prevData?.balances[a.id];
+      if (prevVal !== undefined) {
+        const hint = document.createElement('span');
+        hint.className = 'prev-val';
+        hint.textContent = fmtMoney(prevVal);
+        balWrap.appendChild(hint);
+      }
+
       const com = document.createElement('input');
       com.type = 'text';
       com.className = 'comment';
@@ -82,7 +92,7 @@ export function renderForm() {
       com.tabIndex = -1;
 
       row.appendChild(name);
-      row.appendChild(bal);
+      row.appendChild(balWrap);
       row.appendChild(com);
       block.appendChild(row);
     }

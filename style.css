@@ -129,21 +129,20 @@ main {
 /* ── Utility ─────────────────────────────────────────────── */
 .hint { color: var(--muted); font-size: 0.8125rem; }
 
-/* ── Status bar ──────────────────────────────────────────── */
+/* ── Status bar (in header) ──────────────────────────────── */
 .status {
-  margin-top: 0.75rem;
-  padding: 0.55rem 0.875rem;
-  border-radius: var(--r-sm);
-  font-size: 0.8125rem;
-  min-height: 2rem;
-  display: flex;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 1rem;
 }
-.status.ok   { background: var(--accent-light); border-color: #6ee7b7; color: #065f46; }
-.status.warn { background: var(--red-light);    border-color: #fca5a5; color: #991b1b; }
+.status:empty { display: none; }
+.status.ok   { color: #6ee7b7; }
+.status.warn { color: #fca5a5; }
 
 /* ── Sheet info ──────────────────────────────────────────── */
 .sheet-info {
@@ -1200,6 +1199,13 @@ dialog::backdrop {
     font-size: 0.95rem;
   }
 
+  .status {
+    width: 100%;
+    text-align: left;
+    padding: 0;
+    font-size: 0.7rem;
+  }
+
   #auth-area {
     width: 100%;
     justify-content: flex-end;
@@ -1242,12 +1248,6 @@ dialog::backdrop {
   .sheet-info {
     flex-wrap: wrap;
     row-gap: 0.2rem;
-  }
-
-  .status {
-    min-height: unset;
-    line-height: 1.45;
-    padding: 0.6rem 0.75rem;
   }
 
   .entry-header {

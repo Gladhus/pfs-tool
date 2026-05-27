@@ -55,9 +55,18 @@ export const els = {
   histChartToggles:  document.getElementById('hist-chart-toggles'),
 };
 
+let _statusTimer = null;
 export function setStatus(msg, level = '') {
+  if (_statusTimer) { clearTimeout(_statusTimer); _statusTimer = null; }
   els.status.textContent = msg;
   els.status.className = 'status' + (level ? ' ' + level : '');
+  if (level === 'ok') {
+    _statusTimer = setTimeout(() => {
+      els.status.textContent = '';
+      els.status.className = 'status';
+      _statusTimer = null;
+    }, 3000);
+  }
 }
 
 export function showSheetLink(id) {

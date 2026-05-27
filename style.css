@@ -1278,9 +1278,6 @@ button.danger:hover { background: #dc2626; }
 }
 .detail-table thead th:not(:first-child) {
   text-align: right;
-  min-width: 110px;
-}
-.detail-table thead .detail-delta-col {
   min-width: 130px;
 }
 
@@ -1368,19 +1365,18 @@ button.danger:hover { background: #dc2626; }
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  vertical-align: top;
 }
 .detail-value.negative { color: var(--cat-debts, #f43f5e); }
 
-/* Delta cell */
-.detail-delta-cell {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  font-size: 0.78rem;
-  color: var(--muted);
+.detail-cell-value { }
+.detail-cell-delta {
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-top: 0.15rem;
 }
-.detail-delta-cell.up   { color: var(--delta-up,   #10b981); }
-.detail-delta-cell.down { color: var(--delta-down,  #f43f5e); }
+.detail-cell-delta.up   { color: var(--accent); }
+.detail-cell-delta.down { color: var(--red); }
 
 /* ── Footer ──────────────────────────────────────────────── */
 footer {

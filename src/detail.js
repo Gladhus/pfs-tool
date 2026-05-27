@@ -18,22 +18,26 @@ function signed(balance_raw, acct) {
   return balance_raw * (acct.ownership_share || 1) * (acct.kind === 'debt' ? -1 : 1);
 }
 
-function fmtCell(v, pm) {
-  if (v === null) return '—';
-  if (pm) return '••••••';
-  return fmtMoney(v);
-}
-
-function mkDeltaCell(curr, prev, pm) {
+// Creates a table cell showing the value and, if prev is known, an inline delta below it.
+function mkValueCell(curr, prev, pm) {
   const td = document.createElement('td');
-  td.className = 'detail-delta-cell';
-  if (curr !== null && prev !== null) {
+  if (curr === null) {
+    td.className = 'detail-value';
+    td.textContent = '—';
+    return td;
+  }
+  td.className = 'detail-value' + (curr < 0 ? ' negative' : '');
+  const valDiv = document.createElement('div');
+  valDiv.className = 'detail-cell-value';
+  valDiv.textContent = pm ? '••••••' : fmtMoney(curr);
+  td.appendChild(valDiv);
+  if (prev !== null) {
     const d = curr - prev;
     const pct = fmtPct(d, Math.abs(prev));
-    td.textContent = (pm ? '••••••' : fmtDelta(d)) + (pct ? ` (${pct})` : '');
-    td.classList.add(d >= 0 ? 'up' : 'down');
-  } else {
-    td.textContent = '—';
+    const deltaDiv = document.createElement('div');
+    deltaDiv.className = 'detail-cell-delta ' + (d >= 0 ? 'up' : 'down');
+    deltaDiv.textContent = (pm ? '••' : fmtDelta(d)) + (pct ? ` (${pct})` : '');
+    td.appendChild(deltaDiv);
   }
   return td;
 }
@@ -62,9 +66,7 @@ export function renderDetailTable() {
   const yearBals = {};
   for (const y of years) yearBals[y] = buildEffectiveBalances(y + '-01-01');
 
-  const latestY = years[years.length - 1];
-  const prevY = years.length >= 2 ? years[years.length - 2] : null;
-  const totalCols = years.length + 2;
+  const totalCols = years.length + 1; // account col + year cols
   const pm = state.privateMode;
 
   const getVal = (acct, year) => {
@@ -88,10 +90,6 @@ export function renderDetailTable() {
     th.textContent = y;
     hrow.appendChild(th);
   }
-  const thD = document.createElement('th');
-  thD.className = 'detail-delta-col';
-  thD.textContent = prevY ? `${prevY.slice(2)}→${latestY.slice(2)}` : 'Δ';
-  hrow.appendChild(thD);
   thead.appendChild(hrow);
   table.appendChild(thead);
 
@@ -140,13 +138,11 @@ export function renderDetailTable() {
       nameTd.className = 'detail-acct-name';
       nameTd.textContent = tr(acct);
       row.appendChild(nameTd);
-      for (const y of years) {
-        const td = document.createElement('td');
-        td.className = 'detail-value' + (vals[y] !== null && vals[y] < 0 ? ' negative' : '');
-        td.textContent = fmtCell(vals[y], pm);
-        row.appendChild(td);
+      for (let yi = 0; yi < years.length; yi++) {
+        const y = years[yi];
+        const prev = yi > 0 ? vals[years[yi - 1]] : null;
+        row.appendChild(mkValueCell(vals[y], prev, pm));
       }
-      row.appendChild(mkDeltaCell(vals[latestY], prevY ? vals[prevY] : null, pm));
       tbody.appendChild(row);
     }
 
@@ -158,13 +154,11 @@ export function renderDetailTable() {
       tTd.className = 'detail-acct-name';
       tTd.textContent = t('detail_total');
       totalR.appendChild(tTd);
-      for (const y of years) {
-        const td = document.createElement('td');
-        td.className = 'detail-value' + (catByYear[y] !== null && catByYear[y] < 0 ? ' negative' : '');
-        td.textContent = fmtCell(catByYear[y], pm);
-        totalR.appendChild(td);
+      for (let yi = 0; yi < years.length; yi++) {
+        const y = years[yi];
+        const prev = yi > 0 ? catByYear[years[yi - 1]] : null;
+        totalR.appendChild(mkValueCell(catByYear[y], prev, pm));
       }
-      totalR.appendChild(mkDeltaCell(catByYear[latestY], prevY ? catByYear[prevY] : null, pm));
       tbody.appendChild(totalR);
     }
   }
@@ -184,17 +178,13 @@ export function renderDetailTable() {
   nTd.className = 'detail-acct-name';
   nTd.textContent = t('net_worth');
   netR.appendChild(nTd);
-  for (const y of years) {
-    const td = document.createElement('td');
-    td.className = 'detail-value';
-    td.textContent = fmtCell(netHasData[y] ? netByYear[y] : null, pm);
-    netR.appendChild(td);
+  for (let yi = 0; yi < years.length; yi++) {
+    const y = years[yi];
+    const curr = netHasData[y] ? netByYear[y] : null;
+    const prevY = yi > 0 ? years[yi - 1] : null;
+    const prev = prevY && netHasData[prevY] ? netByYear[prevY] : null;
+    netR.appendChild(mkValueCell(curr, prev, pm));
   }
-  netR.appendChild(mkDeltaCell(
-    netHasData[latestY] ? netByYear[latestY] : null,
-    prevY && netHasData[prevY] ? netByYear[prevY] : null,
-    pm
-  ));
   tbody.appendChild(netR);
 
   table.appendChild(tbody);

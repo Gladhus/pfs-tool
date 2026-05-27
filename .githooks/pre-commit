@@ -1,5 +1,5 @@
 #!/bin/sh
-# Block commits to main if package.json version is already tagged.
+# Block commits to main if package.json version is already tagged (checks remote).
 
 BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
 if [ "$BRANCH" != "main" ]; then
@@ -7,7 +7,9 @@ if [ "$BRANCH" != "main" ]; then
 fi
 
 VERSION="v$(node -p "require('./package.json').version" 2>/dev/null)"
-if git rev-parse "$VERSION" >/dev/null 2>&1; then
+
+# Check local tags first (fast), then remote (catches CI-created tags)
+if git rev-parse "$VERSION" >/dev/null 2>&1 || git ls-remote --tags origin "$VERSION" | grep -q "$VERSION"; then
   echo ""
   echo "❌ Commit blocked: tag $VERSION already exists."
   echo "   Bump the version in package.json before committing to main."

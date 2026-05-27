@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [0.9.7] — 2026-05-27
+## [0.9.7](https://github.com/Gladhus/pfs-tool/releases/tag/v0.9.7) — 2026-05-27
 
 ### Added
 - **Detail tab**: new year-over-year table showing every account's balance at Jan 1 of each year, grouped by category with subtotals, a net worth total row, and a Δ column (latest vs prior year); period pills (3Y / 5Y / All)

@@ -70,6 +70,14 @@ export function populateHistAccountSelect() {
   if (currentVal && [...sel.options].some(o => o.value === currentVal)) sel.value = currentVal;
 }
 
+function fmtMonthHeading(yyyymm) {
+  const [y, m] = yyyymm.split('-');
+  return new Date(+y, +m - 1, 1).toLocaleDateString(
+    document.documentElement.lang === 'fr' ? 'fr-CA' : 'en-CA',
+    { year: 'numeric', month: 'long' }
+  );
+}
+
 export function renderHistoryTable() {
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
 
@@ -94,90 +102,146 @@ export function renderHistoryTable() {
   els.historySection.hidden = false;
   els.historySummary.textContent = tFn('history_summary', allDates.length, allDates[0], allDates[allDates.length - 1]);
 
-  // Group dates by YYYY-MM
+  // Group dates by YYYY-MM, months descending, days within month descending
   const byMonth = new Map();
   for (const d of allDates) {
     const mo = d.slice(0, 7);
     if (!byMonth.has(mo)) byMonth.set(mo, []);
     byMonth.get(mo).push(d);
   }
-
-  const tbody = els.historyTableBody;
-  tbody.innerHTML = '';
-
-  const labels = {
-    date: t('date_label'),
-    investments: t('investments'),
-    realEstateNet: t('real_estate_net'),
-    debts: t('debts'),
-    netWorth: t('net_worth'),
-    delta: t('delta'),
-  };
-
-  // Months descending, days within each month also descending
   const monthsDesc = [...byMonth.keys()].sort().reverse();
 
+  const container = els.historyCards;
+  container.innerHTML = '';
+
   for (const mo of monthsDesc) {
-    const datesInMonth = byMonth.get(mo).slice().reverse(); // descending within month
+    const datesInMonth = byMonth.get(mo).slice().reverse(); // newest first
+    const latestDate = datesInMonth[0];
+    const latest = byDate.get(latestDate);
+    const reNet = latest.realEstate + latest.realEstateDebts;
 
-    // Month group header row
-    const headerRow = document.createElement('tr');
-    headerRow.className = 'month-group-header';
-    headerRow.dataset.month = mo;
-    const headerCell = document.createElement('td');
-    headerCell.colSpan = 6;
-    headerCell.textContent = mo;
-    headerRow.appendChild(headerCell);
-    tbody.appendChild(headerRow);
+    // Delta for the latest entry vs the chronologically previous entry overall
+    const prevIdx = allDates.indexOf(latestDate) - 1;
+    const prevDateKey = prevIdx >= 0 ? allDates[prevIdx] : null;
+    const delta = prevDateKey ? latest.net - byDate.get(prevDateKey).net : null;
 
-    headerRow.addEventListener('click', () => {
-      const isCollapsed = headerRow.classList.toggle('collapsed');
-      tbody.querySelectorAll(`tr.day-row[data-month="${mo}"]`).forEach(r => {
-        r.hidden = isCollapsed;
-      });
-    });
+    // ── Card ──────────────────────────────────────────────
+    const card = document.createElement('div');
+    card.className = 'hist-card';
+    if (latestDate === state.currentDate) card.classList.add('current');
 
-    for (const date of datesInMonth) {
-      const m = byDate.get(date);
-      const reNet = m.realEstate + m.realEstateDebts;
+    // Card main row (clickable → entry for latest date)
+    const main = document.createElement('div');
+    main.className = 'hist-card-main';
+    main.dataset.date = latestDate;
 
-      // Delta vs chronologically previous entry
-      const prevIdx = allDates.indexOf(date) - 1;
-      const prevDate = prevIdx >= 0 ? allDates[prevIdx] : null;
-      const delta = prevDate ? m.net - byDate.get(prevDate).net : null;
+    const left = document.createElement('div');
+    left.className = 'hist-card-left';
 
-      const rowEl = document.createElement('tr');
-      rowEl.className = 'day-row';
-      rowEl.dataset.month = mo;
-      rowEl.dataset.date = date;
-      if (date === state.currentDate) rowEl.classList.add('current');
+    const moLabel = document.createElement('div');
+    moLabel.className = 'hist-card-month';
+    moLabel.textContent = fmtMonthHeading(mo);
 
-      const cDate  = document.createElement('td'); cDate.textContent = date;
-      const cInv   = document.createElement('td'); cInv.className = 'num';  cInv.textContent = fmtMoney(m.investments);
-      const cRE    = document.createElement('td'); cRE.className = 'num';   cRE.textContent  = fmtMoney(reNet);
-      const cDebt  = document.createElement('td'); cDebt.className = 'num'; cDebt.textContent = fmtMoney(m.debts);
-      const cNet   = document.createElement('td'); cNet.className = 'num';  cNet.textContent = fmtMoney(m.net);
-      const cDelta = document.createElement('td'); cDelta.className = 'num delta';
+    const dateLabel = document.createElement('div');
+    dateLabel.className = 'hist-card-date';
+    dateLabel.textContent = latestDate;
 
-      cDate.dataset.label  = labels.date;
-      cInv.dataset.label   = labels.investments;
-      cRE.dataset.label    = labels.realEstateNet;
-      cDebt.dataset.label  = labels.debts;
-      cNet.dataset.label   = labels.netWorth;
-      cDelta.dataset.label = labels.delta;
+    left.appendChild(moLabel);
+    left.appendChild(dateLabel);
 
-      if (delta !== null) {
-        const pct = fmtPct(delta, byDate.get(prevDate).net);
-        cDelta.textContent = fmtDelta(delta) + (pct ? ` (${pct})` : '');
-        cDelta.classList.add(delta >= 0 ? 'up' : 'down');
-      } else {
-        cDelta.textContent = '—';
+    const right = document.createElement('div');
+    right.className = 'hist-card-right';
+
+    const netEl = document.createElement('div');
+    netEl.className = 'hist-card-net';
+    netEl.textContent = fmtMoney(latest.net);
+
+    const deltaEl = document.createElement('div');
+    deltaEl.className = 'hist-card-delta';
+    if (delta !== null) {
+      const pct = fmtPct(delta, byDate.get(prevDateKey).net);
+      deltaEl.textContent = fmtDelta(delta) + (pct ? ` (${pct})` : '');
+      deltaEl.classList.add(delta >= 0 ? 'up' : 'down');
+    }
+
+    right.appendChild(netEl);
+    right.appendChild(deltaEl);
+
+    main.appendChild(left);
+    main.appendChild(right);
+
+    // Sub-stats row
+    const stats = document.createElement('div');
+    stats.className = 'hist-card-stats';
+
+    const mkStat = (label, val) => {
+      const el = document.createElement('span');
+      el.className = 'hist-stat';
+      el.innerHTML = `<span class="hist-stat-label">${label}</span> ${fmtMoney(val)}`;
+      return el;
+    };
+    stats.appendChild(mkStat(t('investments'), latest.investments));
+    stats.appendChild(mkStat(t('real_estate_net'), reNet));
+    stats.appendChild(mkStat(t('debts'), latest.debts));
+
+    card.appendChild(main);
+    card.appendChild(stats);
+
+    // ── Earlier entries (collapsible) ─────────────────────
+    const olderDates = datesInMonth.slice(1);
+    if (olderDates.length) {
+      const expandBtn = document.createElement('button');
+      expandBtn.className = 'hist-expand-btn';
+      expandBtn.type = 'button';
+      expandBtn.textContent = `▾ ${olderDates.length} earlier`;
+
+      const olderList = document.createElement('div');
+      olderList.className = 'hist-older-list';
+      olderList.hidden = true;
+
+      for (const date of olderDates) {
+        const d = byDate.get(date);
+        const prevI = allDates.indexOf(date) - 1;
+        const prevK = prevI >= 0 ? allDates[prevI] : null;
+        const dDelta = prevK ? d.net - byDate.get(prevK).net : null;
+
+        const row = document.createElement('div');
+        row.className = 'hist-older-row';
+        row.dataset.date = date;
+        if (date === state.currentDate) row.classList.add('current');
+
+        const rDate = document.createElement('span');
+        rDate.className = 'hist-older-date';
+        rDate.textContent = date;
+
+        const rNet = document.createElement('span');
+        rNet.className = 'hist-older-net';
+        rNet.textContent = fmtMoney(d.net);
+
+        const rDelta = document.createElement('span');
+        rDelta.className = 'hist-older-delta';
+        if (dDelta !== null) {
+          const pct = fmtPct(dDelta, byDate.get(prevK).net);
+          rDelta.textContent = fmtDelta(dDelta) + (pct ? ` (${pct})` : '');
+          rDelta.classList.add(dDelta >= 0 ? 'up' : 'down');
+        }
+
+        row.appendChild(rDate);
+        row.appendChild(rNet);
+        row.appendChild(rDelta);
+        olderList.appendChild(row);
       }
 
-      rowEl.appendChild(cDate); rowEl.appendChild(cInv); rowEl.appendChild(cRE);
-      rowEl.appendChild(cDebt); rowEl.appendChild(cNet); rowEl.appendChild(cDelta);
-      tbody.appendChild(rowEl);
+      expandBtn.addEventListener('click', () => {
+        const open = olderList.hidden = !olderList.hidden;
+        expandBtn.textContent = (open ? '▾' : '▸') + ` ${olderDates.length} earlier`;
+      });
+
+      card.appendChild(expandBtn);
+      card.appendChild(olderList);
     }
+
+    container.appendChild(card);
   }
 }
 

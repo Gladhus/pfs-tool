@@ -21,7 +21,7 @@ export const els = {
   reloadBtn:         document.getElementById('reload-btn'),
   historySection:    document.getElementById('history-section'),
   historySummary:    document.getElementById('history-summary'),
-  historyTableBody:  document.querySelector('#history-table tbody'),
+  historyCards:      document.getElementById('history-cards'),
   chartSection:      document.getElementById('chart-section'),
   chartCanvas:       document.getElementById('net-worth-chart'),
   showNet:           document.getElementById('show-net'),

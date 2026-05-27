@@ -1,6 +1,6 @@
 import seedData from '../seed/default-accounts.json';
 import { state, HEADERS, SHEET_TITLE } from './state.js';
-import { normalizeDate, normalizeMonth, rebuildDatesList, logCoverageDiagnostic } from './utils.js';
+import { normalizeDate, rebuildDatesList, logCoverageDiagnostic } from './utils.js';
 import { setStatus } from './dom.js';
 
 const cfg = window.PFS_CONFIG || {};
@@ -153,29 +153,3 @@ export async function loadAll() {
   logCoverageDiagnostic();
 }
 
-export async function migrateMonthlyToDaily() {
-  const resp = await gapi.client.sheets.spreadsheets.values.get({
-    spreadsheetId: state.sheetId,
-    range: 'snapshots!A:A',
-    valueRenderOption: 'FORMATTED_VALUE',
-  });
-  const cells = resp.result.values || [];
-  if (!cells.length) return 0;
-
-  const updates = [];
-  cells.forEach((cell, rowIdx) => {
-    if (rowIdx === 0) return; // skip header
-    const val = String(cell[0] || '').trim();
-    if (/^\d{4}-\d{2}$/.test(val)) {
-      updates.push({ range: `snapshots!A${rowIdx + 1}`, values: [[`${val}-01`]] });
-    }
-  });
-
-  if (!updates.length) return 0;
-
-  await gapi.client.sheets.spreadsheets.values.batchUpdate({
-    spreadsheetId: state.sheetId,
-    resource: { valueInputOption: 'RAW', data: updates },
-  });
-  return updates.length;
-}

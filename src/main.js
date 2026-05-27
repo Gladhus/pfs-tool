@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { setLang, applyI18n, t, tFn } from './i18n.js';
+import { setLang, applyI18n, t } from './i18n.js';
 import { els } from './dom.js';
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
@@ -13,7 +13,6 @@ import {
   configError, onSignedIn, onSignOut, onResetSheetLink, onGapiLoad, initTokenClient,
   loadAndRenderForm, setActiveTab, applyToken,
 } from './auth.js';
-import { migrateMonthlyToDaily, loadAll } from './sheets.js';
 
 // --- Wire up all event listeners ---
 
@@ -33,10 +32,10 @@ els.copyPrevBtn.addEventListener('click', onCopyPrev);
 els.reloadBtn.addEventListener('click', () => loadAndRenderForm());
 els.saveSnapshotBtn.addEventListener('click', saveSnapshot);
 
-// History table row click — navigate to entry tab for that date
-els.historyTableBody.addEventListener('click', (e) => {
-  const row = e.target.closest('tr.day-row[data-date]');
-  if (!row) return;
+// History card click — navigate to entry tab for that date
+els.historyCards.addEventListener('click', (e) => {
+  const row = e.target.closest('[data-date]');
+  if (!row || e.target.closest('.hist-expand-btn')) return;
   state.currentDate = row.dataset.date;
   els.dateInput.value = row.dataset.date;
   renderForm();
@@ -106,28 +105,6 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
     if (state.currentDate) renderForm();
     renderAccountsTable();
   });
-});
-
-// Migration button
-document.getElementById('run-migration-btn')?.addEventListener('click', async () => {
-  const btn = document.getElementById('run-migration-btn');
-  const statusEl = document.getElementById('migration-status');
-  btn.disabled = true;
-  statusEl.textContent = '…';
-  try {
-    const n = await migrateMonthlyToDaily();
-    if (n > 0) {
-      await loadAll();
-      renderOverview();
-      renderHistoryTable();
-      renderChart();
-    }
-    statusEl.textContent = n > 0 ? tFn('migrate_daily_ok', n) : t('migrate_daily_none');
-  } catch (err) {
-    statusEl.textContent = 'Error: ' + (err.result?.error?.message || err.message || err);
-  } finally {
-    btn.disabled = false;
-  }
 });
 
 // Private mode toggle

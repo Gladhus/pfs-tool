@@ -23,6 +23,14 @@ export function parseMonthLabel(raw) {
   if (m) return `${m[1]}-${String(+m[2]).padStart(2, '0')}`;
   m = s.match(/^(\d{1,2})[\-\/](\d{4})$/);
   if (m) return `${m[2]}-${String(+m[1]).padStart(2, '0')}`;
+  // Full date DD/MM/YYYY or MM/DD/YYYY — extract month and year
+  // If first part > 12 it must be DD; otherwise assume DD/MM/YYYY (French convention)
+  m = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
+  if (m) {
+    const [, a, b, yr] = m;
+    const [dd, mm] = +a > 12 ? [+a, +b] : [+b, +a];
+    if (mm >= 1 && mm <= 12) return `${yr}-${String(mm).padStart(2, '0')}`;
+  }
   m = s.match(/^([a-zàâäéèêëîïôöùûüç]+)\s+(\d{4})$/);
   if (m) {
     const monIdx = MONTH_NAMES[m[1]];

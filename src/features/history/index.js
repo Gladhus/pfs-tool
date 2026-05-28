@@ -1,10 +1,12 @@
 import Chart from 'chart.js/auto';
-import { state } from './state.js';
-import { t, tFn, tr, lang } from './i18n.js';
-import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { getDatesForPeriod, buildBalanceSweep, activeAccounts, buildXAxisTicks } from './utils.js';
-import { els } from './dom.js';
-import { icon } from './icons.js';
+import { state } from '../../core/state.js';
+import { t, tFn, tr, lang } from '../../core/i18n/index.js';
+import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';
+import { getDatesForPeriod } from '../../utils/dates.js';
+import { buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';
+import { activeAccounts } from '../../utils/balance.js';
+import { els } from '../../core/dom.js';
+import { icon } from '../../core/icons.js';
 
 export function getHistFilteredDates() {
   const btn = document.querySelector('#hist-period-pills .period-btn.active');

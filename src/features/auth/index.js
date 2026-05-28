@@ -1,14 +1,18 @@
-import { state, LS_KEY_SHEET_ID, LS_KEY_TOKEN, LS_KEY_ACTIVE_TAB, TOKEN_SKEW_MS, SHEET_TITLE } from './state.js';
-import { applyI18n } from './i18n.js';
-import { els, setStatus, showSheetLink } from './dom.js';
-import { loadAll, verifySheet, findSheetByName, createSheet, seedNewSheet } from './sheets.js';
-import { renderOverview } from './overview.js';
-import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
-import { renderForm } from './entry.js';
-import { renderAccountsList } from './accounts.js';
-import { renderDetailTable } from './detail.js';
+import { state, LS_KEY_SHEET_ID, LS_KEY_TOKEN, LS_KEY_ACTIVE_TAB, TOKEN_SKEW_MS, SHEET_TITLE } from '../../core/state.js';
+import { applyI18n, setLang, t } from '../../core/i18n/index.js';
+import { els, setStatus, showSheetLink } from '../../core/dom.js';
+import { loadAll, verifySheet, findSheetByName, createSheet, seedNewSheet } from '../../api/index.js';
+import { renderOverview } from '../overview/index.js';
+import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../history/index.js';
+import { renderForm } from '../entry/index.js';
+import { renderAccountsList } from '../settings/accounts/index.js';
+import { renderDetailTable } from '../detail/index.js';
 
 const cfg = window.PFS_CONFIG || {};
+
+let _applyThemeFn = null;
+export function registerApplyTheme(fn) { _applyThemeFn = fn; }
+function applyThemeFromSheet(mode) { _applyThemeFn?.(mode); }
 
 export function configError() {
   if (!cfg.CLIENT_ID || cfg.CLIENT_ID === 'YOUR_CLIENT_ID_HERE') {
@@ -167,12 +171,49 @@ export function onSignOut() {
   setStatus('Signed out.');
 }
 
-export async function onResetSheetLink() {
-  if (!confirm('Forget the linked sheet? A new one will be created on next sign-in if no matching sheet is found. The existing sheet in Drive is NOT deleted.')) return;
-  localStorage.removeItem(LS_KEY_SHEET_ID);
-  state.sheetId = null;
-  els.sheetInfo.hidden = true;
-  setStatus('Sheet link cleared. Sign out and sign back in to re-link or create a new one.');
+export async function onChooseSheet() {
+  const dlg = document.getElementById('sheet-picker-dialog');
+  const listEl = document.getElementById('sheet-picker-list');
+  listEl.innerHTML = `<p class="hint">${t('loading')}</p>`;
+  dlg.showModal();
+
+  try {
+    const resp = await gapi.client.drive.files.list({
+      q: `mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
+      fields: 'files(id,name,modifiedTime)',
+      orderBy: 'modifiedTime desc',
+      pageSize: 30,
+    });
+    const files = resp.result.files || [];
+    listEl.innerHTML = '';
+
+    if (!files.length) {
+      listEl.innerHTML = `<p class="hint">${t('no_sheets_found')}</p>`;
+      return;
+    }
+
+    for (const f of files) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sheet-picker-item';
+      btn.textContent = f.name;
+      btn.addEventListener('click', async () => {
+        dlg.close();
+        state.sheetId = f.id;
+        localStorage.setItem(LS_KEY_SHEET_ID, f.id);
+        showSheetLink(f.id);
+        setStatus(t('sheet_linked'));
+        await loadAndRenderForm();
+      });
+      listEl.appendChild(btn);
+    }
+  } catch (err) {
+    listEl.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'hint';
+    p.textContent = err.result?.error?.message || err.message || String(err);
+    listEl.appendChild(p);
+  }
 }
 
 // --- Sheet bootstrap ---
@@ -209,6 +250,9 @@ export async function bootstrapSheet() {
 
 export async function loadAndRenderForm() {
   await loadAll();
+
+  if (state.configLang)  setLang(state.configLang, { persist: false });
+  if (state.configTheme) applyThemeFromSheet(state.configTheme);
 
   const now = new Date();
   state.currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;

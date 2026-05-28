@@ -1,11 +1,14 @@
-import { state, HEADERS } from './state.js';
-import { t, tr } from './i18n.js';
-import { fmtMoney, fmtDelta, fmtPct, parseMoney } from './format.js';
-import { categoriesInOrder, accountsForCategory, activeAccounts, snapshotForDate, prevDate, computeNetWorthFromSnapshots, buildEffectiveBalances, normalizeDate, rebuildDatesList } from './utils.js';
-import { els, setStatus, showConfirm } from './dom.js';
-import { icon, categoryIcon, categoryKey } from './icons.js';
-import { renderOverview } from './overview.js';
-import { renderHistoryTable, renderChart } from './history.js';
+import { state, HEADERS } from '../../core/state.js';
+import { t, tr } from '../../core/i18n/index.js';
+import { fmtMoney, fmtDelta, fmtPct, parseMoney } from '../../core/format.js';
+import { categoriesInOrder, accountsForCategory, activeAccounts } from '../../utils/balance.js';
+import { projectBalance } from '../../utils/balance.js';
+import { snapshotForDate, computeNetWorthFromSnapshots, buildEffectiveBalances } from '../../utils/stats.js';
+import { normalizeDate, rebuildDatesList, prevDate } from '../../utils/dates.js';
+import { els, setStatus, showConfirm } from '../../core/dom.js';
+import { icon, categoryIcon, categoryKey } from '../../core/icons.js';
+import { renderOverview } from '../overview/index.js';
+import { renderHistoryTable, renderChart } from '../history/index.js';
 
 export function renderForm() {
   const date = els.dateInput.value || state.currentDate;
@@ -96,7 +99,36 @@ export function renderForm() {
 
       const balWrap = document.createElement('div');
       balWrap.className = 'bal-wrap';
-      balWrap.appendChild(bal);
+      const balRow = document.createElement('div');
+      balRow.className = 'bal-row';
+      balWrap.appendChild(balRow);
+      balRow.appendChild(bal);
+
+      if (a.annual_rate) {
+        const projected = projectBalance(a.id, date);
+        if (projected !== null) {
+          const lastSnap = state.snapshots
+            .filter(s => s.account_id === a.id && s.date < date)
+            .sort((x, y) => y.date.localeCompare(x.date))[0];
+          const days = lastSnap
+            ? Math.round((new Date(date) - new Date(lastSnap.date)) / 86400000)
+            : 0;
+          const ratePct = +(a.annual_rate * 100).toFixed(4);
+          const calcBtn = document.createElement('button');
+          calcBtn.type = 'button';
+          calcBtn.className = 'calc-btn';
+          calcBtn.textContent = t('calculate_value');
+          calcBtn.tabIndex = -1;
+          calcBtn.dataset.tooltip = `${ratePct}%/yr · ${fmtMoney(projected)} (${days}d)`;
+          calcBtn.addEventListener('click', () => {
+            bal.value = fmtMoney(projected);
+            updateEmpty();
+            recomputeTotals();
+          });
+          balRow.insertBefore(calcBtn, bal);
+        }
+      }
+
       const prevVal = prevBalances[a.id];
       if (prevVal !== undefined) {
         const hint = document.createElement('span');

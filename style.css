@@ -571,6 +571,24 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   align-items: flex-end;
   gap: 2px;
 }
+.bal-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.calc-btn {
+  background: none !important;
+  border: none !important;
+  padding: 0 0.25rem 0 0;
+  font-size: 0.68rem;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.calc-btn:hover { color: var(--fg-2); background: none; }
 .prev-val {
   display: inline-flex; align-items: center; gap: 0.25rem;
   font-size: 0.68rem;
@@ -1039,6 +1057,45 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 /* Account edit dialog */
 .form-dialog { max-width: 520px; }
+
+/* Sheet picker dialog */
+.sheet-picker-dialog {
+  max-width: 420px;
+  width: 90vw;
+  border: none;
+  border-radius: 14px;
+  padding: 0;
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 0 24px 48px rgba(0,0,0,.35);
+}
+.sheet-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.5rem 0 1rem;
+  min-height: 2rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.sheet-picker-item {
+  display: block;
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--fg);
+  transition: background 0.12s, border-color 0.12s;
+}
+.sheet-picker-item:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
 
 .confirm-dialog {
   max-width: 400px;

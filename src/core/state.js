@@ -12,7 +12,7 @@ export const TOKEN_SKEW_MS     = 60 * 1000;
 export const SHEET_TITLE = cfg.SHEET_TITLE || 'PFS Tool — Bilan financier';
 
 export const HEADERS = {
-  accounts:  ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order', 'tags'],
+  accounts:  ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order', 'tags', 'annual_rate'],
   snapshots: ['date', 'account_id', 'balance_raw', 'comment', 'entered_at'],
   config:    ['key', 'value'],
   tags:      ['name'],
@@ -40,6 +40,8 @@ export const state = {
   chart:        null,
   overviewChart: null,
   datePicker:   null,
+  configLang:   null,
+  configTheme:  null,
   lang:         localStorage.getItem(LS_KEY_LANG) || cfg.LANGUAGE || 'fr',
   privateMode:  localStorage.getItem(LS_KEY_PRIVATE) === '1',
   theme:        localStorage.getItem(LS_KEY_THEME) || 'system',

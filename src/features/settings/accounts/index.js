@@ -1,14 +1,17 @@
-import { state, HEADERS, OWNERS, KINDS } from './state.js';
-import { t, tr, lang } from './i18n.js';
-import { fmtMoney, parseMoney } from './format.js';
-import { categoriesInOrder, activeAccounts, normalizeDate, rebuildDatesList, parseMonthLabel, parseDelimited, suggestAccount, rememberMapping } from './utils.js';
-import { els, setStatus } from './dom.js';
-import { icon, iconEl, categoryIcon, categoryKey } from './icons.js';
-import { renderOverview } from './overview.js';
-import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
-import { renderForm } from './entry.js';
-import { loadAccounts as loadAccountsFromSheet, writeTagsCatalog } from './sheets.js';
-import { attachAutocomplete } from './autocomplete.js';
+import { state, HEADERS, OWNERS, KINDS } from '../../../core/state.js';
+import { t, tr, lang } from '../../../core/i18n/index.js';
+import { fmtMoney, parseMoney } from '../../../core/format.js';
+import { categoriesInOrder, activeAccounts } from '../../../utils/balance.js';
+import { normalizeDate, rebuildDatesList, parseMonthLabel } from '../../../utils/dates.js';
+import { parseDelimited, suggestAccount, rememberMapping } from '../../../utils/import.js';
+import { els, setStatus } from '../../../core/dom.js';
+import { icon, iconEl, categoryIcon, categoryKey } from '../../../core/icons.js';
+import { renderOverview } from '../../overview/index.js';
+import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../../history/index.js';
+import { renderForm } from '../../entry/index.js';
+import { loadAccounts as loadAccountsFromSheet } from '../../../api/accounts.js';
+import { writeTagsCatalog } from '../../../api/tags.js';
+import { attachAutocomplete } from '../../../core/autocomplete.js';
 
 // --- Helpers ---
 
@@ -201,6 +204,7 @@ function fillDialogFromAccount(a, { isNew }) {
 
   els.acctShare.value = Math.round((a.ownership_share || 1) * 100);
   els.acctOrder.value = a.sort_order || 0;
+  els.acctGrowthRate.value = a.annual_rate ? (a.annual_rate * 100).toFixed(4).replace(/\.?0+$/, '') : '';
   els.acctId.textContent = a.id || '—';
   els.acctActive.checked = a.active !== false;
 
@@ -353,6 +357,7 @@ export async function saveAccountDialog() {
     ownership_share: Math.max(0, Math.min(100, Number(els.acctShare.value) || 0)) / 100,
     active: els.acctActive.checked,
     sort_order: Number(els.acctOrder.value) || 0,
+    annual_rate: Number(els.acctGrowthRate.value) / 100 || 0,
     tags: [..._dialogTags],
   };
 

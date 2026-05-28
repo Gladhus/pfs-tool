@@ -1,10 +1,10 @@
-import { state } from './state.js';
-import { t } from './i18n.js';
-import { els } from './dom.js';
-import { writeGroupsCatalog } from './sheets.js';
-import { attachAutocomplete } from './autocomplete.js';
-import { groupColor, TAG_PALETTE, renderOverview } from './overview.js';
-import { toast } from './toast.js';
+import { state } from '../../../core/state.js';
+import { t } from '../../../core/i18n/index.js';
+import { els } from '../../../core/dom.js';
+import { writeGroupsCatalog } from '../../../api/groups.js';
+import { attachAutocomplete } from '../../../core/autocomplete.js';
+import { groupColor, TAG_PALETTE, renderOverview } from '../../overview/index.js';
+import { toast } from '../../../core/toast.js';
 
 const GROUP_COLORS = TAG_PALETTE;
 

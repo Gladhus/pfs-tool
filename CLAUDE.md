@@ -21,27 +21,68 @@ Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds with Vit
 The app is a **Vite-built SPA** with no framework. Entry point is `src/main.js`; all modules are under `src/`. The legacy `app.js` at the root is the old single-file version kept for reference only — it is not loaded.
 
 - `index.html` — app shell; all tabs exist in the DOM at load time, shown/hidden by JS
-- `src/main.js` — event wiring and startup polling for Google APIs
-- `src/auth.js` — OAuth flow, session restore, sheet bootstrap, tab routing
-- `src/sheets.js` — all Google Sheets/Drive API calls; imports seed JSON at build time
-- `src/overview.js` — Overview tab rendering + chart
-- `src/history.js` — History table + chart + account select dropdown
-- `src/entry.js` — Entry form, recompute totals, save snapshot
-- `src/accounts.js` — Accounts table, import flow, migrate ID dialog
-- `src/state.js` — shared `state` object, LS keys, HEADERS
-- `src/i18n.js` — I18N dictionaries, `t()`, `tr()`, `applyI18n()`, `setLang()`
-- `src/format.js` — `fmtMoney()`, `fmtDelta()`, `fmtPct()`, `parseMoney()`
-- `src/utils.js` — month/CSV parsing, similarity, account helpers
-- `src/dom.js` — `els` object (all DOM refs), `setStatus()`
-- `style.css` — all styles
+- `src/main.js` — CSS imports (air-datepicker first, then style.css), event wiring and startup polling for Google APIs
+- `style.css` — all styles (imported by `src/main.js`)
 - `public/config.js` — user-editable runtime config (`CLIENT_ID`, `LANGUAGE`, `CURRENCY`, `SHEET_TITLE`)
-- `seed/default-accounts.json` — seed data bundled at build time (imported by `sheets.js`)
+- `seed/default-accounts.json` — seed data bundled at build time (imported by api files)
 
-### Key objects in `src/state.js`
+### Core modules (`src/core/`)
 
-- **`els`** (in `dom.js`) — map of every DOM element looked up once at startup
+- `src/core/state.js` — shared `state` object, LS keys, `HEADERS`, `OWNERS`, `KINDS`, `SHEET_TITLE`, `TOKEN_SKEW_MS`
+- `src/core/dom.js` — `els` object (all DOM refs), `setStatus()`, `showConfirm()`, `showSheetLink()`, `_setToastFn()`
+- `src/core/format.js` — `fmtMoney()`, `fmtDelta()`, `fmtPct()`, `parseMoney()`
+- `src/core/toast.js` — `toast()` standalone notification helper
+- `src/core/icons.js` — `icon()`, `iconEl()`, `categoryIcon()`, `categoryKey()`
+- `src/core/autocomplete.js` — `attachAutocomplete()` tag/chip input helper
+- `src/core/i18n/index.js` — registry-based i18n: `registerTranslations()`, `registerWriteConfig()`, `lang()`, `t()`, `tFn()`, `tr()`, `applyI18n()`, `setLang()`
+- `src/core/i18n/common/fr.js` and `en.js` — shared translation strings (tabs, buttons, settings)
+
+### Utility modules (`src/utils/`)
+
+- `src/utils/dates.js` — `MONTH_NAMES`, `parseMonthLabel()`, `normalizeDate()`, `normalizeMonth()`, `getDatesForPeriod()`, `rebuildDatesList()`, `prevDate()`, `logCoverageDiagnostic()`
+- `src/utils/stats.js` — `snapshotForDate()`, `buildEffectiveBalances()`, `buildBalanceSweep()`, `computeNetWorthFromSnapshots()`, `computeDateStats()`, `buildXAxisTicks()`
+- `src/utils/balance.js` — `activeAccounts()`, `categoriesInOrder()`, `accountsForCategory()`
+- `src/utils/import.js` — `parseDelimited()`, `normalizeName()`, `similarity()`, `suggestAccount()`, `rememberMapping()`, `slugify()`
+
+### API modules (`src/api/`)
+
+- `src/api/index.js` — `loadAll()` (calls all loaders in parallel); re-exports from all api/* modules
+- `src/api/drive.js` — `verifySheet()`, `findSheetByName()`, `createSheet()`, `seedNewSheet()`
+- `src/api/accounts.js` — `loadAccounts()`, `loadSnapshots()`, `loadCategoryMeta()`
+- `src/api/config.js` — `loadConfig()`, `writeConfig()`
+- `src/api/tags.js` — `loadTagsCatalog()`, `writeTagsCatalog()`, `mergeAndSyncTagsCatalog()`
+- `src/api/groups.js` — `loadGroupsCatalog()`, `writeGroupsCatalog()`
+
+### Feature modules (`src/features/`)
+
+Each feature has `index.js` (logic) and optional `fr.js`/`en.js` (translations).
+
+- `src/features/auth/` — OAuth flow, session restore, sheet bootstrap, tab routing
+- `src/features/overview/` — Overview tab: hero net-worth, donut chart, stat cards, sparklines, tag/group views
+- `src/features/history/` — History table (cards by month) + line chart + account select dropdown
+- `src/features/entry/` — Entry form, recompute totals, save snapshot, progress strip
+- `src/features/detail/` — Detail tab: year-over-year table by category and account
+- `src/features/settings/` — Settings tab translations
+- `src/features/settings/accounts/` — Accounts list, edit dialog, import flow, migrate ID dialog
+- `src/features/settings/groups/` — Groups list and edit dialog
+
+### Key objects in `src/core/state.js`
+
+- **`els`** (in `core/dom.js`) — map of every DOM element looked up once at startup
 - **`state`** — all mutable runtime state: token, sheet ID, loaded accounts/snapshots, chart instances, etc.
 - **`HEADERS`** — canonical column order for each sheet tab (`accounts`, `snapshots`, `config`); controls read/write layout
+
+### i18n registry pattern
+
+Instead of a monolithic dictionary, translations are registered per-feature:
+
+```js
+import { registerTranslations } from '../../core/i18n/index.js';
+registerTranslations('fr', { my_key: 'Valeur FR' });
+registerTranslations('en', { my_key: 'EN value' });
+```
+
+`src/main.js` imports all `fr.js`/`en.js` files to trigger registration before `applyI18n()` runs.
 
 ### Auth flow
 
@@ -63,13 +104,14 @@ On load the app tries to restore an existing session silently (cached token in `
 Three tabs — full schema in `docs/schema.md`:
 
 - **`accounts`** — one row per account; `id` is a stable key, never changes
-- **`snapshots`** — long format: one row per `(month, account_id)` balance; a special row with `account_id = "__month__"` holds the month-level comment
+- **`snapshots`** — long format: one row per `(date, account_id)` balance; a special row with `account_id = "__day__"` holds a day-level comment
 - **`config`** — key-value settings (`language`, `currency`, `schema_version`, `last_imported_at`)
 
 Derived totals (per-category sums, net worth, MoM/YoY deltas) are computed in JS, never stored in the sheet. `accounts.kind` (`asset` / `debt`) drives the sign in net-worth arithmetic; `ownership_share` scales the raw balance for joint accounts.
 
 ### UI tabs
 
-Four tabs rendered by `app.js`: **Overview** (hero net-worth + chart), **History** (snapshot table), **Entry** (monthly data entry form), **Settings** (accounts management + CSV import).
+Five tabs rendered by JS: **Overview** (hero net-worth + chart), **Detail** (year-over-year table), **History** (snapshot cards + chart), **Entry** (monthly data entry form), **Settings** (accounts management + CSV import + groups editor).
 
 Chart rendering uses **Chart.js** (npm package, bundled by Vite).
+Date picker uses **AirDatepicker** (npm package, bundled by Vite).

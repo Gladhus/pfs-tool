@@ -1,31 +1,35 @@
+import 'air-datepicker/air-datepicker.css';
+import '../style.css';
+
 import AirDatepicker from 'air-datepicker';
 import localeEn from 'air-datepicker/locale/en';
 import localeFr from 'air-datepicker/locale/fr';
-import { state, LS_KEY_THEME, HEADERS } from './state.js';
-import { setLang, applyI18n, t, lang } from './i18n.js';
-import { els, _setToastFn } from './dom.js';
-import { toast } from './toast.js';
+import { state, LS_KEY_THEME, HEADERS } from './core/state.js';
+import { setLang, applyI18n, t, lang, registerWriteConfig } from './core/i18n/index.js';
+import { els, _setToastFn } from './core/dom.js';
+import { toast } from './core/toast.js';
 
 _setToastFn(toast);
-import { renderOverview } from './overview.js';
-import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
-import { renderDetailTable } from './detail.js';
-import { renderForm, saveSnapshot, onCopyPrev, onResetEntry } from './entry.js';
+import { renderOverview } from './features/overview/index.js';
+import { renderHistoryTable, renderChart, populateHistAccountSelect } from './features/history/index.js';
+import { renderDetailTable } from './features/detail/index.js';
+import { renderForm, saveSnapshot, onCopyPrev, onResetEntry } from './features/entry/index.js';
 import {
   renderAccountsList, onAddAccount, onToggleArchived,
   saveAccountDialog, deleteAccountFromDialog, closeAccountDialog,
   onAcctTypeChange, onAcctRenameClick, onAcctTagsKeydown, onAcctTagsBlur,
   onParseImport, onClearImport, onConfirmImport, onCancelImport,
   executeMigrate, updateMigratePreview,
-} from './accounts.js';
+} from './features/settings/accounts/index.js';
 import {
-  configError, onSignedIn, onSignOut, onResetSheetLink, onGapiLoad, initTokenClient,
-  loadAndRenderForm, setActiveTab, applyToken,
-} from './auth.js';
+  configError, onSignedIn, onSignOut, onChooseSheet, onGapiLoad, initTokenClient,
+  loadAndRenderForm, setActiveTab, applyToken, registerApplyTheme,
+} from './features/auth/index.js';
+import { writeConfig } from './api/index.js';
 import {
   renderGroupsList, openNewGroupDialog, saveGroupDialog,
   closeGroupDialog, deleteGroupFromDialog,
-} from './groups.js';
+} from './features/settings/groups/index.js';
 
 // Stamp the build version into the footer
 const vEl = document.getElementById('app-version');
@@ -39,7 +43,9 @@ els.signinBtn.addEventListener('click', () => {
   state.tokenClient.requestAccessToken({ prompt: 'consent' });
 });
 els.signoutBtn.addEventListener('click', onSignOut);
-els.resetSheetBtn.addEventListener('click', onResetSheetLink);
+els.chooseSheetBtn?.addEventListener('click', onChooseSheet);
+document.getElementById('sheet-picker-close')?.addEventListener('click', () => document.getElementById('sheet-picker-dialog')?.close());
+document.getElementById('sheet-picker-cancel')?.addEventListener('click', () => document.getElementById('sheet-picker-dialog')?.close());
 
 const parseLocalDate = (s) => { const [y, m, d] = s.split('-'); return new Date(+y, +m - 1, +d); };
 state.datePicker = new AirDatepicker(els.dateInput, {
@@ -72,7 +78,8 @@ els.historyCards.addEventListener('click', (e) => {
 els.tabBar.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.dataset.tab === 'entry' && els.dateInput) {
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       state.currentDate = today;
       state.datePicker ? state.datePicker.selectDate(parseLocalDate(today), { silent: true }) : (els.dateInput.value = today);
     }
@@ -205,14 +212,17 @@ document.getElementById('group-edit-dialog')?.addEventListener('click', (e) => {
 });
 
 // Theme picker
-function applyTheme(mode) {
+function applyTheme(mode, { persist = true } = {}) {
   state.theme = mode;
   try { localStorage.setItem(LS_KEY_THEME, mode); } catch (_) {}
   if (mode === 'system') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', mode);
   document.querySelectorAll('.theme-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.theme === mode));
+  if (persist) writeConfig('theme', mode);
 }
+registerApplyTheme((mode) => applyTheme(mode, { persist: false }));
+registerWriteConfig(writeConfig);
 document.querySelectorAll('.theme-btn').forEach(btn => {
   btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
 });
@@ -230,7 +240,9 @@ els.exportCsvBtn?.addEventListener('click', () => {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `pfs-snapshots-${new Date().toISOString().slice(0,10)}.csv`;
+  const _n = new Date();
+  const _d = `${_n.getFullYear()}-${String(_n.getMonth()+1).padStart(2,'0')}-${String(_n.getDate()).padStart(2,'0')}`;
+  a.href = url; a.download = `pfs-snapshots-${_d}.csv`;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 });

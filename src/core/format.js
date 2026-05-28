@@ -1,4 +1,4 @@
-import { lang } from './i18n.js';
+import { lang } from './i18n/index.js';
 
 const cfg = window.PFS_CONFIG || {};
 

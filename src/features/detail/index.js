@@ -1,8 +1,9 @@
-import { state } from './state.js';
-import { t, tr } from './i18n.js';
-import { fmtMoney, fmtDelta, fmtPct } from './format.js';
-import { buildEffectiveBalances, categoriesInOrder, accountsForCategory } from './utils.js';
-import { icon, categoryIcon, categoryKey } from './icons.js';
+import { state } from '../../core/state.js';
+import { t, tr } from '../../core/i18n/index.js';
+import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';
+import { buildEffectiveBalances } from '../../utils/stats.js';
+import { categoriesInOrder, accountsForCategory } from '../../utils/balance.js';
+import { icon, categoryIcon, categoryKey } from '../../core/icons.js';
 
 function getDetailYears(period) {
   const currentYear = String(new Date().getFullYear());

@@ -330,16 +330,14 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
   if (dates.length < 2) return;
 
   const todayIdx = dates.findLastIndex(d => d <= now);
-  const fmv = currentFmv ?? 0;
 
   const cs = getComputedStyle(document.documentElement);
   const muted   = cs.getPropertyValue('--subtle').trim() || '#94a3b8';
   const gridCol = cs.getPropertyValue('--border').trim() || 'rgba(15,23,42,.06)';
-  const locale  = lang() === 'fr' ? 'fr-CA' : 'en-CA';
 
-  // Build cumulative grant values per date
+  // Build cumulative vested share counts per date
   const grantValues = grants.map(grant =>
-    dates.map(d => computeIntrinsicValue(grant, fmv, d))
+    dates.map(d => computeVestedShares(grant, d))
   );
 
   const datasets = grants.map((grant, gi) => {
@@ -391,7 +389,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
     const abs = Math.abs(v);
     if (abs >= 1_000_000) return (v/1_000_000).toFixed(1)+'M';
     if (abs >= 1_000)     return (v/1_000).toFixed(0)+'k';
-    return v;
+    return Math.round(v);
   };
 
   // x-axis: one tick per year
@@ -418,7 +416,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
           padding: 10, cornerRadius: 8,
           callbacks: {
             title: items => fmtShortDate(dates[items[0].dataIndex]),
-            label: ctx => `  ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}`,
+            label: ctx => `  ${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString()} shares`,
           },
         },
       },

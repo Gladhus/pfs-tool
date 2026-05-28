@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.0.0] — 2026-05-27
+## [1.0.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.0.0) — 2026-05-27
 
 ### Added
 - **Air Datepicker**: replaced the native `<input type="date">` with a fully custom-styled date picker — month and year panel views with no native selects, themed to match the app's design system, FR/EN locale support

@@ -215,6 +215,48 @@
             <p class="hint" data-i18n="groups_hint">Groups let you combine accounts by tag combinations and view them in the Overview. Each group appears as a stat card and a chart line.</p>
             <div id="groups-list" class="groups-list"></div>
           </section>
+
+          <section id="import-section" class="import-section">
+            <header class="section-header">
+              <h2 data-i18n="import_historical">Import historical data</h2>
+            </header>
+
+            <p class="hint" data-i18n="import_hint">
+              Paste your existing monthly tracking sheet (wide format: account names down the first column, months across the top). Copy/paste from Google Sheets works (tab-separated). The app will auto-detect months and let you map source rows to your accounts before importing.
+            </p>
+
+            <textarea id="import-input" rows="8"></textarea>
+
+            <div class="actions">
+              <button id="parse-import-btn" type="button" data-i18n="parse">Parse</button>
+              <button id="clear-import-btn" type="button" class="link-btn" data-i18n="clear">Clear</button>
+            </div>
+
+            <div id="import-preview" hidden>
+              <h3 data-i18n="preview_label">Preview</h3>
+              <p id="import-summary" class="hint"></p>
+              <table id="mapping-table" class="mapping-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="source_row">Source row</th>
+                    <th data-i18n="sample_value">Sample value</th>
+                    <th data-i18n="map_to_account">Map to account</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+
+              <label class="overwrite-toggle">
+                <input id="overwrite-existing" type="checkbox">
+                <span data-i18n="overwrite_toggle">Overwrite existing snapshots for the months in this paste (otherwise skip months already in the sheet)</span>
+              </label>
+
+              <div class="actions">
+                <button id="confirm-import-btn" type="button" class="primary" data-i18n="import_btn">Import</button>
+                <button id="cancel-import-btn" type="button" class="link-btn" data-i18n="cancel">Cancel</button>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -302,47 +344,6 @@
             </div>
           </section>
 
-          <section id="import-section" class="import-section">
-            <header class="section-header">
-              <h2 data-i18n="import_historical">Import historical data</h2>
-            </header>
-
-            <p class="hint" data-i18n="import_hint">
-              Paste your existing monthly tracking sheet (wide format: account names down the first column, months across the top). Copy/paste from Google Sheets works (tab-separated). The app will auto-detect months and let you map source rows to your accounts before importing.
-            </p>
-
-            <textarea id="import-input" rows="8"></textarea>
-
-            <div class="actions">
-              <button id="parse-import-btn" type="button" data-i18n="parse">Parse</button>
-              <button id="clear-import-btn" type="button" class="link-btn" data-i18n="clear">Clear</button>
-            </div>
-
-            <div id="import-preview" hidden>
-              <h3 data-i18n="preview_label">Preview</h3>
-              <p id="import-summary" class="hint"></p>
-              <table id="mapping-table" class="mapping-table">
-                <thead>
-                  <tr>
-                    <th data-i18n="source_row">Source row</th>
-                    <th data-i18n="sample_value">Sample value</th>
-                    <th data-i18n="map_to_account">Map to account</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-
-              <label class="overwrite-toggle">
-                <input id="overwrite-existing" type="checkbox">
-                <span data-i18n="overwrite_toggle">Overwrite existing snapshots for the months in this paste (otherwise skip months already in the sheet)</span>
-              </label>
-
-              <div class="actions">
-                <button id="confirm-import-btn" type="button" class="primary" data-i18n="import_btn">Import</button>
-                <button id="cancel-import-btn" type="button" class="link-btn" data-i18n="cancel">Cancel</button>
-              </div>
-            </div>
-          </section>
         </div>
       </div>
     </section>

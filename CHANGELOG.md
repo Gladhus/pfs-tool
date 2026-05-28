@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.1.0] — 2026-05-28
+
+### Added
+- **Choose sheet**: replaced the static "Reset link" with a "Choose sheet" button that opens a Drive file picker — lists all PFS spreadsheets created by the app, lets the user switch without re-authenticating
+- **Account growth rate**: new optional field in the account editor (`%/yr`); when set, the entry form shows a **Calculate** button next to that account's balance input, pre-filling it with the projected balance (compound monthly) from the last recorded snapshot, with the rate and days-elapsed shown in a tooltip
+- **Config persistence**: language and theme preferences are now written back to the sheet's `config` tab on change, and restored automatically on next sign-in
+
+### Changed
+- **Project structure**: full professional restructure into feature-based folders — `src/core/` (state, dom, format, toast, icons, autocomplete, i18n), `src/api/` (one module per data domain), `src/utils/` (dates, stats, balance, import helpers), `src/features/` (one folder per tab/feature); each feature carries its own `en.js`/`fr.js` translations; i18n uses a `registerTranslations()` registry pattern
+- **Deploy workflow**: release job now also updates the version badge in README.md and includes it in the release commit
+
+---
+
 ## [1.0.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.0.0) — 2026-05-27
 
 ### Added

@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.1.4](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.4) — 2026-05-28
+
+### Fixed
+- **CSV import**: `parseMoney` now correctly treats `$6,500`-style values as 6500 — a comma followed by exactly 3 digits is a thousands separator, not a decimal. Mixed formats like `$1,234.56` also parse correctly.
+
+### Added
+- **Tests**: Vitest test suite with 59 unit tests covering `parseMoney` (null/empty, plain integers, currency symbols, thousands separators, decimal separators, negatives, real spreadsheet values) and `parseMonthLabel` (all supported date formats).
+
+---
+
 ## [1.1.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.3) — 2026-05-28
 
 ### Fixed

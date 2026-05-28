@@ -40,7 +40,7 @@ export function parseMonthLabel(raw) {
   m = s.match(new RegExp(`^${DD}${SEP}${DD}${SEP}${YR2}$`));
   if (m) {
     const [a, b, yr] = [+m[1], +m[2], expandYear(m[3])];
-    const [, mm] = a > 12 ? [a, b] : [b, a];
+    const mm = b; // DD/MM/YYYY assumed; a > 12 just confirms day is first
     if (mm >= 1 && mm <= 12) return `${yr}-${String(mm).padStart(2, '0')}`;
   }
   // Named month + 4-digit year: "Dec 2015"

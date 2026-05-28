@@ -1,7 +1,7 @@
 import { registerTranslations } from '../../core/i18n/index.js';
 
 registerTranslations('fr', {
-  tab_options:           'Options',
+  tab_stock_options:     'Options sur actions',
   opt_vested_label:      'Valeur acquise',
   opt_unvested_label:    'Non acquis (au FMV actuel)',
   opt_value_over_time:   'Valeur des options dans le temps',

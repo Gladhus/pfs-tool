@@ -8,6 +8,7 @@ import { renderOverview } from '../overview/index.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../history/index.js';
 import { renderForm } from '../entry/index.js';
 import { renderAccountsList } from '../settings/accounts/index.js';
+import { renderGroupsList } from '../settings/groups/index.js';
 import { renderDetailTable } from '../detail/index.js';
 import { renderOptions } from '../options/index.js';
 
@@ -273,8 +274,28 @@ export async function loadAndRenderForm() {
   setStatus('Loaded.', 'ok');
 }
 
+let _accountsSubTab = 'detail';
+
+export function setAccountsSubTab(panel) {
+  _accountsSubTab = panel;
+  const panels = ['detail', 'history', 'manage'];
+  for (const p of panels) {
+    const el = document.getElementById(`acct-sub-${p}`);
+    if (el) el.hidden = (p !== panel);
+  }
+  document.querySelectorAll('#accounts-subnav .subnav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.panel === panel);
+  });
+  const gear = document.getElementById('accounts-gear-btn');
+  if (gear) gear.classList.toggle('active', panel === 'manage');
+  if (panel === 'detail')  renderDetailTable();
+  if (panel === 'history') { populateHistAccountSelect(); renderHistoryTable(); renderChart(); }
+  if (panel === 'manage')  { renderAccountsList(); renderGroupsList(); }
+}
+
 export function setActiveTab(name) {
-  const tabs = ['overview', 'history', 'detail', 'entry', 'settings', 'options'];
+  if (name === 'detail' || name === 'history') name = 'accounts';
+  const tabs = ['overview', 'accounts', 'options', 'entry', 'settings'];
   if (!tabs.includes(name)) name = 'overview';
   for (const tab of tabs) {
     const btn = els.tabBar.querySelector(`[data-tab="${tab}"]`);
@@ -284,13 +305,15 @@ export function setActiveTab(name) {
   }
   localStorage.setItem(LS_KEY_ACTIVE_TAB, name);
   if (name === 'overview') renderOverview();
-  if (name === 'detail')   renderDetailTable();
-  if (name === 'settings') renderAccountsList();
+  if (name === 'accounts') setAccountsSubTab(_accountsSubTab);
   if (name === 'options')  renderOptions();
 }
 
 export function showTabBar() {
   els.tabBar.hidden = false;
-  const saved = localStorage.getItem(LS_KEY_ACTIVE_TAB) || 'overview';
+  let saved = localStorage.getItem(LS_KEY_ACTIVE_TAB) || 'overview';
+  if (saved === 'detail')  { _accountsSubTab = 'detail';  saved = 'accounts'; }
+  if (saved === 'history') { _accountsSubTab = 'history'; saved = 'accounts'; }
+  if (saved === 'options' && localStorage.getItem('pfs_stock_options') !== '1') saved = 'overview';
   setActiveTab(saved);
 }

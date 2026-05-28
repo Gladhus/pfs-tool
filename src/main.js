@@ -6,7 +6,7 @@ import './core/i18n/common/fr.js';
 import AirDatepicker from 'air-datepicker';
 import localeEn from 'air-datepicker/locale/en';
 import localeFr from 'air-datepicker/locale/fr';
-import { state, LS_KEY_THEME, HEADERS } from './core/state.js';
+import { state, LS_KEY_THEME, LS_KEY_ACTIVE_TAB, HEADERS } from './core/state.js';
 import { setLang, applyI18n, t, lang, registerWriteConfig } from './core/i18n/index.js';
 import { els, _setToastFn } from './core/dom.js';
 import { toast } from './core/toast.js';
@@ -25,7 +25,7 @@ import {
 } from './features/settings/accounts/index.js';
 import {
   configError, onSignedIn, onSignOut, onChooseSheet, onGapiLoad, initTokenClient,
-  loadAndRenderForm, setActiveTab, applyToken, registerApplyTheme,
+  loadAndRenderForm, setActiveTab, setAccountsSubTab, applyToken, registerApplyTheme,
 } from './features/auth/index.js';
 import { writeConfig } from './api/index.js';
 import {
@@ -89,6 +89,37 @@ els.tabBar.querySelectorAll('.tab-btn').forEach(btn => {
     setActiveTab(btn.dataset.tab);
   });
 });
+
+// Accounts sub-navigation
+document.querySelectorAll('#accounts-subnav .subnav-btn').forEach(btn => {
+  btn.addEventListener('click', () => setAccountsSubTab(btn.dataset.panel));
+});
+document.getElementById('accounts-gear-btn')?.addEventListener('click', () => {
+  setActiveTab('accounts');
+  setAccountsSubTab('manage');
+});
+
+// Stock Options gear
+document.getElementById('opt-settings-btn')?.addEventListener('click', () => {
+  const panel = document.getElementById('opt-settings-panel');
+  const btn   = document.getElementById('opt-settings-btn');
+  if (!panel) return;
+  panel.hidden = !panel.hidden;
+  btn?.classList.toggle('active', !panel.hidden);
+});
+
+// Stock Options enable/disable
+const _stockOptTabBtn = els.tabBar.querySelector('[data-tab="options"]');
+const _enableStockOptsCb = document.getElementById('enable-stock-options');
+function _applyStockOptions(enabled, persist = true) {
+  if (persist) try { localStorage.setItem('pfs_stock_options', enabled ? '1' : '0'); } catch (_) {}
+  if (_stockOptTabBtn) _stockOptTabBtn.hidden = !enabled;
+  if (!enabled && localStorage.getItem(LS_KEY_ACTIVE_TAB) === 'options') setActiveTab('overview');
+}
+const _stockOptEnabled = localStorage.getItem('pfs_stock_options') === '1';
+if (_enableStockOptsCb) _enableStockOptsCb.checked = _stockOptEnabled;
+_applyStockOptions(_stockOptEnabled, false);
+_enableStockOptsCb?.addEventListener('change', () => _applyStockOptions(_enableStockOptsCb.checked));
 
 // Overview period pills
 document.querySelectorAll('#ov-period-pills .period-btn').forEach(btn => {
@@ -182,6 +213,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
     renderDetailTable();
     if (state.currentDate) renderForm();
     renderAccountsList();
+    renderGroupsList();
   });
 });
 
@@ -200,7 +232,6 @@ els.settingsSubtabs?.querySelectorAll('.subtab-btn').forEach(btn => {
       b.classList.toggle('active', b === btn));
     document.querySelectorAll('#tab-settings .subtab-panel').forEach(p =>
       p.hidden = (p.dataset.subtab !== target));
-    if (target === 'groups') renderGroupsList();
   });
 });
 
@@ -287,13 +318,13 @@ document.addEventListener('keydown', (e) => {
 
   const key = e.key.toLowerCase();
   if (key === '1') { document.querySelector('.tab-btn[data-tab="overview"]')?.click(); e.preventDefault(); }
-  else if (key === '2') { document.querySelector('.tab-btn[data-tab="detail"]')?.click(); e.preventDefault(); }
-  else if (key === '3') { document.querySelector('.tab-btn[data-tab="history"]')?.click(); e.preventDefault(); }
-  else if (key === '4') { document.querySelector('.tab-btn[data-tab="options"]')?.click(); e.preventDefault(); }
+  else if (key === '2') { setActiveTab('accounts'); setAccountsSubTab('detail'); e.preventDefault(); }
+  else if (key === '3') { setActiveTab('accounts'); setAccountsSubTab('history'); e.preventDefault(); }
+  else if (key === '4' && localStorage.getItem('pfs_stock_options') === '1') { document.querySelector('.tab-btn[data-tab="options"]')?.click(); e.preventDefault(); }
   else if (key === 'n') { document.querySelector('.tab-btn[data-tab="entry"]')?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
   else if (key === 's' && !els.saveSnapshotBtn.disabled && !document.getElementById('tab-entry').hidden) { els.saveSnapshotBtn?.click(); e.preventDefault(); }
   else if (key === 'p') { els.privateModeBtn?.click(); e.preventDefault(); }
-  else if (key === '?') { toast('Shortcuts: 1 overview · 2 detail · 3 history · 4 options · n entry · s save · p private', { timeout: 5000 }); e.preventDefault(); }
+  else if (key === '?') { toast('Shortcuts: 1 overview · 2 accounts · 3 history · 4 stock options · n entry · s save · p private', { timeout: 5000 }); e.preventDefault(); }
 });
 
 // --- Bootstrap: poll for Google APIs (both load async via CDN) ---

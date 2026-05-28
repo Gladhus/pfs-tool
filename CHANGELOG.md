@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.1.2] — 2026-05-28
+## [1.1.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.2) — 2026-05-28
 
 ### Fixed
 - **Deploy workflow**: README version badge was not being updated on release — `sed` command was planned but never added to the workflow

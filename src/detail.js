@@ -121,46 +121,49 @@ export function renderDetailTable() {
     }
     if (!catRows.length) continue;
 
-    // Category header row
+    // Category header row — label only, different background
     const catHR = document.createElement('tr');
     catHR.className = `detail-cat-header cat-${categoryKey(cat.id)}`;
-    const catTd = document.createElement('td');
-    catTd.colSpan = totalCols;
-    catTd.innerHTML = `<span class="cat-icon">${icon(categoryIcon(cat.id), { size: 13 })}</span>${escapeHtml(tr(cat))}`;
-    catHR.appendChild(catTd);
+    const catNameTd = document.createElement('td');
+    catNameTd.className = 'detail-cat-name';
+    catNameTd.innerHTML = `<span class="detail-cat-name-content"><span class="cat-icon">${icon(categoryIcon(cat.id), { size: 13 })}</span>${escapeHtml(tr(cat))}</span>`;
+    catHR.appendChild(catNameTd);
+    for (let yi = 0; yi < years.length; yi++) {
+      catHR.appendChild(document.createElement('td'));
+    }
     tbody.appendChild(catHR);
 
-    // Account rows
-    for (const { acct, vals } of catRows) {
-      const row = document.createElement('tr');
-      row.className = 'detail-acct-row';
-      const nameTd = document.createElement('td');
-      nameTd.className = 'detail-acct-name';
-      nameTd.textContent = tr(acct);
-      row.appendChild(nameTd);
-      for (let yi = 0; yi < years.length; yi++) {
-        const y = years[yi];
-        const prev = yi > 0 ? vals[years[yi - 1]] : null;
-        row.appendChild(mkValueCell(vals[y], prev, pm));
+    // Account rows (only shown when category has multiple accounts)
+    if (catRows.length > 1) {
+      for (const { acct, vals } of catRows) {
+        const row = document.createElement('tr');
+        row.className = 'detail-acct-row';
+        const nameTd = document.createElement('td');
+        nameTd.className = 'detail-acct-name';
+        nameTd.textContent = tr(acct);
+        row.appendChild(nameTd);
+        for (let yi = 0; yi < years.length; yi++) {
+          const y = years[yi];
+          const prev = yi > 0 ? vals[years[yi - 1]] : null;
+          row.appendChild(mkValueCell(vals[y], prev, pm));
+        }
+        tbody.appendChild(row);
       }
-      tbody.appendChild(row);
     }
 
-    // Category total row (only if multiple accounts had data)
-    if (catRows.length > 1) {
-      const totalR = document.createElement('tr');
-      totalR.className = 'detail-cat-total';
-      const tTd = document.createElement('td');
-      tTd.className = 'detail-acct-name';
-      tTd.textContent = t('detail_total');
-      totalR.appendChild(tTd);
-      for (let yi = 0; yi < years.length; yi++) {
-        const y = years[yi];
-        const prev = yi > 0 ? catByYear[years[yi - 1]] : null;
-        totalR.appendChild(mkValueCell(catByYear[y], prev, pm));
-      }
-      tbody.appendChild(totalR);
+    // Category total row
+    const totalR = document.createElement('tr');
+    totalR.className = 'detail-cat-total';
+    const totalNameTd = document.createElement('td');
+    totalNameTd.className = 'detail-acct-name';
+    totalNameTd.textContent = t('detail_total');
+    totalR.appendChild(totalNameTd);
+    for (let yi = 0; yi < years.length; yi++) {
+      const y = years[yi];
+      const prev = yi > 0 ? catByYear[years[yi - 1]] : null;
+      totalR.appendChild(mkValueCell(catByYear[y], prev, pm));
     }
+    tbody.appendChild(totalR);
   }
 
   if (!anyData) {

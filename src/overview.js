@@ -157,7 +157,7 @@ export function renderOverview() {
   const periodRefDate = filteredDates.length > 1 ? filteredDates[0] : null;
 
   const activePeriod = periodBtn?.dataset.period || 'all';
-  const periodLabel = activePeriod === 'all' ? t('period_all') : activePeriod;
+  const periodLabel = t(`period_${activePeriod.toLowerCase()}`) || activePeriod;
 
   const current   = foldedStatsFor(latestDate);
   const periodRef = periodRefDate ? foldedStatsFor(periodRefDate) : null;
@@ -168,15 +168,21 @@ export function renderOverview() {
   els.ovAsOf.textContent = tFn('data_as_of', fmtDateLong(latestDate));
 
   if (els.ovDelta) {
+    els.ovDelta.innerHTML = '';
+    els.ovDelta.className = 'delta';
     if (periodRef != null) {
       const d = current.netWorth - periodRef.netWorth;
       const pct = fmtPct(d, periodRef.netWorth);
-      const label = periodLabel ? ` ${periodLabel}` : '';
-      els.ovDelta.textContent = `${redact(fmtDelta(d))}${pct ? ` (${pct})` : ''}${label}`;
-      els.ovDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
-    } else {
-      els.ovDelta.textContent = '';
-      els.ovDelta.className = 'delta';
+      const numSpan = document.createElement('span');
+      numSpan.className = 'ov-card-delta-num ' + (d >= 0 ? 'up' : 'down');
+      numSpan.textContent = `${redact(fmtDelta(d))}${pct ? ` (${pct})` : ''}`;
+      els.ovDelta.appendChild(numSpan);
+      if (periodLabel) {
+        const perSpan = document.createElement('span');
+        perSpan.className = 'ov-card-delta-period';
+        perSpan.textContent = periodLabel;
+        els.ovDelta.appendChild(perSpan);
+      }
     }
   }
 
@@ -314,10 +320,18 @@ function renderGroupCards(latestDate, periodRefDate, periodLabel, redact) {
       const d = val - prev;
       if (d !== 0) {
         const deltaEl = document.createElement('div');
-        deltaEl.className = 'ov-card-delta ' + (d >= 0 ? 'up' : 'down');
+        deltaEl.className = 'ov-card-delta';
         const pct = fmtPct(d, prev);
-        const label = periodLabel ? ` ${periodLabel}` : '';
-        deltaEl.textContent = redact(fmtDelta(d)) + (pct ? ` (${pct})` : '') + label;
+        const numSpan = document.createElement('span');
+        numSpan.className = 'ov-card-delta-num ' + (d >= 0 ? 'up' : 'down');
+        numSpan.textContent = redact(fmtDelta(d)) + (pct ? ` (${pct})` : '');
+        deltaEl.appendChild(numSpan);
+        if (periodLabel) {
+          const perSpan = document.createElement('span');
+          perSpan.className = 'ov-card-delta-period';
+          perSpan.textContent = periodLabel;
+          deltaEl.appendChild(perSpan);
+        }
         card.appendChild(deltaEl);
       }
     }

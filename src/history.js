@@ -43,14 +43,13 @@ export function computeSeries(filteredDates) {
 }
 
 export function populateHistAccountSelect() {
-  const sel = els.histAccountSelect;
-  if (!sel || !state.accounts.length) return;
-  const currentVal = sel.value;
-  sel.innerHTML = '';
-  const ovOpt = document.createElement('option');
-  ovOpt.value = '';
-  ovOpt.textContent = t('overview_option');
-  sel.appendChild(ovOpt);
+  const wrap = els.histAccountSelect;
+  if (!wrap || !state.accounts.length) return;
+
+  const currentVal = wrap.dataset.value || '';
+
+  // Build flat option list with group separators
+  const items = [{ value: '', label: t('overview_option') }];
   const catOrder = Object.fromEntries(state.categoryMeta.map(c => [c.id, c.sort_order || 0]));
   const sorted = [...state.accounts].filter(a => a.active).sort((a, b) => {
     const co = (catOrder[a.category] || 99) - (catOrder[b.category] || 99);
@@ -58,20 +57,62 @@ export function populateHistAccountSelect() {
   });
   const byCat = {};
   for (const a of sorted) (byCat[a.category] ||= []).push(a);
-  for (const cat of state.categoryMeta.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))) {
+  for (const cat of [...state.categoryMeta].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))) {
     const accts = byCat[cat.id];
     if (!accts?.length) continue;
-    const og = document.createElement('optgroup');
-    og.label = tr(cat);
-    for (const a of accts) {
-      const opt = document.createElement('option');
-      opt.value = a.id;
-      opt.textContent = tr(a);
-      og.appendChild(opt);
-    }
-    sel.appendChild(og);
+    items.push({ isGroup: true, label: tr(cat) });
+    for (const a of accts) items.push({ value: a.id, label: tr(a) });
   }
-  if (currentVal && [...sel.options].some(o => o.value === currentVal)) sel.value = currentVal;
+
+  const selectedItem = items.find(o => !o.isGroup && o.value === currentVal) || items[0];
+
+  wrap.innerHTML = '';
+
+  // Trigger button
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'custom-select-trigger';
+  trigger.innerHTML = `<span class="custom-select-label">${selectedItem.label}</span>${icon('chevronDown', { size: 14 })}`;
+  wrap.appendChild(trigger);
+
+  // Dropdown menu
+  const menu = document.createElement('div');
+  menu.className = 'custom-select-menu';
+  menu.hidden = true;
+
+  for (const item of items) {
+    if (item.isGroup) {
+      const g = document.createElement('div');
+      g.className = 'custom-select-group';
+      g.textContent = item.label;
+      menu.appendChild(g);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'custom-select-item' + (item.value === currentVal ? ' selected' : '');
+      btn.textContent = item.label;
+      if (item.value === currentVal) {
+        const esc = String(item.label).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        btn.innerHTML = `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`;
+      }
+      btn.addEventListener('click', () => {
+        wrap.dataset.value = item.value;
+        trigger.querySelector('.custom-select-label').textContent = item.label;
+        menu.hidden = true;
+        wrap.classList.remove('open');
+        renderChart();
+      });
+      menu.appendChild(btn);
+    }
+  }
+  wrap.appendChild(menu);
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    const opening = menu.hidden;
+    menu.hidden = !opening;
+    wrap.classList.toggle('open', opening);
+  });
 }
 
 function fmtMonthHeading(yyyymm) {
@@ -295,7 +336,7 @@ export function renderHistoryTable() {
 
 export function renderChart() {
   const filteredDates = getHistFilteredDates();
-  const selectedAccount = els.histAccountSelect?.value || '';
+  const selectedAccount = els.histAccountSelect?.dataset.value || '';
   const isOverview = selectedAccount === '';
 
   if (els.histChartToggles) els.histChartToggles.hidden = !isOverview;

@@ -1,5 +1,8 @@
+import AirDatepicker from 'air-datepicker';
+import localeEn from 'air-datepicker/locale/en';
+import localeFr from 'air-datepicker/locale/fr';
 import { state, LS_KEY_THEME, HEADERS } from './state.js';
-import { setLang, applyI18n, t } from './i18n.js';
+import { setLang, applyI18n, t, lang } from './i18n.js';
 import { els, _setToastFn } from './dom.js';
 import { toast } from './toast.js';
 
@@ -7,7 +10,7 @@ _setToastFn(toast);
 import { renderOverview } from './overview.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from './history.js';
 import { renderDetailTable } from './detail.js';
-import { renderForm, saveSnapshot, onCopyPrev } from './entry.js';
+import { renderForm, saveSnapshot, onCopyPrev, onResetEntry } from './entry.js';
 import {
   renderAccountsList, onAddAccount, onToggleArchived,
   saveAccountDialog, deleteAccountFromDialog, closeAccountDialog,
@@ -38,10 +41,19 @@ els.signinBtn.addEventListener('click', () => {
 els.signoutBtn.addEventListener('click', onSignOut);
 els.resetSheetBtn.addEventListener('click', onResetSheetLink);
 
-els.dateInput.addEventListener('change', () => {
-  state.currentDate = els.dateInput.value;
-  renderForm();
+const parseLocalDate = (s) => { const [y, m, d] = s.split('-'); return new Date(+y, +m - 1, +d); };
+state.datePicker = new AirDatepicker(els.dateInput, {
+  dateFormat: 'yyyy-MM-dd',
+  locale: lang() === 'fr' ? localeFr : localeEn,
+  autoClose: true,
+  keyboardNav: false,
+  onSelect({ formattedDate }) {
+    if (!formattedDate) return;
+    state.currentDate = formattedDate;
+    renderForm();
+  },
 });
+els.resetEntryBtn?.addEventListener('click', onResetEntry);
 els.copyPrevBtn.addEventListener('click', onCopyPrev);
 els.reloadBtn.addEventListener('click', () => loadAndRenderForm());
 els.saveSnapshotBtn.addEventListener('click', saveSnapshot);
@@ -51,14 +63,21 @@ els.historyCards.addEventListener('click', (e) => {
   const row = e.target.closest('[data-date]');
   if (!row || e.target.closest('.hist-expand-btn')) return;
   state.currentDate = row.dataset.date;
-  els.dateInput.value = row.dataset.date;
+  state.datePicker ? state.datePicker.selectDate(parseLocalDate(row.dataset.date), { silent: true }) : (els.dateInput.value = row.dataset.date);
   renderForm();
   setActiveTab('entry');
 });
 
 // Tab bar
 els.tabBar.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+  btn.addEventListener('click', () => {
+    if (btn.dataset.tab === 'entry' && els.dateInput) {
+      const today = new Date().toISOString().slice(0, 10);
+      state.currentDate = today;
+      state.datePicker ? state.datePicker.selectDate(parseLocalDate(today), { silent: true }) : (els.dateInput.value = today);
+    }
+    setActiveTab(btn.dataset.tab);
+  });
 });
 
 // Overview period pills
@@ -96,9 +115,13 @@ document.querySelectorAll('#hist-period-pills .period-btn').forEach(btn => {
     renderChart();
   });
 });
-if (els.histAccountSelect) {
-  els.histAccountSelect.addEventListener('change', renderChart);
-}
+// Close custom account select when clicking outside
+document.addEventListener('click', () => {
+  const wrap = els.histAccountSelect;
+  if (!wrap) return;
+  const menu = wrap.querySelector('.custom-select-menu');
+  if (menu && !menu.hidden) { menu.hidden = true; wrap.classList.remove('open'); }
+});
 
 // Series toggles
 els.showNet?.addEventListener('change', renderChart);
@@ -140,6 +163,7 @@ migrateDialog()?.addEventListener('click', (e) => { if (e.target === migrateDial
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     setLang(btn.dataset.lang);
+    state.datePicker?.update({ locale: btn.dataset.lang === 'fr' ? localeFr : localeEn });
     if (!state.datesSorted.length) return;
     populateHistAccountSelect();
     renderHistoryTable();
@@ -238,12 +262,12 @@ document.addEventListener('keydown', (e) => {
 
   const key = e.key.toLowerCase();
   if (key === '1') { document.querySelector('.tab-btn[data-tab="overview"]')?.click(); e.preventDefault(); }
-  else if (key === '2') { document.querySelector('.tab-btn[data-tab="history"]')?.click(); e.preventDefault(); }
-  else if (key === '3') { document.querySelector('.tab-btn[data-tab="detail"]')?.click(); e.preventDefault(); }
+  else if (key === '2') { document.querySelector('.tab-btn[data-tab="detail"]')?.click(); e.preventDefault(); }
+  else if (key === '3') { document.querySelector('.tab-btn[data-tab="history"]')?.click(); e.preventDefault(); }
   else if (key === 'n') { document.querySelector('.tab-btn[data-tab="entry"]')?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
   else if (key === 's' && !els.saveSnapshotBtn.disabled && !document.getElementById('tab-entry').hidden) { els.saveSnapshotBtn?.click(); e.preventDefault(); }
   else if (key === 'p') { els.privateModeBtn?.click(); e.preventDefault(); }
-  else if (key === '?') { toast('Shortcuts: 1-3 tabs · n entry · s save · p private · ? help', { timeout: 5000 }); e.preventDefault(); }
+  else if (key === '?') { toast('Shortcuts: 1 overview · 2 detail · 3 history · n entry · s save · p private', { timeout: 5000 }); e.preventDefault(); }
 });
 
 // --- Bootstrap: poll for Google APIs (both load async via CDN) ---

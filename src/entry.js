@@ -342,6 +342,19 @@ function updateProgressStrip(filled, total) {
   strip.classList.toggle('complete', filled === total && total > 0);
 }
 
+export async function onResetEntry() {
+  const ok = await showConfirm({
+    message: t('confirm_reset_entry'),
+    okLabel: t('reset_entry'),
+    cancelLabel: t('cancel'),
+  });
+  if (!ok) return;
+  els.categoriesEl.querySelectorAll('input.balance').forEach(inp => { inp.value = ''; });
+  if (els.dayCommentEl) els.dayCommentEl.value = '';
+  recomputeTotals();
+  setStatus(t('reset_entry'));
+}
+
 export function onCopyPrev() {
   const prevD = prevDate(els.dateInput.value);
   if (!prevD) {

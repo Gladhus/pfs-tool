@@ -30,8 +30,8 @@
       <nav id="tab-bar" class="tab-bar" hidden>
         <div class="tab-group">
           <button type="button" class="tab-btn" data-tab="overview" data-i18n="tab_overview">Overview</button>
-          <button type="button" class="tab-btn" data-tab="history" data-i18n="tab_history">History</button>
           <button type="button" class="tab-btn" data-tab="detail" data-i18n="tab_detail">Detail</button>
+          <button type="button" class="tab-btn" data-tab="history" data-i18n="tab_history">History</button>
         </div>
         <span class="tab-spacer"></span>
         <button type="button" class="tab-btn tab-icon-btn" data-tab="entry" title="New entry" aria-label="New entry">
@@ -77,10 +77,10 @@
             <div class="period-pills" id="ov-period-pills">
               <button class="period-btn" data-period="3M">3M</button>
               <button class="period-btn" data-period="6M">6M</button>
+              <button class="period-btn" data-period="YTD">YTD</button>
               <button class="period-btn" data-period="1Y">1Y</button>
               <button class="period-btn" data-period="2Y">2Y</button>
               <button class="period-btn" data-period="5Y">5Y</button>
-              <button class="period-btn" data-period="YTD">YTD</button>
               <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
             </div>
           </div>
@@ -97,10 +97,13 @@
           <header class="entry-header">
             <label>
               <span data-i18n="date_label">Date</span>
-              <input id="date-input" type="date" required>
+              <input id="date-input" type="text" placeholder="yyyy-mm-dd" autocomplete="off" required>
             </label>
+            <div class="entry-header-actions">
+              <button id="reset-entry-btn" type="button" class="entry-btn" data-i18n="reset_entry">Reset</button>
+              <button id="copy-prev-btn" type="button" class="entry-btn" data-i18n="copy_prev_entry">Copy prev. entry</button>
+            </div>
             <span id="date-badge" class="badge" hidden></span>
-            <button id="copy-prev-btn" type="button" class="link-btn" data-i18n="copy_prev_day">Copy prev. day</button>
           </header>
 
           <div id="categories"></div>
@@ -137,13 +140,13 @@
             <div class="period-pills" id="hist-period-pills">
               <button class="period-btn" data-period="3M">3M</button>
               <button class="period-btn" data-period="6M">6M</button>
+              <button class="period-btn" data-period="YTD">YTD</button>
               <button class="period-btn" data-period="1Y">1Y</button>
               <button class="period-btn" data-period="2Y">2Y</button>
               <button class="period-btn" data-period="5Y">5Y</button>
-              <button class="period-btn" data-period="YTD">YTD</button>
               <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
             </div>
-            <select id="hist-account-select" class="hist-account-select"></select>
+            <div id="hist-account-select" class="custom-select" data-value=""></div>
           </div>
           <div id="hist-chart-toggles" class="chart-toggles">
             <label><input type="checkbox" id="show-net" checked> <span data-i18n="show_net_worth">Net worth</span></label>

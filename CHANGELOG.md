@@ -5,6 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.0.0] — 2026-05-27
+
+### Added
+- **Air Datepicker**: replaced the native `<input type="date">` with a fully custom-styled date picker — month and year panel views with no native selects, themed to match the app's design system, FR/EN locale support
+- **Entry form — Reset button**: clears all entered values with a confirmation modal; does not write to the sheet
+- **Entry form — previous value hints**: direction arrow (▲ / ▼ / =) shown next to each account's previous value hint, updated live as you type
+- **Entry tab — open today**: clicking the `+` tab button pre-fills the date input with today's date
+
+### Changed
+- **Tab order**: Overview → Detail → History
+- **Detail tab**: sticky first column (category and account names stay visible when scrolling right); category header rows show background only, no borders; YoY Δ column inline per year; sticky column header on vertical scroll
+- **History tab**: account selector replaced with a custom styled dropdown (no native `<select>`)
+- **Overview cards**: max 4 per row; cards expand to fill available width
+- **Period pills**: reordered to 3M → 6M → YTD → 1Y → 2Y → 5Y → All; inactive pills use a dimmer text color
+- **Card deltas**: two-line layout — amount + % on the first line (green/red), period label on the second line (muted); applied consistently across category cards, group cards, and the net worth hero
+- **Net worth hero delta**: removed the oval pill; now uses the same two-line delta style as the other cards
+- **Entry form buttons**: Reset and Copy prev. entry are proper bordered buttons; badge moved to the right side of the header
+- **Entry form totals**: category summary rows stack label above value, preventing negative signs from wrapping at narrow widths
+- **Mobile tabs**: all tabs fit the screen without horizontal scrolling — tabs share available width equally
+
+---
+
 ## [0.9.7](https://github.com/Gladhus/pfs-tool/releases/tag/v0.9.7) — 2026-05-27
 
 ### Added

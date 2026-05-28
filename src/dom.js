@@ -14,6 +14,7 @@ export const els = {
   entryForm:         document.getElementById('entry-form'),
   dateInput:         document.getElementById('date-input'),
   dateBadge:         document.getElementById('date-badge'),
+  resetEntryBtn:     document.getElementById('reset-entry-btn'),
   copyPrevBtn:       document.getElementById('copy-prev-btn'),
   categoriesEl:      document.getElementById('categories'),
   dayCommentEl:      document.getElementById('day-comment-input'),

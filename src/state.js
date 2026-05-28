@@ -39,6 +39,7 @@ export const state = {
   importParsed: null,
   chart:        null,
   overviewChart: null,
+  datePicker:   null,
   lang:         localStorage.getItem(LS_KEY_LANG) || cfg.LANGUAGE || 'fr',
   privateMode:  localStorage.getItem(LS_KEY_PRIVATE) === '1',
   theme:        localStorage.getItem(LS_KEY_THEME) || 'system',

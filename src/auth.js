@@ -212,7 +212,8 @@ export async function loadAndRenderForm() {
 
   const now = new Date();
   state.currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  els.dateInput.value = state.currentDate;
+  const [y, m, d] = state.currentDate.split('-');
+  state.datePicker ? state.datePicker.selectDate(new Date(+y, +m - 1, +d), { silent: true }) : (els.dateInput.value = state.currentDate);
 
   renderForm();
   els.entryForm.hidden = false;

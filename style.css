@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&display=swap');
+@import 'air-datepicker/air-datepicker.css';
 
 /* ── Tokens ──────────────────────────────────────────────── */
 :root {
@@ -445,7 +446,16 @@ textarea:focus {
   gap: 1rem;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
-  /* No background — pure layout row */
+}
+.entry-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.entry-btn {
+  font-size: 0.78rem;
+  padding: 0.28rem 0.65rem;
 }
 
 .entry-header > label {
@@ -661,13 +671,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 .totals-grid .row {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 0.1rem;
   font-size: 0.8125rem;
   padding: 0.1rem 0;
 }
-.totals-grid .row .lbl { color: var(--muted); }
-.totals-grid .row .val { font-weight: 600; font-feature-settings: "tnum"; }
+.totals-grid .row .lbl { color: var(--muted); font-size: 0.72rem; }
+.totals-grid .row .val { font-weight: 600; font-feature-settings: "tnum"; white-space: nowrap; }
 
 .net-worth {
   display: flex;
@@ -1245,6 +1255,10 @@ button.danger:hover { background: #dc2626; }
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
 }
 
 .detail-table-wrap {
@@ -1271,9 +1285,6 @@ button.danger:hover { background: #dc2626; }
   background: var(--surface-2, var(--surface));
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
 .detail-table thead th:first-child {
   text-align: left;
@@ -1284,7 +1295,8 @@ button.danger:hover { background: #dc2626; }
   min-width: 130px;
 }
 
-/* Sticky first column */
+/* Sticky first column (horizontal scroll only) */
+.detail-table thead th:first-child,
 .detail-acct-row td:first-child,
 .detail-cat-total td:first-child,
 .detail-net-row td:first-child {
@@ -1292,33 +1304,42 @@ button.danger:hover { background: #dc2626; }
   left: 0;
   z-index: 1;
 }
-/* Corner cell: sticks both to top and left */
-.detail-table thead th:first-child {
+/* Target .detail-cat-name directly — avoids :first-child + border-collapse quirk */
+.detail-cat-name {
   position: sticky;
-  top: 0;
   left: 0;
-  z-index: 3;
+  z-index: 1;
 }
-.detail-acct-row td:first-child   { background: var(--surface); }
-.detail-cat-total td:first-child  { background: var(--surface); }
-.detail-net-row td:first-child    { background: var(--surface-2, var(--surface)); }
+/* All sticky first cells need fully opaque backgrounds to cover scrolled content */
+.detail-table thead th:first-child { background: var(--surface-3, var(--surface)); z-index: 2; }
+.detail-acct-row td:first-child    { background: var(--surface); }
+.detail-cat-name                   { background: var(--surface-3, var(--surface)); }
+.detail-cat-total td:first-child   { background: var(--surface); }
+.detail-net-row td:first-child     { background: var(--surface-3, var(--surface)); }
 
 /* Category header rows */
 .detail-cat-header td {
-  padding: 0.55rem 1rem 0.35rem;
+  padding: 0.45rem 1rem;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
   background: var(--surface-2, var(--surface));
-  border-top: 1px solid var(--border);
+}
+.detail-cat-header .detail-cat-name {
+  background: var(--surface-3, var(--surface));
+}
+.detail-cat-name-content {
   display: flex;
   align-items: center;
   gap: 0.35rem;
 }
-.detail-cat-header:first-child td { border-top: none; }
-.detail-cat-header .cat-icon { opacity: 0.7; display: flex; }
+.detail-cat-header .cat-icon {
+  width: auto; height: auto;
+  background: none; border-radius: 0;
+  opacity: 0.7; display: inline-flex;
+}
 
 /* Category color accents */
 .detail-cat-header.cat-investments { color: var(--cat-investments, var(--muted)); }
@@ -1365,7 +1386,7 @@ button.danger:hover { background: #dc2626; }
   background: var(--surface-2, var(--surface));
 }
 .detail-net-row .detail-acct-name {
-  background: var(--surface-2, var(--surface));
+  background: var(--surface-3, var(--surface));
 }
 
 /* Value cells */
@@ -1446,13 +1467,10 @@ footer {
   font-size: 0.8rem;
   font-weight: 600;
   font-feature-settings: "tnum";
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-.ov-deltas .delta.up   { background: var(--accent-light); color: var(--ok); }
-.ov-deltas .delta.down { background: var(--red-light);    color: var(--red); }
 
 .ov-hero-above {
   display: flex;
@@ -1501,7 +1519,7 @@ footer {
 /* ── Stat cards ──────────────────────────────────────────── */
 .ov-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(155px, calc((100% - 2.25rem) / 4)), 1fr));
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -1614,9 +1632,15 @@ footer {
   font-weight: 600;
   font-feature-settings: "tnum";
   margin-top: 0.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-.ov-card-delta.up   { color: var(--accent); }
-.ov-card-delta.down { color: var(--red); }
+.ov-card-delta-num.up   { color: var(--accent); }
+.ov-card-delta-num.down { color: var(--red); }
+.ov-card-delta-period {
+  color: var(--fg-2);
+}
 
 /* ── Overview chart card ─────────────────────────────────── */
 .ov-chart-card {
@@ -1646,16 +1670,16 @@ footer {
   font: inherit;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.3rem 0.8rem;
+  padding: 0.3rem 0.65rem;
   border: none;
   border-radius: 5px;
   background: transparent;
-  color: var(--muted);
+  color: var(--fg-2);
   cursor: pointer;
   letter-spacing: .02em;
   transition: background 100ms, color 100ms, box-shadow 100ms;
 }
-.period-btn:hover { color: var(--fg-2); }
+.period-btn:hover { color: var(--fg); }
 .period-btn.active {
   background: var(--surface);
   color: var(--fg);
@@ -1939,17 +1963,77 @@ dialog::backdrop {
   margin-bottom: 0.75rem;
 }
 
-.hist-account-select {
+/* ── Custom account select (history tab) ───────────────── */
+.custom-select {
+  position: relative;
+  min-width: 11rem;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.28rem 0.55rem;
   font: inherit;
   font-size: 0.78rem;
-  padding: 0.28rem 0.55rem;
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--fg);
   cursor: pointer;
-  min-width: 11rem;
+  white-space: nowrap;
+  text-align: left;
 }
+.custom-select-trigger:hover { background: var(--surface-2, var(--surface)); }
+.custom-select.open .custom-select-trigger { border-color: var(--accent); }
+.custom-select-trigger svg { flex-shrink: 0; color: var(--muted); transition: transform 0.15s; }
+.custom-select.open .custom-select-trigger svg { transform: rotate(180deg); }
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  z-index: 100;
+  overflow: hidden;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.custom-select-group {
+  padding: 0.5rem 0.75rem 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.custom-select-group:not(:first-child) { margin-top: 0.25rem; border-top: 1px solid var(--border); }
+
+.custom-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.42rem 0.75rem;
+  font: inherit;
+  font-size: 0.82rem;
+  background: none;
+  border: none;
+  color: var(--fg);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+.custom-select-item:hover { background: var(--surface-2, var(--surface-3, var(--surface))); }
+.custom-select-item.selected { font-weight: 600; color: var(--accent); }
+.custom-select-check { color: var(--accent); display: inline-flex; }
 
 /* ── Responsive / mobile-first refinements ─────────────── */
 @media (max-width: 980px) {
@@ -2012,17 +2096,18 @@ dialog::backdrop {
   .tab-group {
     flex: 1;
     min-width: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow: visible;
   }
-  .tab-group::-webkit-scrollbar { display: none; }
+  .tab-spacer { display: none; }
 
   .tab-btn:not(.tab-icon-btn) {
-    flex: 1 0 auto;
-    min-width: 5rem;
+    flex: 1 1 0;
+    min-width: 0;
     text-align: center;
-    padding: 0.55rem 0.85rem;
+    padding: 0.55rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .entry-header {
@@ -2247,9 +2332,8 @@ dialog::backdrop {
   main { padding-inline: 0.55rem; }
 
   .tab-btn:not(.tab-icon-btn) {
-    min-width: 4.5rem;
-    font-size: 0.76rem;
-    padding-inline: 0.65rem;
+    font-size: 0.72rem;
+    padding-inline: 0.35rem;
   }
 
   .account-row {
@@ -2398,3 +2482,124 @@ dialog::backdrop {
 }
 .color-swatch:hover { transform: scale(1.15); }
 .color-swatch.active { border-color: var(--fg); box-shadow: 0 0 0 2px var(--surface); }
+
+
+/* ── Date input (text, styled to match former type=date) ──── */
+#date-input {
+  min-width: 11rem;
+  padding: 0.5rem 0.75rem;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+
+/* ── Air Datepicker — full custom theme ─────────────────────
+   Matches the custom-select-menu aesthetic: same surface,
+   border, shadow, accent, radius; no Air Datepicker blues.
+──────────────────────────────────────────────────────────── */
+.air-datepicker-global-container { z-index: 200; }
+
+.air-datepicker {
+  /* Layout / shape */
+  --adp-font-family:    inherit;
+  --adp-font-size:      0.82rem;
+  --adp-width:          248px;
+  --adp-border-radius:  var(--r-sm);
+  --adp-padding:        6px;
+  --adp-z-index:        200;
+
+  /* Surfaces */
+  --adp-background-color:                        var(--surface);
+  --adp-background-color-hover:                  var(--surface-3);
+  --adp-background-color-active:                 var(--surface-3);
+  --adp-background-color-in-range:               color-mix(in srgb, var(--accent) 12%, transparent);
+  --adp-background-color-in-range-focus:         color-mix(in srgb, var(--accent) 20%, transparent);
+  --adp-background-color-selected:               var(--accent);
+  --adp-background-color-selected-other-month-focused: var(--accent);
+  --adp-background-color-selected-other-month:   var(--accent);
+
+  /* Text */
+  --adp-color:                  var(--fg);
+  --adp-color-secondary:        var(--muted);
+  --adp-color-selected:         #fff;
+  --adp-color-other-month:      var(--subtle);
+  --adp-color-other-month-hover:var(--muted);
+  --adp-color-disabled:         var(--subtle);
+  --adp-color-current-date:     var(--accent);
+  --adp-accent-color:           var(--accent);
+
+  /* Nav / header */
+  --adp-color-header-button:    var(--fg-2);
+  --adp-nav-action-size:        28px;
+  --adp-nav-color-secondary:    var(--muted);
+
+  /* Day-name row */
+  --adp-day-name-color:         var(--muted);
+  --adp-day-name-color-hover:   var(--fg);
+
+  /* Borders */
+  --adp-border-color:           var(--border);
+  --adp-border-color-inner:     var(--border);
+  --adp-border-color-inline:    var(--border);
+
+  /* Cells */
+  --adp-cell-border-radius:     var(--r-sm);
+  --adp-btn-height:             30px;
+
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+
+/* Nav row: month/year title + arrows */
+.air-datepicker--nav {
+  border-bottom: 1px solid var(--border);
+  padding: 4px 6px;
+}
+.air-datepicker--nav-title {
+  font-weight: 600;
+  color: var(--fg);
+  border-radius: var(--r-sm);
+}
+.air-datepicker--nav-title:hover { background: var(--surface-3); }
+.air-datepicker--nav-title i { color: var(--muted); }
+
+.air-datepicker--nav-action { border-radius: var(--r-sm); }
+.air-datepicker--nav-action:hover { background: var(--surface-3); }
+.air-datepicker--nav-action path { stroke: var(--fg-2); }
+.air-datepicker--nav-action:hover path { stroke: var(--fg); }
+
+/* Day-name row */
+.air-datepicker--day-name {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* Cells — day/month/year */
+.air-datepicker-cell {
+  border-radius: var(--r-sm);
+  color: var(--fg);
+}
+.air-datepicker-cell:hover { background: var(--surface-3); }
+.air-datepicker-cell.-selected- {
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+.air-datepicker-cell.-current- {
+  color: var(--accent);
+  font-weight: 700;
+}
+.air-datepicker-cell.-current-.-selected- { color: #fff; }
+.air-datepicker-cell.-other-month-,
+.air-datepicker-cell.-other-decade- { color: var(--subtle); }
+.air-datepicker-cell.-disabled- { color: var(--subtle); opacity: .45; }
+
+/* Month/year view cells — bigger touch targets */
+.air-datepicker-cell.-month-,
+.air-datepicker-cell.-year- {
+  border-radius: var(--r-sm);
+  font-size: 0.8rem;
+}

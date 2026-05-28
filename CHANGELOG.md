@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.3.1] — 2026-05-28
+## [1.3.1](https://github.com/Gladhus/pfs-tool/releases/tag/v1.3.1) — 2026-05-28
 
 ### Fixed
 - **Options value chart**: chart now starts from the first date where real FMV data exists; mid-month FMV entries no longer produce a false zero on the month-01 tick that precedes them (root cause: `generateMonthlyDates` used the raw FMV date as the range start, generating a month-01 tick before any FMV existed, which `getEffectiveFmv` correctly returned null for — now returns `null` instead of 0 for no-data dates, leading null ticks are trimmed, and `spanGaps: false` prevents Chart.js from interpolating through any remaining gaps)

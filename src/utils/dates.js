@@ -15,18 +15,57 @@ export const MONTH_NAMES = {
   dec: 12, 'déc': 12, december: 12, 'décembre': 12,
 };
 
+function expandYear(s) {
+  const n = +s;
+  if (s.length === 2) return String(2000 + n);
+  return s;
+}
+
 export function parseMonthLabel(raw) {
   if (!raw) return null;
   let s = String(raw).trim().toLowerCase();
   s = s.replace(/[.,]/g, '').replace(/\s+/g, ' ');
-  let m = s.match(/^(\d{4})[\-\/](\d{1,2})$/);
+  const YR = '(\\d{4})';
+  const YR2 = '(\\d{2,4})';
+  const SEP = '[\\-\\/]';
+  const SEP3 = '[\\-\\/\\s]';
+  const MON = '([a-zàâäéèêëîïôöùûüç]+)';
+  const DD = '(\\d{1,2})';
+  let m;
+  m = s.match(new RegExp(`^${YR}${SEP}${DD}$`));
   if (m) return `${m[1]}-${String(+m[2]).padStart(2, '0')}`;
-  m = s.match(/^(\d{1,2})[\-\/](\d{4})$/);
+  m = s.match(new RegExp(`^${DD}${SEP}${YR}$`));
   if (m) return `${m[2]}-${String(+m[1]).padStart(2, '0')}`;
-  m = s.match(/^([a-zàâäéèêëîïôöùûüç]+)\s+(\d{4})$/);
+  // Full numeric date: DD/MM/YY(YY) — if first part > 12 it's the day; otherwise DD/MM assumed
+  m = s.match(new RegExp(`^${DD}${SEP}${DD}${SEP}${YR2}$`));
+  if (m) {
+    const [a, b, yr] = [+m[1], +m[2], expandYear(m[3])];
+    const mm = b; // DD/MM/YYYY assumed; a > 12 just confirms day is first
+    if (mm >= 1 && mm <= 12) return `${yr}-${String(mm).padStart(2, '0')}`;
+  }
+  // Named month + 4-digit year: "Dec 2015"
+  m = s.match(new RegExp(`^${MON}\\s+${YR}$`));
   if (m) {
     const monIdx = MONTH_NAMES[m[1]];
     if (monIdx) return `${m[2]}-${String(monIdx).padStart(2, '0')}`;
+  }
+  // DD-MMM-YY(YY): "1-Dec-15", "1-Dec-2015"
+  m = s.match(new RegExp(`^${DD}${SEP3}${MON}${SEP3}${YR2}$`));
+  if (m) {
+    const monIdx = MONTH_NAMES[m[2]];
+    if (monIdx) return `${expandYear(m[3])}-${String(monIdx).padStart(2, '0')}`;
+  }
+  // MMM-DD-YY(YY): "Dec-1-15"
+  m = s.match(new RegExp(`^${MON}${SEP3}${DD}${SEP3}${YR2}$`));
+  if (m) {
+    const monIdx = MONTH_NAMES[m[1]];
+    if (monIdx) return `${expandYear(m[3])}-${String(monIdx).padStart(2, '0')}`;
+  }
+  // YYYY-MMM-DD: "2015-Dec-1"
+  m = s.match(new RegExp(`^${YR}${SEP3}${MON}${SEP3}${DD}$`));
+  if (m) {
+    const monIdx = MONTH_NAMES[m[2]];
+    if (monIdx) return `${m[1]}-${String(monIdx).padStart(2, '0')}`;
   }
   return null;
 }

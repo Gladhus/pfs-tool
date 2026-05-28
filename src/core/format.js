@@ -23,10 +23,16 @@ export function parseMoney(str) {
   const lastComma = s.lastIndexOf(',');
   const lastDot   = s.lastIndexOf('.');
   if (lastComma !== -1 || lastDot !== -1) {
-    const decimalSep = lastComma > lastDot ? ',' : '.';
-    const thouSep    = decimalSep === ',' ? '.' : ',';
-    s = s.split(thouSep).join('');
-    if (decimalSep === ',') s = s.replace(',', '.');
+    // When both separators present, the later one is the decimal (e.g. "1,234.56").
+    // When only a comma: thousands if exactly 3 digits follow (e.g. "6,500"), else decimal.
+    // Dots alone are always decimal.
+    if (lastComma !== -1 && lastDot !== -1) {
+      if (lastDot > lastComma) s = s.replace(/,/g, '');
+      else s = s.replace(/\./g, '').replace(',', '.');
+    } else if (lastComma !== -1) {
+      const commaIsThousands = s.length - lastComma - 1 === 3;
+      s = commaIsThousands ? s.replace(/,/g, '') : s.replace(',', '.');
+    }
   }
   const n = Number(s);
   return Number.isFinite(n) ? n : null;

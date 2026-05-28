@@ -5,6 +5,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.2.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.2.0) — 2026-05-28
+
+### Added
+- **Stock Options tab**: new dedicated tab for tracking equity compensation — supports multiple companies, multiple grants per company (ISO, NSO, RSU, SAR), full vesting calendar (cliff + monthly/quarterly/annual intervals), and FMV history with LOCF semantics
+- **Vesting charts**: per-company stacked line chart showing cumulative vested value over time; solid lines for past vesting, dashed for future; extends to last fully-vested date; vertical "today" marker
+- **Options value chart**: top-level summary chart showing actual historical intrinsic value over time, stacked by company (driven by FMV history)
+- **Equity in net worth**: vested stock option value is included in the net worth hero, Overview donut chart, and entry form totals
+- **Stock Options toggle**: enable/disable the Stock Options tab from Settings → Preferences; hidden by default
+
+### Changed
+- **Navigation restructure**: main tab bar simplified to Overview · Accounts · Stock Options (if enabled) — Detail and History moved inside the Accounts tab as sub-panels accessible via a pill sub-nav
+- **Accounts gear**: ⚙ button on the Accounts sub-nav reveals an account management panel (accounts list, groups editor, and import tool) — previously spread across the Settings tab
+- **Stock Options gear**: ⚙ button on the Stock Options tab reveals the Add Company panel
+- **Settings tab**: stripped down to Preferences and Data (sheet link, CSV export) — account/group management and CSV import moved to the Accounts gear panel
+- **Import historical data**: moved from Settings → Data to the Accounts gear panel, alongside account and group management
+
+---
+
+## [1.1.4](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.4) — 2026-05-28
+
+### Fixed
+- **CSV import**: `parseMoney` now correctly treats `$6,500`-style values as 6500 — a comma followed by exactly 3 digits is a thousands separator, not a decimal. Mixed formats like `$1,234.56` also parse correctly.
+
+### Added
+- **Tests**: Vitest test suite with 59 unit tests covering `parseMoney` (null/empty, plain integers, currency symbols, thousands separators, decimal separators, negatives, real spreadsheet values) and `parseMonthLabel` (all supported date formats).
+
+---
+
+## [1.1.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.3) — 2026-05-28
+
+### Fixed
+- **CSV import**: date column headers are now parsed universally — supports `DD/MM/YYYY`, `DD-MMM-YY` (e.g. `1-Dec-15`), `DD-MMM-YYYY`, `MMM-DD-YY(YY)`, `YYYY-MMM-DD`, `MMM YYYY`, and all prior formats. Two-digit years are treated as 2000s.
+
+---
+
 ## [1.1.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.2) — 2026-05-28
 
 ### Fixed

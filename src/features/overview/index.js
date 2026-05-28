@@ -5,6 +5,7 @@ import { state } from '../../core/state.js';
 import { lang, t, tFn, tr } from '../../core/i18n/index.js';
 import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';
 import { computeDateStats, buildEffectiveBalances, buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';
+import { computeTotalEquityValue } from '../../utils/options.js';
 import { getDatesForPeriod } from '../../utils/dates.js';
 import { els } from '../../core/dom.js';
 import { icon, categoryIcon, categoryKey } from '../../core/icons.js';
@@ -265,6 +266,45 @@ function renderCategoryCards(current, periodRef, periodLabel, redact) {
     }
     cards.appendChild(card);
   }
+
+  // Equity card (stock options) — injected separately since it's not an account category
+  const equityVal = current.byCategory['equity'];
+  if (equityVal > 0) {
+    const card = document.createElement('div');
+    card.className = 'ov-stat-card cat-equity';
+    const head = document.createElement('div');
+    head.className = 'ov-card-head';
+    const iconWrap = document.createElement('span');
+    iconWrap.className = 'cat-icon';
+    iconWrap.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`;
+    const lbl = document.createElement('div');
+    lbl.className = 'ov-card-label';
+    lbl.textContent = t('equity_label');
+    head.appendChild(iconWrap);
+    head.appendChild(lbl);
+    const valEl = document.createElement('div');
+    valEl.className = 'ov-card-value';
+    valEl.textContent = redact(fmtMoney(equityVal));
+    card.appendChild(head);
+    card.appendChild(valEl);
+    const spark = document.createElement('canvas');
+    spark.className = 'ov-card-spark';
+    spark.width = 200; spark.height = 28;
+    card.appendChild(spark);
+    if (periodRef) {
+      const prev = periodRef.byCategory['equity'] || 0;
+      const d = equityVal - prev;
+      if (d !== 0) {
+        const deltaEl = document.createElement('div');
+        deltaEl.className = 'ov-card-delta ' + (d >= 0 ? 'up' : 'down');
+        const pct = fmtPct(d, prev);
+        const label = periodLabel ? ` ${periodLabel}` : '';
+        deltaEl.textContent = redact(fmtDelta(d)) + (pct ? ` (${pct})` : '') + label;
+        card.appendChild(deltaEl);
+      }
+    }
+    cards.appendChild(card);
+  }
 }
 
 function renderGroupCards(latestDate, periodRefDate, periodLabel, redact) {
@@ -365,8 +405,13 @@ function renderOverviewDonut(current) {
   }
   els.ovDonutWrap.hidden = false;
 
+  // Equity slice
+  const equityVal = current.byCategory['equity'];
+  if (equityVal > 0) entries.push({ id: 'equity', label: t('equity_label'), value: equityVal });
+
   const cs = getComputedStyle(document.documentElement);
   const colorFor = (id) => {
+    if (id === 'equity') return cs.getPropertyValue('--cat-equity').trim() || '#06b6d4';
     const key = categoryKey(id);
     return cs.getPropertyValue('--cat-' + key).trim() || cs.getPropertyValue('--accent').trim();
   };
@@ -468,6 +513,12 @@ export function renderOverviewChart() {
           if (bucketFirstSeen[b] === -1) bucketFirstSeen[b] = i;
         }
       }
+    }
+    // Add equity value to the net series
+    const equity = computeTotalEquityValue(dates[i]);
+    if (equity) {
+      net[i] += equity;
+      dayHasAny = true;
     }
     hasAny[i] = dayHasAny;
   }

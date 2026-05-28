@@ -29,8 +29,8 @@
       <nav id="tab-bar" class="tab-bar" hidden>
         <div class="tab-group">
           <button type="button" class="tab-btn" data-tab="overview" data-i18n="tab_overview">Overview</button>
-          <button type="button" class="tab-btn" data-tab="detail" data-i18n="tab_detail">Detail</button>
-          <button type="button" class="tab-btn" data-tab="history" data-i18n="tab_history">History</button>
+          <button type="button" class="tab-btn" data-tab="accounts" data-i18n="tab_accounts">Accounts</button>
+          <button type="button" class="tab-btn" data-tab="options" data-i18n="tab_stock_options" hidden>Stock Options</button>
         </div>
         <span class="tab-spacer"></span>
         <button type="button" class="tab-btn tab-icon-btn" data-tab="entry" title="New entry" aria-label="New entry">
@@ -130,63 +130,69 @@
         </section>
       </div>
 
-      <div id="tab-history" class="tab-panel" hidden>
-        <section id="chart-section" class="chart-section" hidden>
-          <header class="section-header">
-            <h2 data-i18n="progression">Progression</h2>
-          </header>
-          <div class="chart-controls">
-            <div class="period-pills" id="hist-period-pills">
-              <button class="period-btn" data-period="3M">3M</button>
-              <button class="period-btn" data-period="6M">6M</button>
-              <button class="period-btn" data-period="YTD">YTD</button>
-              <button class="period-btn" data-period="1Y">1Y</button>
-              <button class="period-btn" data-period="2Y">2Y</button>
+      <!-- ── Accounts tab ──────────────────────────────────────── -->
+      <div id="tab-accounts" class="tab-panel" hidden>
+        <nav class="section-subnav" id="accounts-subnav">
+          <div class="subnav-pills">
+            <button class="subnav-btn active" data-panel="detail" data-i18n="tab_detail">Detail</button>
+            <button class="subnav-btn" data-panel="history" data-i18n="tab_history">History</button>
+          </div>
+          <button class="subnav-gear" id="accounts-gear-btn" aria-label="Manage accounts">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </nav>
+
+        <!-- Detail sub-panel -->
+        <div class="subnav-panel" id="acct-sub-detail">
+          <div class="detail-controls">
+            <div class="period-pills" id="detail-period-pills">
+              <button class="period-btn" data-period="3Y">3Y</button>
               <button class="period-btn" data-period="5Y">5Y</button>
               <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
             </div>
-            <div id="hist-account-select" class="custom-select" data-value=""></div>
           </div>
-          <div id="hist-chart-toggles" class="chart-toggles">
-            <label><input type="checkbox" id="show-net" checked> <span data-i18n="show_net_worth">Net worth</span></label>
-            <label><input type="checkbox" id="show-investments" checked> <span data-i18n="show_investments">Investments</span></label>
-            <label><input type="checkbox" id="show-realestate" checked> <span data-i18n="show_real_estate">Real Estate (net)</span></label>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="net-worth-chart"></canvas>
-          </div>
-        </section>
-
-        <section id="history-section" class="history-section" hidden>
-          <header class="section-header">
-            <h2 data-i18n="history">History</h2>
-            <span id="history-summary" class="hint"></span>
-          </header>
-          <div id="history-cards" class="history-cards"></div>
-        </section>
-      </div>
-
-      <!-- ── Detail tab ─────────────────────────────────────── -->
-      <div id="tab-detail" class="tab-panel" hidden>
-        <div class="detail-controls">
-          <div class="period-pills" id="detail-period-pills">
-            <button class="period-btn" data-period="3Y">3Y</button>
-            <button class="period-btn" data-period="5Y">5Y</button>
-            <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
-          </div>
+          <div class="detail-table-wrap" id="detail-table-wrap"></div>
         </div>
-        <div class="detail-table-wrap" id="detail-table-wrap"></div>
-      </div>
 
-      <div id="tab-settings" class="tab-panel" hidden>
-        <nav class="subtab-bar" id="settings-subtabs">
-          <button type="button" class="subtab-btn active" data-subtab="accounts" data-i18n="manage_accounts">Accounts</button>
-          <button type="button" class="subtab-btn" data-subtab="groups" data-i18n="groups_label">Groups</button>
-          <button type="button" class="subtab-btn" data-subtab="preferences" data-i18n="app_settings">Preferences</button>
-          <button type="button" class="subtab-btn" data-subtab="data" data-i18n="data_settings">Data</button>
-        </nav>
+        <!-- History sub-panel -->
+        <div class="subnav-panel" id="acct-sub-history" hidden>
+          <section id="chart-section" class="chart-section" hidden>
+            <header class="section-header">
+              <h2 data-i18n="progression">Progression</h2>
+            </header>
+            <div class="chart-controls">
+              <div class="period-pills" id="hist-period-pills">
+                <button class="period-btn" data-period="3M">3M</button>
+                <button class="period-btn" data-period="6M">6M</button>
+                <button class="period-btn" data-period="YTD">YTD</button>
+                <button class="period-btn" data-period="1Y">1Y</button>
+                <button class="period-btn" data-period="2Y">2Y</button>
+                <button class="period-btn" data-period="5Y">5Y</button>
+                <button class="period-btn active" data-period="all" data-i18n="period_all">All</button>
+              </div>
+              <div id="hist-account-select" class="custom-select" data-value=""></div>
+            </div>
+            <div id="hist-chart-toggles" class="chart-toggles">
+              <label><input type="checkbox" id="show-net" checked> <span data-i18n="show_net_worth">Net worth</span></label>
+              <label><input type="checkbox" id="show-investments" checked> <span data-i18n="show_investments">Investments</span></label>
+              <label><input type="checkbox" id="show-realestate" checked> <span data-i18n="show_real_estate">Real Estate (net)</span></label>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="net-worth-chart"></canvas>
+            </div>
+          </section>
 
-        <div class="subtab-panel" data-subtab="accounts">
+          <section id="history-section" class="history-section" hidden>
+            <header class="section-header">
+              <h2 data-i18n="history">History</h2>
+              <span id="history-summary" class="hint"></span>
+            </header>
+            <div id="history-cards" class="history-cards"></div>
+          </section>
+        </div>
+
+        <!-- Manage sub-panel (gear) -->
+        <div class="subnav-panel" id="acct-sub-manage" hidden>
           <section id="accounts-section" class="accounts-section">
             <header class="section-header">
               <h2 data-i18n="manage_accounts">Manage accounts</h2>
@@ -195,17 +201,12 @@
             <p class="hint" data-i18n="manage_accounts_hint">
               Click an account to edit. Archive an account to retire it without losing its history.
             </p>
-
             <div id="accounts-list" class="accounts-list"></div>
-
             <button id="toggle-archived-btn" type="button" class="link-btn archived-toggle" hidden></button>
             <div id="accounts-archived-list" class="accounts-list archived" hidden></div>
-
             <div id="accounts-status" class="hint"></div>
           </section>
-        </div>
 
-        <div class="subtab-panel" data-subtab="groups" hidden>
           <section class="accounts-section">
             <header class="section-header">
               <h2 data-i18n="groups_label">Groups</h2>
@@ -213,45 +214,6 @@
             </header>
             <p class="hint" data-i18n="groups_hint">Groups let you combine accounts by tag combinations and view them in the Overview. Each group appears as a stat card and a chart line.</p>
             <div id="groups-list" class="groups-list"></div>
-          </section>
-        </div>
-
-        <div class="subtab-panel" data-subtab="preferences" hidden>
-          <section class="pref-section">
-            <header class="section-header">
-              <h2 data-i18n="app_settings">Preferences</h2>
-            </header>
-            <div class="setting-row">
-              <span class="setting-label" data-i18n="language_label">Language</span>
-              <div class="lang-toggle">
-                <button type="button" class="lang-btn" data-lang="fr">FR</button>
-                <button type="button" class="lang-btn" data-lang="en">EN</button>
-              </div>
-            </div>
-            <div class="setting-row">
-              <span class="setting-label" data-i18n="theme_label">Theme</span>
-              <div class="theme-toggle">
-                <button type="button" class="theme-btn" data-theme="light" data-i18n="theme_light">Light</button>
-                <button type="button" class="theme-btn" data-theme="dark" data-i18n="theme_dark">Dark</button>
-                <button type="button" class="theme-btn active" data-theme="system" data-i18n="theme_system">System</button>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div class="subtab-panel" data-subtab="data" hidden>
-          <section class="pref-section">
-            <header class="section-header">
-              <h2 data-i18n="data_sheet">Spreadsheet</h2>
-            </header>
-            <p class="hint">
-              <span data-i18n="your_pfs_sheet">Your PFS sheet:</span>
-              <a id="sheet-link-2" href="#" target="_blank" rel="noopener" data-i18n="open_in_sheets">Open in Google Sheets</a>
-            </p>
-            <div class="actions">
-              <button id="choose-sheet-btn" type="button" data-i18n="choose_sheet">Choose sheet</button>
-              <button id="export-csv-btn" type="button" data-i18n="export_csv">Export snapshots (CSV)</button>
-            </div>
           </section>
 
           <section id="import-section" class="import-section">
@@ -295,6 +257,93 @@
               </div>
             </div>
           </section>
+        </div>
+      </div>
+
+      <!-- ── Stock Options tab ─────────────────────────────── -->
+      <div id="tab-options" class="tab-panel" hidden>
+        <div class="opt-header opt-topbar">
+          <div class="opt-hero">
+            <div class="opt-hero-block">
+              <div class="opt-hero-label" data-i18n="opt_vested_label">Vested value</div>
+              <div class="opt-hero-value" id="opt-vested-value">—</div>
+            </div>
+            <div class="opt-hero-block opt-hero-block--muted">
+              <div class="opt-hero-label" data-i18n="opt_unvested_label">Unvested</div>
+              <div class="opt-hero-value" id="opt-unvested-value">—</div>
+            </div>
+          </div>
+          <button class="opt-section-gear" id="opt-settings-btn" aria-label="Manage companies">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+
+        <div id="opt-settings-panel" class="opt-settings-panel" hidden>
+          <div class="opt-add-row">
+            <button type="button" id="opt-add-company-btn" class="primary" data-i18n="opt_add_company">+ Add company</button>
+          </div>
+        </div>
+
+        <div class="opt-summary-card ov-chart-card" id="opt-summary-card" hidden>
+          <h3 class="opt-section-title" data-i18n="opt_value_over_time">Options value over time</h3>
+          <div class="chart-wrap opt-summary-chart-wrap">
+            <canvas id="opt-summary-canvas"></canvas>
+          </div>
+        </div>
+
+        <div id="opt-companies-list"></div>
+      </div>
+
+      <div id="tab-settings" class="tab-panel" hidden>
+        <nav class="subtab-bar" id="settings-subtabs">
+          <button type="button" class="subtab-btn active" data-subtab="preferences" data-i18n="app_settings">Preferences</button>
+          <button type="button" class="subtab-btn" data-subtab="data" data-i18n="data_settings">Data</button>
+        </nav>
+
+        <div class="subtab-panel" data-subtab="preferences">
+          <section class="pref-section">
+            <header class="section-header">
+              <h2 data-i18n="app_settings">Preferences</h2>
+            </header>
+            <div class="setting-row">
+              <span class="setting-label" data-i18n="language_label">Language</span>
+              <div class="lang-toggle">
+                <button type="button" class="lang-btn" data-lang="fr">FR</button>
+                <button type="button" class="lang-btn" data-lang="en">EN</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label" data-i18n="theme_label">Theme</span>
+              <div class="theme-toggle">
+                <button type="button" class="theme-btn" data-theme="light" data-i18n="theme_light">Light</button>
+                <button type="button" class="theme-btn" data-theme="dark" data-i18n="theme_dark">Dark</button>
+                <button type="button" class="theme-btn active" data-theme="system" data-i18n="theme_system">System</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label class="setting-checkbox-row">
+                <input type="checkbox" id="enable-stock-options">
+                <span data-i18n="enable_stock_options">Enable Stock Options tab</span>
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <div class="subtab-panel" data-subtab="data" hidden>
+          <section class="pref-section">
+            <header class="section-header">
+              <h2 data-i18n="data_sheet">Spreadsheet</h2>
+            </header>
+            <p class="hint">
+              <span data-i18n="your_pfs_sheet">Your PFS sheet:</span>
+              <a id="sheet-link-2" href="#" target="_blank" rel="noopener" data-i18n="open_in_sheets">Open in Google Sheets</a>
+            </p>
+            <div class="actions">
+              <button id="choose-sheet-btn" type="button" data-i18n="choose_sheet">Choose sheet</button>
+              <button id="export-csv-btn" type="button" data-i18n="export_csv">Export snapshots (CSV)</button>
+            </div>
+          </section>
+
         </div>
       </div>
     </section>
@@ -497,6 +546,105 @@
   <footer>
     <small>PFS Tool — <span id="app-version"></span></small>
   </footer>
+
+  <!-- ── Option company dialog ──────────────────────────── -->
+  <dialog id="opt-company-dialog" class="form-dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header">
+        <h2 id="opt-company-dlg-title">Company</h2>
+        <button type="button" class="dialog-close" id="opt-company-dlg-close" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-company-name" data-i18n="opt_company_name">Company name</label>
+        <input type="text" id="opt-company-name" autocomplete="off">
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-company-ticker" data-i18n="opt_ticker">Ticker (optional)</label>
+        <input type="text" id="opt-company-ticker" autocomplete="off" maxlength="10" style="text-transform:uppercase">
+      </div>
+      <label class="dialog-checkbox">
+        <input type="checkbox" id="opt-company-active" checked>
+        <span data-i18n="opt_active">Active</span>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="opt-company-save-btn" data-i18n="save_changes">Save</button>
+        <button type="button" class="link-btn" id="opt-company-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button type="button" class="link-btn danger" id="opt-company-delete-btn" hidden data-i18n="opt_delete_company">Delete company</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ── Option grant dialog ─────────────────────────────── -->
+  <dialog id="opt-grant-dialog" class="form-dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header">
+        <h2 id="opt-grant-dlg-title">Grant</h2>
+        <button type="button" class="dialog-close" id="opt-grant-dlg-close" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-grant-label" data-i18n="opt_grant_label">Label</label>
+        <input type="text" id="opt-grant-label" autocomplete="off" placeholder="e.g. Initial grant">
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-type" data-i18n="opt_grant_type">Type</label>
+          <select id="opt-grant-type">
+            <option value="ISO">ISO</option>
+            <option value="NSO">NSO</option>
+            <option value="RSU">RSU</option>
+            <option value="SAR">SAR</option>
+          </select>
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-date" data-i18n="opt_grant_date">Grant date</label>
+          <input type="date" id="opt-grant-date">
+        </div>
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-shares" data-i18n="opt_total_shares">Total shares</label>
+          <input type="number" id="opt-grant-shares" min="0" step="1">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-strike" data-i18n="opt_strike_price">Strike price</label>
+          <input type="number" id="opt-grant-strike" min="0" step="0.01" placeholder="0 for RSUs">
+        </div>
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-vesting-start" data-i18n="opt_vesting_start">Vesting start</label>
+          <input type="date" id="opt-grant-vesting-start">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-cliff" data-i18n="opt_cliff_months">Cliff (months)</label>
+          <input type="number" id="opt-grant-cliff" min="0" step="1" value="12">
+        </div>
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-vesting-months" data-i18n="opt_vesting_months">Duration (months)</label>
+          <input type="number" id="opt-grant-vesting-months" min="1" step="1" value="48">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-interval" data-i18n="opt_vesting_interval">Vesting interval</label>
+          <select id="opt-grant-interval">
+            <option value="monthly" data-i18n="opt_interval_monthly">Monthly</option>
+            <option value="quarterly" data-i18n="opt_interval_quarterly">Quarterly</option>
+            <option value="annual" data-i18n="opt_interval_annual">Annual</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-grant-expiry" data-i18n="opt_expiry_date">Expiry date (optional)</label>
+        <input type="date" id="opt-grant-expiry">
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="opt-grant-save-btn" data-i18n="save_changes">Save</button>
+        <button type="button" class="link-btn" id="opt-grant-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button type="button" class="link-btn danger" id="opt-grant-delete-btn" hidden data-i18n="opt_delete_grant">Delete grant</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>

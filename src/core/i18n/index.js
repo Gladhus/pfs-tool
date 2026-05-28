@@ -43,6 +43,7 @@ export function setLang(l, { persist = true } = {}) {
   state.lang = l;
   if (persist) {
     try { localStorage.setItem(LS_KEY_LANG, l); } catch (_) {}
+    _writeConfigFn?.('language', l);
   }
   applyI18n();
 }

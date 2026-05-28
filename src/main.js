@@ -32,6 +32,7 @@ import {
   renderGroupsList, openNewGroupDialog, saveGroupDialog,
   closeGroupDialog, deleteGroupFromDialog,
 } from './features/settings/groups/index.js';
+import { openCompanyDialog, closeCompanyDialog, openGrantDialog, closeGrantDialog } from './features/options/index.js';
 
 // Stamp the build version into the footer
 const vEl = document.getElementById('app-version');
@@ -213,6 +214,15 @@ document.getElementById('group-edit-dialog')?.addEventListener('click', (e) => {
   if (e.target === document.getElementById('group-edit-dialog')) closeGroupDialog();
 });
 
+// Options tab
+document.getElementById('opt-add-company-btn')?.addEventListener('click', () => openCompanyDialog(null));
+document.getElementById('opt-company-cancel-btn')?.addEventListener('click', closeCompanyDialog);
+document.getElementById('opt-company-dlg-close')?.addEventListener('click', closeCompanyDialog);
+document.getElementById('opt-grant-cancel-btn')?.addEventListener('click', closeGrantDialog);
+document.getElementById('opt-grant-dlg-close')?.addEventListener('click', closeGrantDialog);
+document.getElementById('opt-company-dialog')?.addEventListener('click', e => { if (e.target === document.getElementById('opt-company-dialog')) closeCompanyDialog(); });
+document.getElementById('opt-grant-dialog')?.addEventListener('click', e => { if (e.target === document.getElementById('opt-grant-dialog')) closeGrantDialog(); });
+
 // Theme picker
 function applyTheme(mode, { persist = true } = {}) {
   state.theme = mode;
@@ -252,7 +262,8 @@ els.exportCsvBtn?.addEventListener('click', () => {
 // Dismiss chart tooltips when tapping outside a canvas (touch devices have no
 // mouseout, so Chart.js tooltips stay pinned otherwise)
 function dismissChartTooltips() {
-  for (const c of [state.chart, state.overviewChart]) {
+  const optCharts = Object.values(state.optionCompanyCharts || {});
+  for (const c of [state.chart, state.overviewChart, state.optionSummaryChart, ...optCharts]) {
     if (!c) continue;
     c.setActiveElements([]);
     if (c.tooltip) c.tooltip.setActiveElements([], { x: 0, y: 0 });
@@ -278,10 +289,11 @@ document.addEventListener('keydown', (e) => {
   if (key === '1') { document.querySelector('.tab-btn[data-tab="overview"]')?.click(); e.preventDefault(); }
   else if (key === '2') { document.querySelector('.tab-btn[data-tab="detail"]')?.click(); e.preventDefault(); }
   else if (key === '3') { document.querySelector('.tab-btn[data-tab="history"]')?.click(); e.preventDefault(); }
+  else if (key === '4') { document.querySelector('.tab-btn[data-tab="options"]')?.click(); e.preventDefault(); }
   else if (key === 'n') { document.querySelector('.tab-btn[data-tab="entry"]')?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
   else if (key === 's' && !els.saveSnapshotBtn.disabled && !document.getElementById('tab-entry').hidden) { els.saveSnapshotBtn?.click(); e.preventDefault(); }
   else if (key === 'p') { els.privateModeBtn?.click(); e.preventDefault(); }
-  else if (key === '?') { toast('Shortcuts: 1 overview · 2 detail · 3 history · n entry · s save · p private', { timeout: 5000 }); e.preventDefault(); }
+  else if (key === '?') { toast('Shortcuts: 1 overview · 2 detail · 3 history · 4 options · n entry · s save · p private', { timeout: 5000 }); e.preventDefault(); }
 });
 
 // --- Bootstrap: poll for Google APIs (both load async via CDN) ---

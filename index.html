@@ -31,6 +31,7 @@
           <button type="button" class="tab-btn" data-tab="overview" data-i18n="tab_overview">Overview</button>
           <button type="button" class="tab-btn" data-tab="detail" data-i18n="tab_detail">Detail</button>
           <button type="button" class="tab-btn" data-tab="history" data-i18n="tab_history">History</button>
+          <button type="button" class="tab-btn" data-tab="options" data-i18n="tab_options">Options</button>
         </div>
         <span class="tab-spacer"></span>
         <button type="button" class="tab-btn tab-icon-btn" data-tab="entry" title="New entry" aria-label="New entry">
@@ -176,6 +177,35 @@
           </div>
         </div>
         <div class="detail-table-wrap" id="detail-table-wrap"></div>
+      </div>
+
+      <!-- ── Options tab ───────────────────────────────────── -->
+      <div id="tab-options" class="tab-panel" hidden>
+        <div class="opt-header">
+          <div class="opt-hero">
+            <div class="opt-hero-block">
+              <div class="opt-hero-label" data-i18n="opt_vested_label">Vested value</div>
+              <div class="opt-hero-value" id="opt-vested-value">—</div>
+            </div>
+            <div class="opt-hero-block opt-hero-block--muted">
+              <div class="opt-hero-label" data-i18n="opt_unvested_label">Unvested</div>
+              <div class="opt-hero-value" id="opt-unvested-value">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="opt-summary-card ov-chart-card" id="opt-summary-card" hidden>
+          <h3 class="opt-section-title" data-i18n="opt_value_over_time">Options value over time</h3>
+          <div class="chart-wrap opt-summary-chart-wrap">
+            <canvas id="opt-summary-canvas"></canvas>
+          </div>
+        </div>
+
+        <div id="opt-companies-list"></div>
+
+        <div class="opt-add-row">
+          <button type="button" id="opt-add-company-btn" class="primary" data-i18n="opt_add_company">+ Add company</button>
+        </div>
       </div>
 
       <div id="tab-settings" class="tab-panel" hidden>
@@ -497,6 +527,105 @@
   <footer>
     <small>PFS Tool — <span id="app-version"></span></small>
   </footer>
+
+  <!-- ── Option company dialog ──────────────────────────── -->
+  <dialog id="opt-company-dialog" class="form-dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header">
+        <h2 id="opt-company-dlg-title">Company</h2>
+        <button type="button" class="dialog-close" id="opt-company-dlg-close" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-company-name" data-i18n="opt_company_name">Company name</label>
+        <input type="text" id="opt-company-name" autocomplete="off">
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-company-ticker" data-i18n="opt_ticker">Ticker (optional)</label>
+        <input type="text" id="opt-company-ticker" autocomplete="off" maxlength="10" style="text-transform:uppercase">
+      </div>
+      <label class="dialog-checkbox">
+        <input type="checkbox" id="opt-company-active" checked>
+        <span data-i18n="opt_active">Active</span>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="opt-company-save-btn" data-i18n="save_changes">Save</button>
+        <button type="button" class="link-btn" id="opt-company-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button type="button" class="link-btn danger" id="opt-company-delete-btn" hidden data-i18n="opt_delete_company">Delete company</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ── Option grant dialog ─────────────────────────────── -->
+  <dialog id="opt-grant-dialog" class="form-dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header">
+        <h2 id="opt-grant-dlg-title">Grant</h2>
+        <button type="button" class="dialog-close" id="opt-grant-dlg-close" aria-label="Close">✕</button>
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-grant-label" data-i18n="opt_grant_label">Label</label>
+        <input type="text" id="opt-grant-label" autocomplete="off" placeholder="e.g. Initial grant">
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-type" data-i18n="opt_grant_type">Type</label>
+          <select id="opt-grant-type">
+            <option value="ISO">ISO</option>
+            <option value="NSO">NSO</option>
+            <option value="RSU">RSU</option>
+            <option value="SAR">SAR</option>
+          </select>
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-date" data-i18n="opt_grant_date">Grant date</label>
+          <input type="date" id="opt-grant-date">
+        </div>
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-shares" data-i18n="opt_total_shares">Total shares</label>
+          <input type="number" id="opt-grant-shares" min="0" step="1">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-strike" data-i18n="opt_strike_price">Strike price</label>
+          <input type="number" id="opt-grant-strike" min="0" step="0.01" placeholder="0 for RSUs">
+        </div>
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-vesting-start" data-i18n="opt_vesting_start">Vesting start</label>
+          <input type="date" id="opt-grant-vesting-start">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-cliff" data-i18n="opt_cliff_months">Cliff (months)</label>
+          <input type="number" id="opt-grant-cliff" min="0" step="1" value="12">
+        </div>
+      </div>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-vesting-months" data-i18n="opt_vesting_months">Duration (months)</label>
+          <input type="number" id="opt-grant-vesting-months" min="1" step="1" value="48">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-grant-interval" data-i18n="opt_vesting_interval">Vesting interval</label>
+          <select id="opt-grant-interval">
+            <option value="monthly" data-i18n="opt_interval_monthly">Monthly</option>
+            <option value="quarterly" data-i18n="opt_interval_quarterly">Quarterly</option>
+            <option value="annual" data-i18n="opt_interval_annual">Annual</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-grant-expiry" data-i18n="opt_expiry_date">Expiry date (optional)</label>
+        <input type="date" id="opt-grant-expiry">
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="opt-grant-save-btn" data-i18n="save_changes">Save</button>
+        <button type="button" class="link-btn" id="opt-grant-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button type="button" class="link-btn danger" id="opt-grant-delete-btn" hidden data-i18n="opt_delete_grant">Delete grant</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>

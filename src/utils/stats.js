@@ -1,4 +1,5 @@
 import { state } from '../core/state.js';
+import { computeTotalEquityValue } from './options.js';
 
 export function snapshotForDate(date) {
   const rows = state.snapshots.filter(s => s.date === date);
@@ -75,6 +76,11 @@ export function computeDateStats(date) {
     const signed = balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
     netWorth += signed;
     byCategory[a.category] = (byCategory[a.category] || 0) + signed;
+  }
+  const equity = computeTotalEquityValue(date);
+  if (equity) {
+    netWorth += equity;
+    byCategory['equity'] = equity;
   }
   return { netWorth, byCategory };
 }

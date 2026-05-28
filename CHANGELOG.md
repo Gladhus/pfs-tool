@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.3.0] — 2026-05-28
+## [1.3.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.3.0) — 2026-05-28
 
 ### Added
 - **Options manage panel**: gear icon on the Stock Options tab now opens a full management sub-panel (same pattern as Accounts tab) — contains CRUD for companies, grants, and FMV history

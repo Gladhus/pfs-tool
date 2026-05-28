@@ -15,6 +15,7 @@ import {
 import {
   writeOptionCompanies, writeOptionGrants, addOptionFmvEntry, writeOptionFmv,
 } from '../../api/options.js';
+import { writeConfig } from '../../api/config.js';
 
 const GRANT_COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6', '#ec4899', '#eab308'];
 const COMPANY_COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6', '#10b981', '#ec4899'];
@@ -422,7 +423,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
           padding: 10, cornerRadius: 8,
           callbacks: {
             title: items => fmtShortDate(dates[items[0].dataIndex]),
-            label: ctx => `  ${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString()} shares`,
+            label: ctx => `  ${ctx.dataset.label}: ${Math.round(grantValues[ctx.datasetIndex][ctx.dataIndex]).toLocaleString()} shares`,
           },
         },
       },
@@ -453,6 +454,35 @@ export function renderOptionsManage() {
   const list = document.getElementById('opt-manage-list');
   if (!list) return;
   list.innerHTML = '';
+
+  // Equity tags row — controls which groups equity is included in
+  const tagsRow = document.createElement('div');
+  tagsRow.className = 'opt-manage-section';
+  tagsRow.style.cssText = 'margin-bottom:1rem';
+  const currentTags = (state.configEquityTags || []).join(', ');
+  tagsRow.innerHTML = `
+    <div class="opt-manage-header" style="margin-bottom:0.5rem">
+      <strong>${escapeHtml(t('opt_equity_tags'))}</strong>
+    </div>
+    <p class="hint" style="margin:0 0 0.5rem">${escapeHtml(t('opt_equity_tags_hint'))}</p>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input type="text" id="opt-equity-tags-input" value="${escapeHtml(currentTags)}" placeholder="tech, investments" style="flex:1;padding:.35rem .6rem;border:1px solid var(--border);border-radius:6px;font:inherit;font-size:.85rem;background:var(--surface-2);color:var(--fg)">
+      <button type="button" class="primary" id="opt-equity-tags-save">${escapeHtml(t('save_changes'))}</button>
+    </div>`;
+  list.appendChild(tagsRow);
+
+  tagsRow.querySelector('#opt-equity-tags-save').addEventListener('click', async () => {
+    const raw = tagsRow.querySelector('#opt-equity-tags-input').value;
+    const tags = raw.split(',').map(t => t.trim()).filter(Boolean);
+    state.configEquityTags = tags;
+    try {
+      setStatus('Saving…');
+      await writeConfig('equity_tags', tags.join(','));
+      setStatus('Saved.', 'ok');
+    } catch (err) {
+      setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    }
+  });
 
   const allCompanies = state.optionCompanies;
   if (!allCompanies.length) {

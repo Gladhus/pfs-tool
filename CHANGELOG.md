@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.4.0] — 2026-05-28
+
+### Added
+- **Equity in overview chart**: vested stock options value now appears as its own colored stacked area in the Overview chart (category view), with a series toggle chip alongside the other categories
+- **Equity in group totals**: groups now include equity when its configured tags match the group's tag criteria — set tags in the Stock Options manage panel (⚙ → Tags field)
+- **Equity tags**: new "Tags" field at the top of the Stock Options manage panel; comma-separated tags (e.g. `tech, investments`) control which overview groups equity is counted in; persisted to the sheet config as `equity_tags`
+- **Equity sparkline**: the equity stat card now draws its historical sparkline (was created but never rendered)
+
+### Fixed
+- **Vesting chart tooltip**: hover values were showing the cumulative stacked total instead of each grant's individual vested share count
+- **Mobile accounts sidebar**: sticky horizontal nav bar now stays pinned at the top of the viewport when scrolling on mobile (previously used `position: static`)
+
+---
+
 ## [1.3.1](https://github.com/Gladhus/pfs-tool/releases/tag/v1.3.1) — 2026-05-28
 
 ### Fixed

@@ -3077,15 +3077,20 @@ dialog::backdrop {
 .manage-content { flex: 1; min-width: 0; }
 
 @media (max-width: 600px) {
-  .manage-layout { flex-direction: column; gap: 0.75rem; }
+  .manage-layout { flex-direction: column; gap: 0; }
   .manage-sidebar {
     flex-direction: row;
     flex-wrap: wrap;
-    position: static;
-    padding-top: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 0.4rem 0;
     min-width: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
   }
   .manage-sidebar-link { width: auto; font-size: 0.78rem; padding: 0.35rem 0.6rem; }
+  .manage-content { padding-top: 0.75rem; }
 }
 
 /* ── Options manage panel ────────────────────────────────── */

@@ -11,6 +11,8 @@ export async function loadConfig() {
     if (map.theme)    state.configTheme = map.theme;
     if (map.stock_options_enabled !== undefined)
       state.configStockOptions = map.stock_options_enabled === '1' ? true : map.stock_options_enabled === '0' ? false : null;
+    if (map.equity_tags !== undefined)
+      state.configEquityTags = String(map.equity_tags || '').split(',').map(t => t.trim()).filter(Boolean);
   } catch (_) {}
 }
 

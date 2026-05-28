@@ -99,6 +99,8 @@ function groupStatsFor(date, group) {
     if (!a || !accountMatchesGroup(a, group)) continue;
     total += balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
   }
+  if (state.configEquityTags?.length && accountMatchesGroup({ tags: state.configEquityTags }, group))
+    total += computeTotalEquityValue(date);
   return total;
 }
 
@@ -291,6 +293,7 @@ function renderCategoryCards(current, periodRef, periodLabel, redact) {
     spark.className = 'ov-card-spark';
     spark.width = 200; spark.height = 28;
     card.appendChild(spark);
+    queueSparkline(spark, { kind: 'equity' });
     if (periodRef) {
       const prev = periodRef.byCategory['equity'] || 0;
       const d = equityVal - prev;
@@ -492,6 +495,13 @@ export function renderOverviewChart() {
     ? groups.map(g => ({ key: 'group:' + g.name, label: g.name, color: groupColor(g), match: a => accountMatchesGroup(a, g) }))
     : cats.map(c => ({ key: c.id, label: tr(c), color: null /* filled below */, match: a => foldCategoryId(a.category) === c.id, catId: c.id }));
 
+  // Equity (stock options) has no account/snapshot — add as its own bucket in category view
+  let equityBucketIdx = -1;
+  if (view === 'category' && state.optionCompanies?.length) {
+    equityBucketIdx = buckets.length;
+    buckets.push({ key: 'equity', label: t('equity_label'), color: null, catId: 'equity' });
+  }
+
   const seriesArr = buckets.map(() => new Array(dates.length).fill(0));
   const net = new Array(dates.length).fill(0);
   const hasAny = new Array(dates.length).fill(false);
@@ -514,11 +524,23 @@ export function renderOverviewChart() {
         }
       }
     }
-    // Add equity value to the net series
     const equity = computeTotalEquityValue(dates[i]);
     if (equity) {
       net[i] += equity;
       dayHasAny = true;
+      if (equityBucketIdx >= 0) {
+        seriesArr[equityBucketIdx][i] += equity;
+        if (bucketFirstSeen[equityBucketIdx] === -1) bucketFirstSeen[equityBucketIdx] = i;
+      }
+      if (view === 'group' && state.configEquityTags?.length) {
+        const vEquity = { tags: state.configEquityTags };
+        for (let b = 0; b < buckets.length; b++) {
+          if (buckets[b].match(vEquity)) {
+            seriesArr[b][i] += equity;
+            if (bucketFirstSeen[b] === -1) bucketFirstSeen[b] = i;
+          }
+        }
+      }
     }
     hasAny[i] = dayHasAny;
   }
@@ -714,6 +736,10 @@ function renderSeriesToggles() {
       const color = cs.getPropertyValue('--cat-' + categoryKey(cat.id)).trim() || netColor;
       wrap.appendChild(mkToggle(cat.id, tr(cat), color));
     }
+    if (state.optionCompanies?.length && state.optionFmv?.length) {
+      const equityColor = cs.getPropertyValue('--cat-equity').trim() || '#06b6d4';
+      wrap.appendChild(mkToggle('equity', t('equity_label'), equityColor));
+    }
   }
 }
 
@@ -728,20 +754,26 @@ function drawSpark(canvas, spec) {
   const dates = state.datesSorted.slice(-24);
   if (dates.length < 2) return;
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
-  const matches = (a) => {
-    if (spec.kind === 'group') return accountMatchesGroup(a, spec.group);
-    return foldCategoryId(a.category) === spec.id;
-  };
-  const sweep = buildBalanceSweep(dates);
-  const series = sweep.map(balances => {
-    let total = 0;
-    for (const [id, balance_raw] of Object.entries(balances)) {
-      const a = acctById[id];
-      if (!a || !matches(a)) continue;
-      total += balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
-    }
-    return total;
-  });
+
+  let series;
+  if (spec.kind === 'equity') {
+    series = dates.map(d => computeTotalEquityValue(d));
+  } else {
+    const matches = (a) => {
+      if (spec.kind === 'group') return accountMatchesGroup(a, spec.group);
+      return foldCategoryId(a.category) === spec.id;
+    };
+    const sweep = buildBalanceSweep(dates);
+    series = sweep.map(balances => {
+      let total = 0;
+      for (const [id, balance_raw] of Object.entries(balances)) {
+        const a = acctById[id];
+        if (!a || !matches(a)) continue;
+        total += balance_raw * (a.ownership_share || 1) * (a.kind === 'debt' ? -1 : 1);
+      }
+      return total;
+    });
+  }
 
   const min = Math.min(...series);
   const max = Math.max(...series);

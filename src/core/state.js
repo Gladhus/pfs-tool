@@ -52,6 +52,7 @@ export const state = {
   configLang:          null,
   configTheme:         null,
   configStockOptions:  null,
+  configEquityTags:    [],
   lang:         localStorage.getItem(LS_KEY_LANG) || cfg.LANGUAGE || 'fr',
   privateMode:  localStorage.getItem(LS_KEY_PRIVATE) === '1',
   theme:        localStorage.getItem(LS_KEY_THEME) || 'system',

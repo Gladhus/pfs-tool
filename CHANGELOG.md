@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.1.0] — 2026-05-28
+## [1.1.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.0) — 2026-05-28
 
 ### Added
 - **Choose sheet**: replaced the static "Reset link" with a "Choose sheet" button that opens a Drive file picker — lists all PFS spreadsheets created by the app, lets the user switch without re-authenticating

@@ -123,25 +123,41 @@ function renderSummaryChart(now) {
   card.hidden = false;
 
   const startDate = allFmvDates[0];
-  const dates = generateMonthlyDates(startDate, now);
-  if (dates.length < 2) return;
+  const allDates = generateMonthlyDates(startDate, now);
+  if (allDates.length < 2) return;
 
   const cs = getComputedStyle(document.documentElement);
   const muted   = cs.getPropertyValue('--subtle').trim() || '#94a3b8';
   const gridCol = cs.getPropertyValue('--border').trim() || 'rgba(15,23,42,.06)';
-  const locale  = lang() === 'fr' ? 'fr-CA' : 'en-CA';
 
-  // Build cumulative datasets (one per company, stacked)
-  const companyValues = companies.map(c =>
-    dates.map(d => computeCompanyEquityValue(c.id, d))
-  );
+  // Use null (not 0) when a company has no FMV data yet for a date.
+  // This prevents mid-month FMV entries from producing a false zero on the
+  // month-01 date that precedes them.
+  const allCompanyValues = companies.map(c => {
+    const grants = state.optionGrants.filter(g => g.company_id === c.id);
+    return allDates.map(d => {
+      const entry = getEffectiveFmv(c.id, d);
+      if (!entry) return null;
+      return grants.reduce((sum, g) => sum + computeIntrinsicValue(g, entry.fmv, d), 0);
+    });
+  });
+
+  // Trim leading dates where every company has null (no data at all yet)
+  let trimStart = 0;
+  while (trimStart < allDates.length && allCompanyValues.every(v => v[trimStart] === null)) trimStart++;
+  const dates = allDates.slice(trimStart);
+  const companyValues = allCompanyValues.map(v => v.slice(trimStart));
+
+  if (dates.length < 2) return;
 
   const datasets = companies.map((company, ci) => {
     const color = COMPANY_COLORS[ci % COMPANY_COLORS.length];
-    // cumulative: sum of this company and all previous
-    const cumData = dates.map((_, di) =>
-      companyValues.slice(0, ci + 1).reduce((s, arr) => s + arr[di], 0)
-    );
+    // cumulative: sum of this company and all previous; null if all are still null
+    const cumData = dates.map((_, di) => {
+      const vals = companyValues.slice(0, ci + 1).map(arr => arr[di]);
+      if (vals.every(v => v === null)) return null;
+      return vals.reduce((s, v) => s + (v ?? 0), 0);
+    });
     return {
       label: company.ticker ? `${company.name} (${company.ticker})` : company.name,
       data: cumData,
@@ -152,7 +168,7 @@ function renderSummaryChart(now) {
       tension: 0.3,
       pointRadius: 0,
       pointHoverRadius: 4,
-      spanGaps: true,
+      spanGaps: false,
     };
   });
 
@@ -164,9 +180,8 @@ function renderSummaryChart(now) {
   };
 
   // x-axis ticks: one per year
-  const years = new Set(dates.map(d => d.slice(0,4)));
   const yearTicks = new Set();
-  dates.forEach((d, i) => { if (!yearTicks.size || d.slice(0,4) !== dates[i-1]?.slice(0,4)) yearTicks.add(i); });
+  dates.forEach((d, i) => { if (i === 0 || d.slice(0,4) !== dates[i-1].slice(0,4)) yearTicks.add(i); });
 
   if (state.optionSummaryChart) { state.optionSummaryChart.destroy(); state.optionSummaryChart = null; }
   state.optionSummaryChart = new Chart(canvas, {

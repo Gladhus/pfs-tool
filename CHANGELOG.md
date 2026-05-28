@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.1.1] — 2026-05-28
+
+### Fixed
+- **i18n**: all translation files now self-register on import via `registerTranslations()` — previously the registry was always empty and every label fell back to its key
+- **Language persistence**: changing language now writes to the sheet's `config` tab; `setLang()` was saving to `localStorage` only
+
+---
+
 ## [1.1.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.0) — 2026-05-28
 
 ### Added

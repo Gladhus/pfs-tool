@@ -13,7 +13,7 @@ import {
   grantFullyVestedDate, grantFirstVestDate, generateMonthlyDates,
 } from '../../utils/options.js';
 import {
-  writeOptionCompanies, writeOptionGrants, addOptionFmvEntry,
+  writeOptionCompanies, writeOptionGrants, addOptionFmvEntry, writeOptionFmv,
 } from '../../api/options.js';
 
 const GRANT_COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6', '#ec4899', '#eab308'];
@@ -52,12 +52,28 @@ let _editingCompanyId = null;   // null = new
 let _editingGrantId   = null;   // null = new
 let _editingGrantCoId = null;   // which company the grant belongs to
 
-// --- Main render ---
+// --- Sub-tab state ---
+let _optSubTab = 'main';
+
+export function setOptionsSubTab(panel) {
+  _optSubTab = panel;
+  const gear = document.getElementById('opt-settings-btn');
+  for (const p of ['main', 'manage']) {
+    const el = document.getElementById(`opt-sub-${p}`);
+    if (el) el.hidden = (p !== panel);
+  }
+  if (gear) gear.classList.toggle('active', panel === 'manage');
+  if (panel === 'main')   _renderOptionsMain();
+  if (panel === 'manage') renderOptionsManage();
+}
 
 export function renderOptions() {
-  const panel = document.getElementById('tab-options');
-  if (!panel) return;
+  setOptionsSubTab(_optSubTab);
+}
 
+// --- Main sub-panel ---
+
+function _renderOptionsMain() {
   const now = today();
   const companies = state.optionCompanies.filter(c => c.active !== false);
   const totalVested   = computeTotalEquityValue(now);
@@ -219,24 +235,8 @@ function buildCompanyCard(company, ci, now) {
     <div class="opt-card-values">
       ${vestedVal !== null ? `<span class="opt-vested-val">${fmtMoney(vestedVal)} <span class="opt-val-label">${t('opt_vested_label')}</span></span>` : ''}
       ${unvestedVal !== null ? `<span class="opt-unvested-val">${fmtMoney(unvestedVal)} <span class="opt-val-label">${t('opt_unvested_label')}</span></span>` : ''}
-    </div>
-    <div class="opt-card-actions">
-      <button type="button" class="link-btn opt-edit-company-btn">${t('opt_edit_company')}</button>
-      <button type="button" class="link-btn opt-add-grant-btn">${t('opt_add_grant')}</button>
     </div>`;
   card.appendChild(header);
-
-  // FMV log row
-  const fmvRow = document.createElement('div');
-  fmvRow.className = 'opt-fmv-row';
-  const todayStr = now;
-  fmvRow.innerHTML = `
-    <label class="opt-fmv-label">${t('opt_log_fmv')}</label>
-    <input type="date" class="opt-fmv-date-input" value="${todayStr}">
-    <input type="number" class="opt-fmv-input" placeholder="${escapeHtml(t('opt_fmv_placeholder'))}" step="0.01" min="0">
-    <input type="text" class="opt-fmv-note-input" placeholder="${escapeHtml(t('opt_note_placeholder'))}">
-    <button type="button" class="opt-fmv-save-btn primary">${t('opt_log_fmv')}</button>`;
-  card.appendChild(fmvRow);
 
   // Vesting chart
   if (grants.length) {
@@ -273,7 +273,6 @@ function buildCompanyCard(company, ci, now) {
           <span class="opt-grant-dot" style="background:${gColor}"></span>
           <span class="opt-grant-name">${escapeHtml(grant.label || grant.grant_type || 'Grant')}</span>
           <span class="opt-grant-type-badge">${escapeHtml(grant.grant_type || '')}</span>
-          <button type="button" class="link-btn opt-edit-grant-btn" data-grant-id="${escapeHtml(grant.id)}" data-company-id="${escapeHtml(company.id)}">Edit</button>
         </div>
         <div class="opt-grant-progress-wrap">
           <div class="opt-grant-progress-bar">
@@ -291,14 +290,6 @@ function buildCompanyCard(company, ci, now) {
     grantsList.innerHTML = `<p class="hint" style="margin:.5rem 0">${t('opt_no_grants')}</p>`;
   }
   card.appendChild(grantsList);
-
-  // Wire up buttons
-  header.querySelector('.opt-edit-company-btn').addEventListener('click', () => openCompanyDialog(company.id));
-  header.querySelector('.opt-add-grant-btn').addEventListener('click', () => openGrantDialog(null, company.id));
-  grantsList.querySelectorAll('.opt-edit-grant-btn').forEach(btn => {
-    btn.addEventListener('click', () => openGrantDialog(btn.dataset.grantId, btn.dataset.companyId));
-  });
-  fmvRow.querySelector('.opt-fmv-save-btn').addEventListener('click', () => saveFmvEntry(company.id, fmvRow));
 
   return card;
 }
@@ -441,34 +432,225 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
   });
 }
 
-// --- FMV save ---
+// --- Manage sub-panel ---
 
-async function saveFmvEntry(companyId, fmvRow) {
-  const dateInput = fmvRow.querySelector('.opt-fmv-date-input');
-  const amtInput  = fmvRow.querySelector('.opt-fmv-input');
-  const noteInput = fmvRow.querySelector('.opt-fmv-note-input');
-  const btn       = fmvRow.querySelector('.opt-fmv-save-btn');
+export function renderOptionsManage() {
+  const list = document.getElementById('opt-manage-list');
+  if (!list) return;
+  list.innerHTML = '';
 
-  const date = dateInput.value.trim();
-  const fmv  = parseFloat(amtInput.value);
-  if (!date || !Number.isFinite(fmv) || fmv < 0) {
-    amtInput.focus();
+  const allCompanies = state.optionCompanies;
+  if (!allCompanies.length) {
+    list.innerHTML = `<p class="hint" style="margin:1rem 0">${escapeHtml(t('opt_no_companies'))}</p>`;
     return;
   }
 
+  allCompanies.forEach((company, ci) => {
+    const section = buildCompanyManageSection(company, ci);
+    list.appendChild(section);
+  });
+}
+
+function buildCompanyManageSection(company, ci) {
+  const color = COMPANY_COLORS[ci % COMPANY_COLORS.length];
+  const grants = state.optionGrants.filter(g => g.company_id === company.id);
+  const companyFmv = state.optionFmv
+    .filter(f => f.company_id === company.id)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const section = document.createElement('div');
+  section.className = 'opt-manage-section';
+  section.style.setProperty('--opt-color', color);
+
+  // Company header
+  const header = document.createElement('div');
+  header.className = 'opt-manage-header';
+  header.innerHTML = `
+    <div class="opt-card-title">
+      <span class="opt-company-dot"></span>
+      <strong>${escapeHtml(company.name)}</strong>
+      ${company.ticker ? `<span class="opt-ticker">${escapeHtml(company.ticker)}</span>` : ''}
+      ${company.active === false ? `<span class="opt-inactive-badge">${t('opt_inactive')}</span>` : ''}
+    </div>
+    <button type="button" class="link-btn opt-manage-edit-company">${t('edit_label')}</button>`;
+  section.appendChild(header);
+  header.querySelector('.opt-manage-edit-company').addEventListener('click', () => openCompanyDialog(company.id));
+
+  // FMV history block
+  const fmvBlock = document.createElement('div');
+  fmvBlock.className = 'opt-manage-block';
+
+  const fmvTitle = document.createElement('div');
+  fmvTitle.className = 'opt-manage-subtitle';
+  fmvTitle.textContent = t('opt_fmv_history');
+  fmvBlock.appendChild(fmvTitle);
+
+  if (companyFmv.length) {
+    const table = document.createElement('table');
+    table.className = 'opt-fmv-table';
+    table.innerHTML = `<thead><tr>
+      <th>${t('opt_fmv_date_col')}</th>
+      <th>${t('opt_fmv_value_col')}</th>
+      <th>${t('opt_fmv_note_col')}</th>
+      <th></th>
+    </tr></thead>`;
+    const tbody = document.createElement('tbody');
+
+    companyFmv.forEach((entry) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(entry.date)}</td>
+        <td>${fmtMoney(Number(entry.fmv))}</td>
+        <td class="opt-fmv-note-cell">${escapeHtml(entry.note || '')}</td>
+        <td class="opt-fmv-actions">
+          <button type="button" class="link-btn fmv-edit-btn">${t('edit_label')}</button>
+          <button type="button" class="link-btn fmv-delete-btn" style="color:var(--danger)">✕</button>
+        </td>`;
+      tr.querySelector('.fmv-edit-btn').addEventListener('click', () => editFmvRow(tbody, tr, company.id, entry));
+      tr.querySelector('.fmv-delete-btn').addEventListener('click', () => deleteFmvEntry(company.id, entry));
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    fmvBlock.appendChild(table);
+  } else {
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.style.margin = '0.25rem 0 0.5rem';
+    hint.textContent = t('opt_no_fmv_history');
+    fmvBlock.appendChild(hint);
+  }
+
+  // Add FMV form
+  const addForm = document.createElement('div');
+  addForm.className = 'opt-fmv-manage-add';
+  const nowStr = today();
+  addForm.innerHTML = `
+    <input type="date" class="fmv-add-date" value="${nowStr}">
+    <input type="number" class="fmv-add-val" placeholder="${escapeHtml(t('opt_fmv_placeholder'))}" step="0.01" min="0">
+    <input type="text" class="fmv-add-note" placeholder="${escapeHtml(t('opt_note_placeholder'))}">
+    <button type="button" class="fmv-add-btn primary">${t('opt_fmv_add')}</button>`;
+  const addBtn = addForm.querySelector('.fmv-add-btn');
+  addBtn.addEventListener('click', () => saveFmvEntryFromManage(
+    company.id,
+    addForm.querySelector('.fmv-add-date'),
+    addForm.querySelector('.fmv-add-val'),
+    addForm.querySelector('.fmv-add-note'),
+    addBtn,
+  ));
+  fmvBlock.appendChild(addForm);
+  section.appendChild(fmvBlock);
+
+  // Grants block
+  const grantsBlock = document.createElement('div');
+  grantsBlock.className = 'opt-manage-block';
+
+  const grantsTitle = document.createElement('div');
+  grantsTitle.className = 'opt-manage-subtitle';
+  grantsTitle.textContent = t('opt_grants_label');
+  grantsBlock.appendChild(grantsTitle);
+
+  if (grants.length) {
+    grants.forEach((grant, gi) => {
+      const gColor = GRANT_COLORS[gi % GRANT_COLORS.length];
+      const row = document.createElement('div');
+      row.className = 'opt-manage-grant-row';
+      row.innerHTML = `
+        <span class="opt-grant-dot" style="background:${gColor}; width:8px; height:8px; flex-shrink:0"></span>
+        <span class="opt-manage-meta">${escapeHtml(grant.label || grant.grant_type || 'Grant')}
+          <span class="opt-grant-type-badge">${escapeHtml(grant.grant_type || '')}</span>
+          <span class="opt-manage-meta-detail">${(Number(grant.total_shares)||0).toLocaleString()} shares · strike ${fmtMoney(Number(grant.strike_price)||0)}</span>
+        </span>
+        <button type="button" class="link-btn manage-edit-grant-btn">${t('edit_label')}</button>`;
+      row.querySelector('.manage-edit-grant-btn').addEventListener('click', () => openGrantDialog(grant.id, company.id));
+      grantsBlock.appendChild(row);
+    });
+  } else {
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.style.margin = '0.25rem 0 0.5rem';
+    hint.textContent = t('opt_no_grants');
+    grantsBlock.appendChild(hint);
+  }
+
+  const addGrantBtn = document.createElement('button');
+  addGrantBtn.type = 'button';
+  addGrantBtn.className = 'link-btn';
+  addGrantBtn.textContent = t('opt_add_grant');
+  addGrantBtn.addEventListener('click', () => openGrantDialog(null, company.id));
+  grantsBlock.appendChild(addGrantBtn);
+
+  section.appendChild(grantsBlock);
+  return section;
+}
+
+function editFmvRow(tbody, tr, companyId, entry) {
+  tr.innerHTML = `
+    <td><input type="date" class="fmv-edit-date" value="${entry.date}"></td>
+    <td><input type="number" class="fmv-edit-val" value="${entry.fmv}" step="0.01" min="0" style="width:6rem"></td>
+    <td><input type="text" class="fmv-edit-note" value="${escapeHtml(entry.note || '')}" style="width:100%"></td>
+    <td class="opt-fmv-actions">
+      <button type="button" class="fmv-save-edit primary">✓</button>
+      <button type="button" class="link-btn fmv-cancel-edit">✕</button>
+    </td>`;
+
+  tr.querySelector('.fmv-save-edit').addEventListener('click', async () => {
+    const date = tr.querySelector('.fmv-edit-date').value;
+    const fmv  = parseFloat(tr.querySelector('.fmv-edit-val').value);
+    const note = tr.querySelector('.fmv-edit-note').value.trim();
+    if (!date || !Number.isFinite(fmv) || fmv < 0) return;
+    const updated = state.optionFmv.map(f =>
+      (f.company_id === companyId && f.date === entry.date && Number(f.fmv) === Number(entry.fmv) && (f.note||'') === (entry.note||''))
+        ? { ...f, date, fmv, note }
+        : f
+    ).sort((a, b) => a.date.localeCompare(b.date));
+    try {
+      setStatus('Saving…');
+      await writeOptionFmv(updated);
+      setStatus('Saved.', 'ok');
+    } catch (err) {
+      setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    }
+    renderOptionsManage();
+  });
+
+  tr.querySelector('.fmv-cancel-edit').addEventListener('click', () => renderOptionsManage());
+}
+
+async function deleteFmvEntry(companyId, entry) {
+  const newFmv = state.optionFmv.filter(f =>
+    !(f.company_id === companyId && f.date === entry.date && Number(f.fmv) === Number(entry.fmv) && (f.note||'') === (entry.note||''))
+  );
+  try {
+    setStatus('Deleting…');
+    await writeOptionFmv(newFmv);
+    setStatus('Deleted.', 'ok');
+  } catch (err) {
+    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+  }
+  renderOptionsManage();
+}
+
+async function saveFmvEntryFromManage(companyId, dateInput, amtInput, noteInput, btn) {
+  const date = dateInput.value.trim();
+  const fmv  = parseFloat(amtInput.value);
+  if (!date || !Number.isFinite(fmv) || fmv < 0) { amtInput.focus(); return; }
+
   btn.disabled = true;
+  const newFmv = [...state.optionFmv, { date, company_id: companyId, fmv, note: noteInput.value.trim() }]
+    .sort((a, b) => a.date.localeCompare(b.date));
   try {
     setStatus('Saving FMV…');
-    await addOptionFmvEntry({ date, company_id: companyId, fmv, note: noteInput.value.trim() });
+    await writeOptionFmv(newFmv);
     amtInput.value = '';
     noteInput.value = '';
     setStatus('FMV saved.', 'ok');
-    renderOptions();
   } catch (err) {
-    setStatus('Error saving FMV: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
   } finally {
     btn.disabled = false;
   }
+  renderOptionsManage();
 }
 
 // --- Company dialog ---

@@ -9,6 +9,8 @@ export async function loadConfig() {
     const map = Object.fromEntries(rows.slice(1).map(r => [r[0], r[1] ?? '']));
     if (map.language) state.configLang = map.language;
     if (map.theme)    state.configTheme = map.theme;
+    if (map.stock_options_enabled !== undefined)
+      state.configStockOptions = map.stock_options_enabled === '1' ? true : map.stock_options_enabled === '0' ? false : null;
   } catch (_) {}
 }
 

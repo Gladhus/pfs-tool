@@ -193,6 +193,14 @@
 
         <!-- Manage sub-panel (gear) -->
         <div class="subnav-panel" id="acct-sub-manage" hidden>
+          <div class="manage-layout">
+            <nav class="manage-sidebar">
+              <button type="button" class="manage-sidebar-link" data-scroll-to="accounts-section" data-i18n="manage_accounts">Accounts</button>
+              <button type="button" class="manage-sidebar-link" data-scroll-to="groups-section" data-i18n="groups_label">Groups</button>
+              <button type="button" class="manage-sidebar-link" data-scroll-to="import-section" data-i18n="import_historical">Import</button>
+            </nav>
+            <div class="manage-content">
+
           <section id="accounts-section" class="accounts-section">
             <header class="section-header">
               <h2 data-i18n="manage_accounts">Manage accounts</h2>
@@ -207,7 +215,7 @@
             <div id="accounts-status" class="hint"></div>
           </section>
 
-          <section class="accounts-section">
+          <section id="groups-section" class="accounts-section">
             <header class="section-header">
               <h2 data-i18n="groups_label">Groups</h2>
               <button id="add-group-btn" type="button" class="primary" data-i18n="add_group">+ Add group</button>
@@ -257,12 +265,23 @@
               </div>
             </div>
           </section>
+
+            </div><!-- /manage-content -->
+          </div><!-- /manage-layout -->
         </div>
       </div>
 
       <!-- ── Stock Options tab ─────────────────────────────── -->
       <div id="tab-options" class="tab-panel" hidden>
-        <div class="opt-header opt-topbar">
+        <nav class="section-subnav" id="options-subnav">
+          <div></div>
+          <button class="subnav-gear" id="opt-settings-btn" aria-label="Manage companies">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </nav>
+
+        <!-- Main sub-panel: read-only overview -->
+        <div class="subnav-panel" id="opt-sub-main">
           <div class="opt-hero">
             <div class="opt-hero-block">
               <div class="opt-hero-label" data-i18n="opt_vested_label">Vested value</div>
@@ -273,25 +292,22 @@
               <div class="opt-hero-value" id="opt-unvested-value">—</div>
             </div>
           </div>
-          <button class="opt-section-gear" id="opt-settings-btn" aria-label="Manage companies">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </button>
+          <div class="opt-summary-card ov-chart-card" id="opt-summary-card" hidden>
+            <h3 class="opt-section-title" data-i18n="opt_value_over_time">Options value over time</h3>
+            <div class="chart-wrap opt-summary-chart-wrap">
+              <canvas id="opt-summary-canvas"></canvas>
+            </div>
+          </div>
+          <div id="opt-companies-list"></div>
         </div>
 
-        <div id="opt-settings-panel" class="opt-settings-panel" hidden>
+        <!-- Manage sub-panel: CRUD + FMV history -->
+        <div class="subnav-panel" id="opt-sub-manage" hidden>
+          <div id="opt-manage-list"></div>
           <div class="opt-add-row">
             <button type="button" id="opt-add-company-btn" class="primary" data-i18n="opt_add_company">+ Add company</button>
           </div>
         </div>
-
-        <div class="opt-summary-card ov-chart-card" id="opt-summary-card" hidden>
-          <h3 class="opt-section-title" data-i18n="opt_value_over_time">Options value over time</h3>
-          <div class="chart-wrap opt-summary-chart-wrap">
-            <canvas id="opt-summary-canvas"></canvas>
-          </div>
-        </div>
-
-        <div id="opt-companies-list"></div>
       </div>
 
       <div id="tab-settings" class="tab-panel" hidden>
@@ -325,6 +341,20 @@
                 <input type="checkbox" id="enable-stock-options">
                 <span data-i18n="enable_stock_options">Enable Stock Options tab</span>
               </label>
+            </div>
+          </section>
+
+          <section class="pref-section">
+            <header class="section-header">
+              <h2 data-i18n="manage_label">Manage</h2>
+            </header>
+            <div class="setting-row">
+              <span class="setting-label" data-i18n="accounts_label">Accounts</span>
+              <button type="button" class="link-btn settings-jump-btn" id="settings-goto-accounts" data-i18n="goto_manage">Manage →</button>
+            </div>
+            <div class="setting-row" id="settings-goto-options-row" hidden>
+              <span class="setting-label" data-i18n="tab_stock_options">Stock Options</span>
+              <button type="button" class="link-btn settings-jump-btn" id="settings-goto-options" data-i18n="goto_manage">Manage →</button>
             </div>
           </section>
         </div>

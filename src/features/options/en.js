@@ -43,4 +43,13 @@ registerTranslations('en', {
   opt_delete_company:    'Delete company',
   opt_delete_grant:      'Delete grant',
   equity_label:          'Equity',
+  opt_fmv_history:       'FMV History',
+  opt_fmv_date_col:      'Date',
+  opt_fmv_value_col:     'Price',
+  opt_fmv_note_col:      'Note',
+  opt_grants_label:      'Grants',
+  opt_inactive:          'Inactive',
+  edit_label:            'Edit',
+  opt_fmv_add:           'Add FMV',
+  opt_no_fmv_history:    'No FMV entries yet',
 });

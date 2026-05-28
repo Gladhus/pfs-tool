@@ -3035,41 +3035,195 @@ dialog::backdrop {
 .subnav-gear:hover { background: var(--surface-3); color: var(--fg-2); }
 .subnav-gear.active { background: var(--surface-3); color: var(--accent); border-color: var(--accent); }
 
-/* ── Options tab topbar + gear ───────────────────────────── */
-.opt-topbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-.opt-topbar .opt-hero { flex: 1; }
 
-.opt-section-gear {
-  width: 32px;
-  height: 32px;
-  padding: 0;
+/* ── Manage layout with sticky sidebar ───────────────────── */
+.manage-layout {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.manage-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: sticky;
+  top: 1rem;
+  min-width: 7rem;
+  flex-shrink: 0;
+  padding-top: 0.5rem;
+}
+
+.manage-sidebar-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.75rem;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
   color: var(--muted);
   cursor: pointer;
-  flex-shrink: 0;
-  margin-top: 0.25rem;
   transition: background var(--t-fast), color var(--t-fast);
 }
-.opt-section-gear:hover { background: var(--surface-3); color: var(--fg-2); }
-.opt-section-gear.active { background: var(--surface-3); color: var(--accent); border-color: var(--accent); }
-
-.opt-settings-panel {
+.manage-sidebar-link:hover {
   background: var(--surface-2);
+  color: var(--fg-2);
+}
+
+.manage-content { flex: 1; min-width: 0; }
+
+@media (max-width: 600px) {
+  .manage-layout { flex-direction: column; gap: 0.75rem; }
+  .manage-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+    padding-top: 0;
+    min-width: 0;
+  }
+  .manage-sidebar-link { width: auto; font-size: 0.78rem; padding: 0.35rem 0.6rem; }
+}
+
+/* ── Options manage panel ────────────────────────────────── */
+.opt-manage-section {
+  background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--opt-color, var(--cat-equity));
   border-radius: var(--r);
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   margin-bottom: 1rem;
 }
+
+.opt-manage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.opt-manage-subtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.opt-manage-block {
+  margin-bottom: 1.25rem;
+}
+.opt-manage-block:last-child { margin-bottom: 0; }
+
+.opt-manage-grant-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.opt-manage-grant-row:last-of-type { border-bottom: none; }
+
+.opt-manage-meta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.opt-manage-meta-detail {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.opt-fmv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+.opt-fmv-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.opt-fmv-table td {
+  padding: 0.35rem 0.5rem 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.opt-fmv-table tr:last-child td { border-bottom: none; }
+
+.opt-fmv-actions {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.opt-fmv-note-cell {
+  color: var(--muted);
+  font-size: 0.78rem;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opt-fmv-manage-add {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
+.opt-fmv-manage-add input[type="date"],
+.opt-fmv-manage-add input[type="number"],
+.opt-fmv-manage-add input[type="text"] {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg, var(--surface-2));
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.82rem;
+}
+.opt-fmv-manage-add input[type="date"] { width: 9rem; }
+.opt-fmv-manage-add input[type="number"] { width: 7rem; }
+.opt-fmv-manage-add input[type="text"] { flex: 1; min-width: 6rem; }
+
+.opt-inactive-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: var(--warn-bg, #fef3c7);
+  color: var(--warn, #b45309);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.subnav-panel { padding-top: 0.25rem; }
+
+/* ── Settings jump button ────────────────────────────────── */
+.settings-jump-btn {
+  font-weight: 500;
+  color: var(--accent);
+}
+.settings-jump-btn:hover { text-decoration: underline; }
 
 /* ── Setting row checkbox variant ────────────────────────── */
 .setting-checkbox-row {

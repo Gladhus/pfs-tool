@@ -44,4 +44,7 @@ registerTranslations('en', {
   no_sheets_found: 'No sheets found',
   sheet_linked: 'Sheet linked.',
   net_worth: 'Net worth',
+  manage_label: 'Manage',
+  accounts_label: 'Accounts',
+  goto_manage: 'Manage →',
 });

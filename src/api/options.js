@@ -126,3 +126,9 @@ export async function addOptionFmvEntry(entry) {
   });
   state.optionFmv.push(entry);
 }
+
+export async function writeOptionFmv(entries) {
+  await writeTab('option_fmv', HEADERS.option_fmv,
+    entries.map(f => HEADERS.option_fmv.map(h => f[h] ?? '')));
+  state.optionFmv = entries;
+}

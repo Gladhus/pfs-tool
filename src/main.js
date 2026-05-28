@@ -26,13 +26,14 @@ import {
 import {
   configError, onSignedIn, onSignOut, onChooseSheet, onGapiLoad, initTokenClient,
   loadAndRenderForm, setActiveTab, setAccountsSubTab, applyToken, registerApplyTheme,
+  registerApplyStockOptions,
 } from './features/auth/index.js';
 import { writeConfig } from './api/index.js';
 import {
   renderGroupsList, openNewGroupDialog, saveGroupDialog,
   closeGroupDialog, deleteGroupFromDialog,
 } from './features/settings/groups/index.js';
-import { openCompanyDialog, closeCompanyDialog, openGrantDialog, closeGrantDialog } from './features/options/index.js';
+import { openCompanyDialog, closeCompanyDialog, openGrantDialog, closeGrantDialog, setOptionsSubTab } from './features/options/index.js';
 
 // Stamp the build version into the footer
 const vEl = document.getElementById('app-version');
@@ -101,11 +102,8 @@ document.getElementById('accounts-gear-btn')?.addEventListener('click', () => {
 
 // Stock Options gear
 document.getElementById('opt-settings-btn')?.addEventListener('click', () => {
-  const panel = document.getElementById('opt-settings-panel');
-  const btn   = document.getElementById('opt-settings-btn');
-  if (!panel) return;
-  panel.hidden = !panel.hidden;
-  btn?.classList.toggle('active', !panel.hidden);
+  const isManage = !document.getElementById('opt-sub-manage')?.hidden;
+  setOptionsSubTab(isManage ? 'main' : 'manage');
 });
 
 // Stock Options enable/disable
@@ -114,12 +112,22 @@ const _enableStockOptsCb = document.getElementById('enable-stock-options');
 function _applyStockOptions(enabled, persist = true) {
   if (persist) try { localStorage.setItem('pfs_stock_options', enabled ? '1' : '0'); } catch (_) {}
   if (_stockOptTabBtn) _stockOptTabBtn.hidden = !enabled;
+  const optionsJumpRow = document.getElementById('settings-goto-options-row');
+  if (optionsJumpRow) optionsJumpRow.hidden = !enabled;
   if (!enabled && localStorage.getItem(LS_KEY_ACTIVE_TAB) === 'options') setActiveTab('overview');
 }
 const _stockOptEnabled = localStorage.getItem('pfs_stock_options') === '1';
 if (_enableStockOptsCb) _enableStockOptsCb.checked = _stockOptEnabled;
 _applyStockOptions(_stockOptEnabled, false);
-_enableStockOptsCb?.addEventListener('change', () => _applyStockOptions(_enableStockOptsCb.checked));
+_enableStockOptsCb?.addEventListener('change', () => {
+  const enabled = _enableStockOptsCb.checked;
+  _applyStockOptions(enabled);
+  writeConfig('stock_options_enabled', enabled ? '1' : '0');
+});
+registerApplyStockOptions((enabled) => {
+  if (_enableStockOptsCb) _enableStockOptsCb.checked = enabled;
+  _applyStockOptions(enabled, false);
+});
 
 // Overview period pills
 document.querySelectorAll('#ov-period-pills .period-btn').forEach(btn => {
@@ -232,6 +240,24 @@ els.settingsSubtabs?.querySelectorAll('.subtab-btn').forEach(btn => {
       b.classList.toggle('active', b === btn));
     document.querySelectorAll('#tab-settings .subtab-panel').forEach(p =>
       p.hidden = (p.dataset.subtab !== target));
+  });
+});
+
+// Settings jump links
+document.getElementById('settings-goto-accounts')?.addEventListener('click', () => {
+  setActiveTab('accounts');
+  setAccountsSubTab('manage');
+});
+document.getElementById('settings-goto-options')?.addEventListener('click', () => {
+  setActiveTab('options');
+  setOptionsSubTab('manage');
+});
+
+// Manage sidebar scroll links
+document.querySelectorAll('.manage-sidebar-link[data-scroll-to]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.scrollTo);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
 

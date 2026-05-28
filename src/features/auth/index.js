@@ -18,6 +18,10 @@ let _applyThemeFn = null;
 export function registerApplyTheme(fn) { _applyThemeFn = fn; }
 function applyThemeFromSheet(mode) { _applyThemeFn?.(mode); }
 
+let _applyStockOptionsFn = null;
+export function registerApplyStockOptions(fn) { _applyStockOptionsFn = fn; }
+function applyStockOptionsFromSheet(enabled) { _applyStockOptionsFn?.(enabled); }
+
 export function configError() {
   if (!cfg.CLIENT_ID || cfg.CLIENT_ID === 'YOUR_CLIENT_ID_HERE') {
     setStatus('Edit config.js and set CLIENT_ID. See docs/SETUP.md.', 'warn');
@@ -257,6 +261,7 @@ export async function loadAndRenderForm() {
 
   if (state.configLang)  setLang(state.configLang, { persist: false });
   if (state.configTheme) applyThemeFromSheet(state.configTheme);
+  if (state.configStockOptions !== null) applyStockOptionsFromSheet(state.configStockOptions);
 
   const now = new Date();
   state.currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;

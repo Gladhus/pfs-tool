@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.3.0] — 2026-05-28
+
+### Added
+- **Options manage panel**: gear icon on the Stock Options tab now opens a full management sub-panel (same pattern as Accounts tab) — contains CRUD for companies, grants, and FMV history
+- **FMV history editor**: per-company table of all historical FMV entries with inline edit and delete; add new entries without leaving the manage panel
+- **Settings jump links**: Settings → Preferences now has a "Manage" section with direct navigation buttons to the Accounts manage panel and the Stock Options manage panel
+- **Accounts manage sidebar**: sticky sidebar navigation inside the Accounts manage panel for quick-scrolling to Accounts, Groups, and Import sections; collapses to a horizontal row on mobile
+
+### Changed
+- **Stock Options gear**: previously opened a small dropdown; now swaps the full tab to a manage sub-panel; main view is now a read-only overview (hero values + charts + vesting progress)
+- **Stock options toggle persistence**: enabling/disabling the Stock Options tab now writes `stock_options_enabled` to the Google Sheet config tab in addition to localStorage; the setting is restored across devices on sign-in
+
+---
+
 ## [1.2.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.2.0) — 2026-05-28
 
 ### Added

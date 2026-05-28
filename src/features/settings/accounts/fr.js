@@ -1,4 +1,6 @@
-export default {
+import { registerTranslations } from '../../../core/i18n/index.js';
+
+registerTranslations('fr', {
   id_col: 'ID',
   name_fr_col: 'Nom (FR)',
   name_en_col: 'Nom (EN)',
@@ -28,4 +30,4 @@ export default {
   new_account_type_label: 'Nouveau type de compte',
   new_id_label: 'Nouvel ID',
   confirm_rename: 'Confirmer',
-};
+});

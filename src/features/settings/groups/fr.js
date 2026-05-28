@@ -1,4 +1,6 @@
-export default {
+import { registerTranslations } from '../../../core/i18n/index.js';
+
+registerTranslations('fr', {
   edit_group: 'Modifier le groupe',
   group_name_label: 'Nom',
   group_color_label: 'Couleur',
@@ -10,4 +12,4 @@ export default {
   group_saved: 'Groupe enregistré.',
   group_deleted: 'Groupe supprimé.',
   group_save_failed: 'Échec de la sauvegarde',
-};
+});

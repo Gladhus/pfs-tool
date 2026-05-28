@@ -1,3 +1,5 @@
+import "./en.js";
+import "./fr.js";
 import { state, LS_KEY_SHEET_ID, LS_KEY_TOKEN, LS_KEY_ACTIVE_TAB, TOKEN_SKEW_MS, SHEET_TITLE } from '../../core/state.js';
 import { applyI18n, setLang, t } from '../../core/i18n/index.js';
 import { els, setStatus, showSheetLink } from '../../core/dom.js';

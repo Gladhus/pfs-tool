@@ -1,3 +1,5 @@
+import "./en.js";
+import "./fr.js";
 import { state } from '../../core/state.js';
 import { t, tr } from '../../core/i18n/index.js';
 import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';

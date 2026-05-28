@@ -1,4 +1,6 @@
-export default {
+import { registerTranslations } from '../../core/i18n/index.js';
+
+registerTranslations('fr', {
   save_snapshot: 'Enregistrer le bilan',
   reload_from_sheet: 'Recharger',
   copy_prev_month: 'Copier le mois préc.',
@@ -18,4 +20,4 @@ export default {
   confirm_reset_entry: 'Effacer toutes les valeurs saisies ?',
   confirm_delete_entries: 'Ces comptes avaient une valeur enregistrée pour cette date et seront supprimés :',
   confirm_delete_ok: 'Supprimer',
-};
+});

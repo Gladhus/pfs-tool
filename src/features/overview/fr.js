@@ -1,4 +1,6 @@
-export default {
+import { registerTranslations } from '../../core/i18n/index.js';
+
+registerTranslations('fr', {
   empty_overview_title: 'Aucune donnée pour le moment',
   empty_overview_body: "Enregistrez votre premier bilan dans l'onglet Saisie pour voir vos statistiques apparaître ici.",
   empty_overview_cta: 'Aller à la saisie',
@@ -15,4 +17,4 @@ export default {
   no_groups_title: 'Aucun groupe',
   no_groups_body: "Créez des groupes dans Paramètres pour filtrer vos comptes par combinaison d'étiquettes.",
   manage_groups: 'Gérer les groupes',
-};
+});

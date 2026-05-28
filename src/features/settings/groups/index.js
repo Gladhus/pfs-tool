@@ -1,3 +1,5 @@
+import "./en.js";
+import "./fr.js";
 import { state } from '../../../core/state.js';
 import { t } from '../../../core/i18n/index.js';
 import { els } from '../../../core/dom.js';

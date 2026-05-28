@@ -1,3 +1,5 @@
+import "./en.js";
+import "./fr.js";
 import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { lang, t, tFn, tr } from '../../core/i18n/index.js';

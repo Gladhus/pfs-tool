@@ -1,3 +1,7 @@
+import "../en.js";
+import "../fr.js";
+import "./en.js";
+import "./fr.js";
 import { state, HEADERS, OWNERS, KINDS } from '../../../core/state.js';
 import { t, tr, lang } from '../../../core/i18n/index.js';
 import { fmtMoney, parseMoney } from '../../../core/format.js';

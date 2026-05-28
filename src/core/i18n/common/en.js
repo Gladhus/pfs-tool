@@ -1,4 +1,6 @@
-export default {
+import { registerTranslations } from '../index.js';
+
+registerTranslations('en', {
   sign_in: 'Sign in with Google',
   sign_out: 'Sign out',
   tab_overview: 'Overview',
@@ -40,4 +42,4 @@ export default {
   no_sheets_found: 'No sheets found',
   sheet_linked: 'Sheet linked.',
   net_worth: 'Net worth',
-};
+});

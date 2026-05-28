@@ -1,4 +1,6 @@
-export default {
+import { registerTranslations } from '../../core/i18n/index.js';
+
+registerTranslations('en', {
   empty_overview_title: 'No data yet',
   empty_overview_body: 'Save your first snapshot in the Entry tab — your stats will show up here.',
   empty_overview_cta: 'Go to Entry',
@@ -15,4 +17,4 @@ export default {
   no_groups_title: 'No groups yet',
   no_groups_body: 'Create groups in Settings to view accounts by tag combinations in Overview.',
   manage_groups: 'Manage groups',
-};
+});

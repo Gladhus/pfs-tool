@@ -1,4 +1,6 @@
-export default {
+import { registerTranslations } from '../../core/i18n/index.js';
+
+registerTranslations('fr', {
   progression: 'Progression',
   show_net_worth: 'Valeur nette',
   show_investments: 'Investissements',
@@ -13,4 +15,4 @@ export default {
   empty_history_body: 'Vos bilans apparaîtront ici une fois enregistrés.',
   incomplete_data: 'Données incomplètes — certains comptes utilisent la dernière valeur connue.',
   overview_option: 'Aperçu',
-};
+});

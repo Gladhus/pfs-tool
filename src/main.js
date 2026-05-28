@@ -1,5 +1,7 @@
 import 'air-datepicker/air-datepicker.css';
 import '../style.css';
+import './core/i18n/common/en.js';
+import './core/i18n/common/fr.js';
 
 import AirDatepicker from 'air-datepicker';
 import localeEn from 'air-datepicker/locale/en';

@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.1.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.3) — 2026-05-28
+
+### Fixed
+- **CSV import**: date column headers are now parsed universally — supports `DD/MM/YYYY`, `DD-MMM-YY` (e.g. `1-Dec-15`), `DD-MMM-YYYY`, `MMM-DD-YY(YY)`, `YYYY-MMM-DD`, `MMM YYYY`, and all prior formats. Two-digit years are treated as 2000s.
+
+---
+
 ## [1.1.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.1.2) — 2026-05-28
 
 ### Fixed

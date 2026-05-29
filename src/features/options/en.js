@@ -52,6 +52,6 @@ registerTranslations('en', {
   edit_label:            'Edit',
   opt_fmv_add:           'Add FMV',
   opt_no_fmv_history:    'No FMV entries yet',
-  opt_equity_tags:       'Tags',
+  opt_equity_tags:       'Equity tags',
   opt_equity_tags_hint:  'Comma-separated tags used to include equity in overview groups (e.g. tech, investments)',
 });

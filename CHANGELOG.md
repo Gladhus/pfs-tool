@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.4.1] — 2026-05-29
+
+### Fixed
+- **Equity tags section**: "Tags" label renamed to "Equity tags" for clarity; section now uses a proper `<h2>` header matching the Accounts manage panel style
+- **Equity tags rendering**: tags section was silently wiped when no companies existed (root cause: `list.innerHTML = '...'` overwrote the already-appended tags row when the companies array was empty; fixed with `appendChild`)
+
+---
+
 ## [1.4.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.4.0) — 2026-05-28
 
 ### Added

@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.4.2] — 2026-05-29
+## [1.4.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.4.2) — 2026-05-29
 
 ### Fixed
 - **Bootstrap crash**: equity bucket pushed into the `buckets[]` array without a `.match` method caused `a[Dt].match is not a function` during overview chart rendering whenever Stock Options was enabled (root cause: category-view equity bucket lacked the `match: () => false` sentinel that all other buckets carry)

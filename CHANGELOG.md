@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.4.0] — 2026-05-28
+## [1.4.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.4.0) — 2026-05-28
 
 ### Added
 - **Equity in overview chart**: vested stock options value now appears as its own colored stacked area in the Overview chart (category view), with a series toggle chip alongside the other categories

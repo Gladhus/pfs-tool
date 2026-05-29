@@ -499,7 +499,7 @@ export function renderOverviewChart() {
   let equityBucketIdx = -1;
   if (view === 'category' && state.optionCompanies?.length) {
     equityBucketIdx = buckets.length;
-    buckets.push({ key: 'equity', label: t('equity_label'), color: null, catId: 'equity' });
+    buckets.push({ key: 'equity', label: t('equity_label'), color: null, catId: 'equity', match: () => false });
   }
 
   const seriesArr = buckets.map(() => new Array(dates.length).fill(0));

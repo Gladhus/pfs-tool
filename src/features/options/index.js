@@ -5,6 +5,7 @@ import { state } from '../../core/state.js';
 import { t, lang } from '../../core/i18n/index.js';
 import { fmtMoney, fmtPct } from '../../core/format.js';
 import { setStatus } from '../../core/dom.js';
+import { attachAutocomplete } from '../../core/autocomplete.js';
 import {
   computeVestedShares, computeUnvestedShares,
   computeIntrinsicValue, computeUnvestedValue,
@@ -459,30 +460,78 @@ export function renderOptionsManage() {
   const tagsRow = document.createElement('section');
   tagsRow.className = 'opt-manage-section';
   tagsRow.style.cssText = 'margin-bottom:1.5rem';
-  const currentTags = (state.configEquityTags || []).join(', ');
   tagsRow.innerHTML = `
     <header class="section-header" style="margin-bottom:0.5rem">
       <h2>${escapeHtml(t('opt_equity_tags'))}</h2>
     </header>
     <p class="hint" style="margin:0 0 0.75rem">${escapeHtml(t('opt_equity_tags_hint'))}</p>
-    <div style="display:flex;gap:0.5rem;align-items:center">
-      <input type="text" id="opt-equity-tags-input" value="${escapeHtml(currentTags)}" placeholder="tech, investments" style="flex:1;padding:.35rem .6rem;border:1px solid var(--border);border-radius:6px;font:inherit;font-size:.85rem;background:var(--surface-2);color:var(--fg)">
-      <button type="button" class="primary" id="opt-equity-tags-save">${escapeHtml(t('save_changes'))}</button>
+    <div class="tag-input-wrap" id="opt-equity-tags-wrap">
+      <div id="opt-equity-tags-chips" class="tag-chips"></div>
+      <input type="text" id="opt-equity-tags-input" autocomplete="off" placeholder="Add tag…">
     </div>`;
   list.appendChild(tagsRow);
 
-  tagsRow.querySelector('#opt-equity-tags-save').addEventListener('click', async () => {
-    const raw = tagsRow.querySelector('#opt-equity-tags-input').value;
-    const tags = raw.split(',').map(t => t.trim()).filter(Boolean);
-    state.configEquityTags = tags;
+  const chipsEl = tagsRow.querySelector('#opt-equity-tags-chips');
+  const tagInput = tagsRow.querySelector('#opt-equity-tags-input');
+  let _equityTags = [...(state.configEquityTags || [])];
+
+  async function saveEquityTags() {
+    state.configEquityTags = [..._equityTags];
     try {
-      setStatus('Saving…');
-      await writeConfig('equity_tags', tags.join(','));
-      setStatus('Saved.', 'ok');
+      await writeConfig('equity_tags', _equityTags.join(','));
     } catch (err) {
       setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
     }
+  }
+
+  function renderEquityTagChips() {
+    chipsEl.innerHTML = '';
+    for (const tag of _equityTags) {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `${escapeHtml(tag)}<button type="button" aria-label="Remove">&times;</button>`;
+      chip.querySelector('button').addEventListener('click', () => {
+        _equityTags = _equityTags.filter(t => t !== tag);
+        renderEquityTagChips();
+        saveEquityTags();
+      });
+      chipsEl.appendChild(chip);
+    }
+  }
+
+  function allKnownTags() {
+    const set = new Set((state.tagsCatalog || []).map(t => t.name));
+    for (const a of state.accounts) {
+      if (Array.isArray(a.tags)) a.tags.forEach(tag => tag && set.add(tag));
+    }
+    return [...set].sort();
+  }
+
+  attachAutocomplete(tagInput, {
+    getOptions: () => allKnownTags().filter(tag => !_equityTags.includes(tag)),
+    onPick: (tag) => {
+      if (!_equityTags.includes(tag)) {
+        _equityTags.push(tag);
+        renderEquityTagChips();
+        saveEquityTags();
+      }
+    },
   });
+
+  tagInput.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ',') && tagInput.value.trim()) {
+      e.preventDefault();
+      const tag = tagInput.value.trim().replace(/,$/, '');
+      if (tag && !_equityTags.includes(tag)) {
+        _equityTags.push(tag);
+        renderEquityTagChips();
+        saveEquityTags();
+      }
+      tagInput.value = '';
+    }
+  });
+
+  renderEquityTagChips();
 
   const allCompanies = state.optionCompanies;
   if (!allCompanies.length) {

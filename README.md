@@ -1,6 +1,6 @@
 # PFS Tool — Personal Financial Statement
 
-![Version](https://img.shields.io/badge/version-1.4.2-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.4.3-6366f1?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 
 A privacy-first net worth tracker that stores your data in **your own Google Sheet** — nothing passes through any server you don't control.

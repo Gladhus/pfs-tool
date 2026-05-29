@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.4.3] — 2026-05-29
+## [1.4.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.4.3) — 2026-05-29
 
 ### Changed
 - **Equity tags input**: replaced plain comma-separated text field with tag chips + autocomplete — same pattern as the account editor; suggestions come from the existing tags catalog, chips show with × remove buttons, Enter/comma adds a new tag, changes auto-save to the sheet

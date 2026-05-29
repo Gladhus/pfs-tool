@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.4.1] — 2026-05-29
+## [1.4.1](https://github.com/Gladhus/pfs-tool/releases/tag/v1.4.1) — 2026-05-29
 
 ### Fixed
 - **Equity tags section**: "Tags" label renamed to "Equity tags" for clarity; section now uses a proper `<h2>` header matching the Accounts manage panel style

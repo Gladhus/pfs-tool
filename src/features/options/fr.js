@@ -52,6 +52,10 @@ registerTranslations('fr', {
   edit_label:            'Modifier',
   opt_fmv_add:           'Ajouter FMV',
   opt_no_fmv_history:    'Aucune entrée FMV',
+  opt_pill_vesting:      'Acquisition',
+  opt_pill_value:        'Valeur',
+  opt_shares_vested:     'actions acquises',
+  opt_shares_unvested:   'actions non acquises',
   opt_equity_tags:       'Étiquettes equity',
   opt_equity_tags_hint:  'Étiquettes séparées par des virgules pour inclure les options dans les groupes (ex: tech, investissements)',
 });

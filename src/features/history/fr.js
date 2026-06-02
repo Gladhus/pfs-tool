@@ -5,6 +5,7 @@ registerTranslations('fr', {
   show_net_worth: 'Valeur nette',
   show_investments: 'Investissements',
   show_real_estate: 'Immobilier (net)',
+  show_other:       'Autre',
   history: 'Historique',
   investments: 'Investissements',
   real_estate_net: 'Immobilier (net)',
@@ -15,4 +16,6 @@ registerTranslations('fr', {
   empty_history_body: 'Vos bilans apparaîtront ici une fois enregistrés.',
   incomplete_data: 'Données incomplètes — certains comptes utilisent la dernière valeur connue.',
   overview_option: 'Aperçu',
+  hist_newer: 'Récents',
+  hist_older: 'Anciens',
 });

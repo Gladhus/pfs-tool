@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.5.0] — 2026-06-02
+
+### Added
+- **History pagination**: history cards now paginate at 12 months per page with Newer/Older navigation
+- **Private mode in header**: private mode button moved to the main header (right of the gear icon) using an eye/eye-off icon; toggle now re-renders the currently active tab instead of always refreshing overview
+
+### Changed
+- **Tab bar**: replaced segmented pill navigation with GitHub-style underline tabs
+- **Overview hero card**: period pills repositioned to the top-right corner of the hero card on all screen sizes
+- **Sidebar — Manage sub-items**: Accounts, Groups, and Import are now nested sub-points under the Manage sidebar item (visible only when Manage is active); sidebar is sticky on desktop
+- **Header cleanup**: removed "Open in Google Sheets", "Sign out", and user email from the header permanently — these live in Settings only; suppressed ok-level status messages (e.g. "Loaded.")
+
+### Fixed
+- **Private mode coverage**: $ amounts and share counts are now redacted across all sections — History cards (values + deltas), Stock Options (card totals, per-grant values, share counts, chart tooltips, y-axis ticks), and Settings/Accounts balance display; percentages and FMV always remain visible
+- **Private mode toggle**: toggling private mode outside the overview tab now re-renders the active tab correctly
+- **Detail table horizontal scroll**: fixed section layout so the detail table scrolls independently on mobile
+
+---
+
 ## [1.4.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.4.3) — 2026-05-29
 
 ### Changed

@@ -128,15 +128,16 @@ export function renderOverview() {
   const ovTab = document.getElementById('tab-overview');
   ovTab?.classList.toggle('pfs-private', state.privateMode);
   if (els.privateModeBtn) {
-    els.privateModeBtn.textContent = state.privateMode ? t('private_mode_off') : t('private_mode');
+    els.privateModeBtn.classList.toggle('is-private', state.privateMode);
+    els.privateModeBtn.innerHTML = state.privateMode
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   }
 
   if (!state.datesSorted.length) {
     els.ovNetWorth.textContent = '—';
     if (els.ovDelta) els.ovDelta.textContent = '';
     els.ovAsOf.textContent = '';
-    if (els.ovDonutWrap) els.ovDonutWrap.hidden = true;
-    if (els.ovAllocLegend) els.ovAllocLegend.innerHTML = '';
     if (els.ovCards) {
       els.ovCards.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1;">
@@ -201,15 +202,6 @@ export function renderOverview() {
     renderCategoryCards(current, periodRef, periodLabel, redact);
   }
 
-  // Donut: only meaningful for category view (slices must be mutually
-  // exclusive to represent net worth). Hide it in group mode.
-  if (view === 'category') {
-    renderOverviewDonut(current);
-  } else if (els.ovDonutWrap) {
-    els.ovDonutWrap.hidden = true;
-    if (els.ovAllocLegend) els.ovAllocLegend.innerHTML = '';
-    if (state.donutChart) { state.donutChart.destroy(); state.donutChart = null; }
-  }
   renderOverviewChart();
 }
 
@@ -383,98 +375,6 @@ function renderGroupCards(latestDate, periodRefDate, periodLabel, redact) {
     }
     cards.appendChild(card);
   }
-}
-
-// --- Donut: asset allocation at the latest date ---
-function renderOverviewDonut(current) {
-  const canvas = els.ovDonutCanvas;
-  const legend = els.ovAllocLegend;
-  if (!canvas || !legend) return;
-
-  // Only positive-net buckets (assets). Debts excluded.
-  const cats = effectiveCategories();
-  const entries = [];
-  for (const cat of cats) {
-    const v = current.byCategory[cat.id];
-    if (v == null || v <= 0) continue;
-    entries.push({ id: cat.id, label: tr(cat), value: v });
-  }
-
-  if (!entries.length) {
-    els.ovDonutWrap.hidden = true;
-    legend.innerHTML = '';
-    if (state.donutChart) { state.donutChart.destroy(); state.donutChart = null; }
-    return;
-  }
-  els.ovDonutWrap.hidden = false;
-
-  // Equity slice
-  const equityVal = current.byCategory['equity'];
-  if (equityVal > 0) entries.push({ id: 'equity', label: t('equity_label'), value: equityVal });
-
-  const cs = getComputedStyle(document.documentElement);
-  const colorFor = (id) => {
-    if (id === 'equity') return cs.getPropertyValue('--cat-equity').trim() || '#06b6d4';
-    const key = categoryKey(id);
-    return cs.getPropertyValue('--cat-' + key).trim() || cs.getPropertyValue('--accent').trim();
-  };
-  const surfaceBg = cs.getPropertyValue('--surface').trim() || '#fff';
-  const total = entries.reduce((s, e) => s + e.value, 0);
-
-  // Legend (always rebuild — small DOM)
-  legend.innerHTML = '';
-  for (const e of entries) {
-    const row = document.createElement('div');
-    row.className = 'ov-legend-row';
-    const pct = total ? Math.round((e.value / total) * 100) : 0;
-    row.innerHTML = `
-      <span class="ov-legend-dot" style="background:${colorFor(e.id)}"></span>
-      <span class="ov-legend-name">${escapeHtml(e.label)}</span>
-      <span class="ov-legend-pct">${pct}%</span>
-    `;
-    legend.appendChild(row);
-  }
-
-  const data = {
-    labels: entries.map(e => e.label),
-    datasets: [{
-      data: entries.map(e => e.value),
-      backgroundColor: entries.map(e => colorFor(e.id)),
-      borderColor: surfaceBg,
-      borderWidth: 2,
-      hoverOffset: 6,
-    }],
-  };
-
-  if (state.donutChart) {
-    state.donutChart.data = data;
-    state.donutChart.update();
-    return;
-  }
-
-  state.donutChart = new Chart(canvas, {
-    type: 'doughnut',
-    data,
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      cutout: '68%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
-          padding: 10, cornerRadius: 8,
-          callbacks: {
-            label: (ctx) => {
-              const v = ctx.parsed;
-              const pct = total ? ((v / total) * 100).toFixed(1) : 0;
-              return ` ${ctx.label}: ${state.privateMode ? '••••••' : fmtMoney(v)} (${pct}%)`;
-            },
-          },
-        },
-      },
-    },
-  });
 }
 
 // --- Main chart: net worth + per-category OR per-tag lines, with toggles ---

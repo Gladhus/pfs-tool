@@ -17,10 +17,10 @@ export function getHistFilteredDates() {
 
 export function computeSeries(filteredDates) {
   const dates = filteredDates || state.datesSorted;
-  if (!dates.length) return { dates: [], net: [], investments: [], realEstateNet: [] };
+  if (!dates.length) return { dates: [], net: [], investments: [], realEstateNet: [], other: [] };
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
   const sweep = buildBalanceSweep(dates);
-  const outDates = [], net = [], investments = [], realEstateNet = [];
+  const outDates = [], net = [], investments = [], realEstateNet = [], other = [];
   for (let i = 0; i < dates.length; i++) {
     const balances = sweep[i];
     if (!Object.keys(balances).length) continue;
@@ -38,12 +38,18 @@ export function computeSeries(filteredDates) {
     net.push(n);
     investments.push(inv);
     realEstateNet.push(re + red);
+    other.push(n - inv - (re + red));
   }
   const nullBeforeFirst = arr => {
     const first = arr.findIndex(v => v !== 0);
     return first <= 0 ? arr : arr.map((v, i) => i < first ? null : v);
   };
-  return { dates: outDates, net, investments: nullBeforeFirst(investments), realEstateNet: nullBeforeFirst(realEstateNet) };
+  return {
+    dates: outDates, net,
+    investments: nullBeforeFirst(investments),
+    realEstateNet: nullBeforeFirst(realEstateNet),
+    other: nullBeforeFirst(other),
+  };
 }
 
 export function populateHistAccountSelect() {
@@ -99,9 +105,20 @@ export function populateHistAccountSelect() {
         const esc = String(item.label).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         btn.innerHTML = `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`;
       }
+      btn.dataset.label = item.label;
       btn.addEventListener('click', () => {
         wrap.dataset.value = item.value;
         trigger.querySelector('.custom-select-label').textContent = item.label;
+        // Update selected state in menu without rebuilding
+        menu.querySelectorAll('.custom-select-item').forEach(b => {
+          const isSel = b === btn;
+          b.classList.toggle('selected', isSel);
+          const lbl = b.dataset.label || '';
+          const esc = lbl.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+          b.innerHTML = isSel
+            ? `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`
+            : esc;
+        });
         menu.hidden = true;
         wrap.classList.remove('open');
         renderChart();
@@ -127,6 +144,11 @@ function fmtMonthHeading(yyyymm) {
   );
 }
 
+const HIST_PAGE_SIZE = 12;
+let _histPage = 0;
+
+export function resetHistPage() { _histPage = 0; }
+
 export function renderHistoryTable() {
   if (!state.datesSorted.length) {
     els.historySection.hidden = false;
@@ -137,6 +159,7 @@ export function renderHistoryTable() {
         <h3 class="empty-state-title">${t('empty_history_title')}</h3>
         <p class="empty-state-body">${t('empty_history_body')}</p>
       </div>`;
+    if (els.histPagination) els.histPagination.hidden = true;
     return;
   }
 
@@ -188,11 +211,17 @@ export function renderHistoryTable() {
     byMonth.get(mo).push(d);
   }
   const monthsDesc = [...byMonth.keys()].sort().reverse();
+  const totalPages = Math.ceil(monthsDesc.length / HIST_PAGE_SIZE);
+  if (_histPage >= totalPages) _histPage = Math.max(0, totalPages - 1);
+  const pageMonths = monthsDesc.slice(_histPage * HIST_PAGE_SIZE, (_histPage + 1) * HIST_PAGE_SIZE);
 
   const container = els.historyCards;
   container.innerHTML = '';
 
-  for (const mo of monthsDesc) {
+  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
+  const redactDelta = d => state.privateMode ? '••' : fmtDelta(d);
+
+  for (const mo of pageMonths) {
     const datesInMonth = byMonth.get(mo).slice().reverse(); // newest first
     const latestDate = datesInMonth[0];
     const latest = byDate.get(latestDate);
@@ -240,13 +269,13 @@ export function renderHistoryTable() {
 
     const netEl = document.createElement('div');
     netEl.className = 'hist-card-net';
-    netEl.textContent = fmtMoney(latest.net);
+    netEl.textContent = redact(latest.net);
 
     const deltaEl = document.createElement('div');
     deltaEl.className = 'hist-card-delta';
     if (delta !== null) {
       const pct = fmtPct(delta, byDate.get(prevDateKey).net);
-      deltaEl.textContent = fmtDelta(delta) + (pct ? ` (${pct})` : '');
+      deltaEl.textContent = redactDelta(delta) + (pct ? ` (${pct})` : '');
       deltaEl.classList.add(delta >= 0 ? 'up' : 'down');
     }
 
@@ -309,13 +338,13 @@ export function renderHistoryTable() {
 
         const rNet = document.createElement('span');
         rNet.className = 'hist-older-net';
-        rNet.textContent = fmtMoney(d.net);
+        rNet.textContent = redact(d.net);
 
         const rDelta = document.createElement('span');
         rDelta.className = 'hist-older-delta';
         if (dDelta !== null) {
           const pct = fmtPct(dDelta, byDate.get(prevK).net);
-          rDelta.textContent = fmtDelta(dDelta) + (pct ? ` (${pct})` : '');
+          rDelta.textContent = redactDelta(dDelta) + (pct ? ` (${pct})` : '');
           rDelta.classList.add(dDelta >= 0 ? 'up' : 'down');
         }
 
@@ -336,6 +365,38 @@ export function renderHistoryTable() {
 
     container.appendChild(card);
   }
+
+  _renderHistPagination(totalPages);
+}
+
+function _renderHistPagination(totalPages) {
+  const el = els.histPagination;
+  if (!el) return;
+  el.innerHTML = '';
+  if (totalPages <= 1) { el.hidden = true; return; }
+  el.hidden = false;
+
+  const prevBtn = document.createElement('button');
+  prevBtn.type = 'button';
+  prevBtn.className = 'hist-page-btn';
+  prevBtn.textContent = '← ' + t('hist_newer');
+  prevBtn.disabled = _histPage === 0;
+  prevBtn.addEventListener('click', () => { _histPage--; renderHistoryTable(); });
+
+  const info = document.createElement('span');
+  info.className = 'hist-page-info';
+  info.textContent = `${_histPage + 1} / ${totalPages}`;
+
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.className = 'hist-page-btn';
+  nextBtn.textContent = t('hist_older') + ' →';
+  nextBtn.disabled = _histPage >= totalPages - 1;
+  nextBtn.addEventListener('click', () => { _histPage++; renderHistoryTable(); });
+
+  el.appendChild(prevBtn);
+  el.appendChild(info);
+  el.appendChild(nextBtn);
 }
 
 export function renderChart() {
@@ -347,14 +408,12 @@ export function renderChart() {
 
   const cs = getComputedStyle(document.documentElement);
   const color = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
-  const COLOR_NET   = color('--fg', '#0f172a');
   const COLOR_INVEST = color('--cat-investments', '#3b82f6');
   const COLOR_RE     = color('--cat-real-estate', '#f59e0b');
   const COLOR_ASSET  = color('--accent', '#10b981');
   const COLOR_DEBT   = color('--cat-debts', '#f43f5e');
   const COLOR_MUTED  = color('--subtle', '#94a3b8');
   const COLOR_GRID   = color('--border', 'rgba(15,23,42,.06)');
-  const COLOR_FG2    = color('--fg-2', '#475569');
 
   const datasets = [];
   const chartCtx = els.chartCanvas.getContext('2d');
@@ -377,9 +436,32 @@ export function renderChart() {
     const data = computeSeries(filteredDates);
     if (!data.dates.length) { els.chartSection.hidden = true; return; }
     chartDates = data.dates;
-    if (els.showNet?.checked)         datasets.push(lineDataset(t('net_worth_chart'), data.net,           COLOR_NET));
-    if (els.showInvestments?.checked) datasets.push(lineDataset(t('investments'),     data.investments,    COLOR_INVEST));
-    if (els.showRealEstate?.checked)  datasets.push(lineDataset(t('real_estate_net'), data.realEstateNet,  COLOR_RE));
+
+    // Build stacked areas using cumulative values (like vesting chart)
+    let cumData = new Array(chartDates.length).fill(0);
+    let si = 0;
+    const pushArea = (label, rawData, hex) => {
+      cumData = cumData.map((acc, i) => acc + (rawData[i] ?? 0));
+      datasets.push({
+        label,
+        data: [...cumData],
+        _rawData: rawData,
+        borderColor: hex,
+        backgroundColor: hexToRgba(hex, 0.4),
+        borderWidth: 2,
+        fill: si === 0 ? 'origin' : '-1',
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        spanGaps: true,
+      });
+      si++;
+    };
+
+    const COLOR_OTHER = color('--cat-cash', '#10b981');
+    if (els.showInvestments?.checked) pushArea(t('investments'),     data.investments,   COLOR_INVEST);
+    if (els.showRealEstate?.checked)  pushArea(t('real_estate_net'), data.realEstateNet, COLOR_RE);
+    if (els.showOther?.checked)       pushArea(t('show_other'),      data.other,         COLOR_OTHER);
   } else {
     const acct = state.accounts.find(a => a.id === selectedAccount);
     if (!acct) { els.chartSection.hidden = true; return; }
@@ -411,12 +493,17 @@ export function renderChart() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { color: COLOR_FG2, font: { size: 12, family: "'Inter', sans-serif" }, padding: 24, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8 } },
+        legend: { display: false },
         tooltip: {
           backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
           padding: 12, cornerRadius: 10, titleFont: { size: 11 },
           bodyFont: { size: 13, weight: '600' },
-          callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(ctx.parsed.y)}` },
+          callbacks: {
+            label: (ctx) => {
+              const val = ctx.dataset._rawData ? (ctx.dataset._rawData[ctx.dataIndex] ?? ctx.parsed.y) : ctx.parsed.y;
+              return `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(val)}`;
+            },
+          },
         },
       },
       scales: {
@@ -441,13 +528,8 @@ export function renderChart() {
     },
   };
 
-  if (state.chart) {
-    state.chart.data = config.data;
-    state.chart.options = config.options;
-    state.chart.update();
-  } else {
-    state.chart = new Chart(els.chartCanvas, config);
-  }
+  if (state.chart) { state.chart.destroy(); state.chart = null; }
+  state.chart = new Chart(els.chartCanvas, config);
 }
 
 function hexToRgba(hex, a) {

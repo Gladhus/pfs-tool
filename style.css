@@ -146,11 +146,10 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
-html { color-scheme: light dark; }
+html { color-scheme: light dark; overflow-x: hidden; }
 
 body {
   margin: 0;
-  overflow-x: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
   line-height: 1.6;
@@ -165,7 +164,7 @@ body {
   height: 56px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0 1.75rem;
   background: linear-gradient(180deg, #0f172a 0%, #0c1424 100%);
   border-bottom: 1px solid rgba(255,255,255,.06);
@@ -174,16 +173,43 @@ body {
   z-index: 200;
 }
 
-.site-header h1 {
+.site-logo {
   margin: 0;
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.logo-mark {
+  width: 30px;
+  height: 30px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 6px rgba(16,185,129,.35);
+}
+
+.logo-name {
+  font-size: 0.975rem;
   font-weight: 700;
   color: #fff;
-  letter-spacing: -.01em;
+  letter-spacing: -0.015em;
 }
-.site-header h1 span { color: var(--accent); }
 
-#auth-area { display: flex; align-items: center; gap: 0.6rem; }
+.logo-sub {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: rgba(255,255,255,0.45);
+  margin-left: 0.12em;
+  letter-spacing: 0.01em;
+}
+
+#auth-area { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
 
 #user-email {
   font-size: 0.8rem;
@@ -215,6 +241,11 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   font-size: 0.78rem;
   padding: 0.35rem 0.75rem;
 }
+.site-header .tab-btn {
+  background: transparent;
+  border-color: transparent;
+  padding: 0 1rem;
+}
 .site-header button:hover { background: rgba(255,255,255,.15); }
 
 button.primary {
@@ -243,7 +274,6 @@ main {
   max-width: 920px;
   margin: 0 auto;
   padding: 1.5rem 1.5rem 4rem;
-  overflow-x: hidden;
 }
 
 /* ── Utility ─────────────────────────────────────────────── */
@@ -324,17 +354,16 @@ svg { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
 
 /* ── Tab bar ─────────────────────────────────────────────── */
 #tab-bar {
+  align-self: stretch;
   display: flex;
-  align-items: center;
-  margin: 1.25rem 0 0.25rem;
+  align-items: stretch;
+  flex-shrink: 0;
 }
 
 .tab-group {
-  display: inline-flex;
-  background: var(--border);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 2px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
 }
 
 .tab-spacer { flex: 1; }
@@ -342,36 +371,57 @@ svg { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
 .tab-btn {
   background: transparent;
   border: none;
-  border-radius: 7px;
-  padding: 0.45rem 1.3rem;
+  border-radius: 0;
+  padding: 0 1rem;
   font: inherit;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--muted);
+  color: rgba(255,255,255,.45);
   cursor: pointer;
-  transition: background 150ms, color 150ms, box-shadow 150ms;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+  transition: color 150ms;
+  white-space: nowrap;
+  min-height: 0;
 }
-.tab-btn:hover { color: var(--fg-2); background: transparent; }
+.tab-btn:hover { color: rgba(255,255,255,.85); }
 .tab-btn.active {
-  background: var(--surface);
-  color: var(--fg);
+  color: #fff;
   font-weight: 600;
-  box-shadow: 0 1px 4px rgba(15,23,42,.12), 0 0 0 1px rgba(15,23,42,.05);
 }
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 150ms;
+}
+.tab-btn:hover::after { background: rgba(255,255,255,.2); }
+.tab-btn.active::after { background: var(--accent); }
 
 .tab-icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  margin-left: 4px;
   flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,.65);
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
 }
-.tab-icon-btn:hover { background: var(--border); color: var(--fg-2); }
-.tab-icon-btn.active { background: var(--border); color: var(--fg); }
+.tab-icon-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+.tab-icon-btn.active { background: rgba(255,255,255,.15); color: #fff; }
+#private-mode-btn.is-private { color: var(--accent); }
 
 /* ── Focus ring for all inputs ───────────────────────────── */
 input:focus-visible,
@@ -757,6 +807,28 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   margin-top: 0.75rem;
 }
 
+.hist-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+}
+
+.hist-page-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8125rem;
+  border-radius: 6px;
+  min-height: 0;
+}
+
+.hist-page-info {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .hist-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -910,6 +982,21 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   padding: 1.25rem;
 }
 
+#chart-section {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "account  pills"
+    "toggles  toggles"
+    "chart    chart";
+  column-gap: 1rem;
+  row-gap: 0.75rem;
+}
+#hist-account-select          { grid-area: account; align-self: center; }
+#hist-period-pills            { grid-area: pills; justify-self: end; align-self: center; }
+#hist-chart-toggles           { grid-area: toggles; }
+#chart-section > .chart-wrap  { grid-area: chart; }
+
 .chart-toggles {
   display: flex;
   gap: 0.5rem;
@@ -940,29 +1027,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   margin-top: 1rem;
 }
 
-/* ── Settings sub-tabs ───────────────────────────────────── */
-.subtab-bar {
-  display: inline-flex; gap: 2px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px; padding: 3px;
-  margin: 1.25rem 0 0.5rem;
-}
-.subtab-btn {
-  background: transparent; border: none;
-  border-radius: 7px;
-  padding: 0.4rem 1rem;
-  font: inherit; font-size: 0.78rem; font-weight: 500;
-  color: var(--muted); cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
-}
-.subtab-btn:hover { color: var(--fg-2); }
-.subtab-btn.active {
-  background: var(--surface);
-  color: var(--fg);
-  font-weight: 600;
-  box-shadow: var(--shadow-xs);
-}
+
 
 /* ── Theme picker ────────────────────────────────────────── */
 .theme-toggle {
@@ -1320,6 +1385,8 @@ button.danger:hover { background: #dc2626; }
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.75rem 1rem;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .detail-table-wrap {
@@ -1484,21 +1551,33 @@ footer {
 
 /* ── Overview ────────────────────────────────────────────── */
 
-.ov-hero {
+/*
+  Desktop grid for the merged hero + chart card:
+    col 1 (1fr): net worth left
+    col 2 (auto): private-mode btn (row 1), period pills (row 2)
+  Series toggles + chart span full width below.
+*/
+.ov-hero-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-md);
-  padding: 2rem 2rem 1.75rem;
+  padding: 1.5rem 1.5rem 1.25rem;
   margin-bottom: 1rem;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "left    pills"
+    "toggles toggles"
+    "chart   chart";
+  column-gap: 1.5rem;
+  row-gap: 0.6rem;
 }
 
-.ov-hero-left { display: flex; flex-direction: column; gap: 0.5rem; }
+.ov-hero-left    { grid-area: left; display: flex; flex-direction: column; gap: 0.4rem; align-self: start; }
+#ov-period-pills { grid-area: pills; justify-self: end; align-self: start; }
+#ov-series-toggles  { grid-area: toggles; }
+.ov-chart-wrap      { grid-area: chart; }
 
 .ov-hero-label {
   font-size: 0.7rem;
@@ -1531,13 +1610,6 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 0;
-}
-
-.ov-hero-above {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1.25rem;
-  margin-bottom: 0.3rem;
 }
 
 .ov-as-of {
@@ -1703,22 +1775,6 @@ footer {
   color: var(--fg-2);
 }
 
-/* ── Overview chart card ─────────────────────────────────── */
-.ov-chart-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 1.25rem;
-}
-
-.ov-chart-top {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
 
 .period-pills {
   display: inline-flex;
@@ -1862,47 +1918,6 @@ dialog::backdrop {
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
 }
-
-/* ── Overview hero right (private mode btn + donut + legend) ── */
-.ov-hero-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.6rem;
-  flex-shrink: 0;
-  min-width: 0;
-}
-
-.ov-donut-wrap {
-  position: relative;
-  width: 140px; height: 140px;
-}
-.ov-donut-wrap canvas { width: 100% !important; height: 100% !important; }
-
-.ov-allocation-legend:empty { display: none; }
-.ov-allocation-legend {
-  display: flex; flex-direction: column;
-  gap: 0.25rem;
-  align-items: stretch;
-  width: 100%;
-  min-width: 11rem;
-}
-.ov-legend-row {
-  display: grid;
-  grid-template-columns: 0.65rem 1fr auto;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.72rem;
-  color: var(--fg-2);
-  font-feature-settings: "tnum";
-}
-.ov-legend-dot {
-  width: 0.6rem; height: 0.6rem;
-  border-radius: 999px;
-  display: inline-block;
-}
-.ov-legend-name { color: var(--muted); }
-.ov-legend-pct  { font-weight: 700; color: var(--fg); }
 
 /* Series chips on the overview chart card — pill toggles, no checkbox */
 .chart-toggles .series-chip {
@@ -2109,40 +2124,20 @@ dialog::backdrop {
 
 @media (max-width: 768px) {
   .site-header {
-    height: auto;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    padding: 0.7rem 1rem;
-  }
-
-  .site-header h1 {
-    width: 100%;
-    font-size: 0.95rem;
-  }
-
-  .status {
-    width: 100%;
-    text-align: left;
-    padding: 0;
-    font-size: 0.7rem;
-  }
-
-  #auth-area {
-    width: 100%;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    height: 56px;
     gap: 0.5rem;
-  }
-
-  #user-email {
-    width: 100%;
-    text-align: right;
+    padding: 0 1rem;
   }
 
   main {
-    padding: 0.85rem 0.75rem 2.5rem;
+    padding: 0.85rem 0.75rem calc(60px + 1rem);
   }
+  #tab-bar { display: none; }
+  .is-signed-in .site-header { height: 44px; padding: 0 1rem; }
+  .is-signed-in.has-subnav .site-header { border-bottom: none; }
+  .is-signed-in #tab-bar,
+  .is-signed-in #status,
+  .is-signed-in #auth-area { display: none; }
 
   button,
   input[type="month"],
@@ -2150,25 +2145,10 @@ dialog::backdrop {
     min-height: 2.5rem;
   }
 
-  #tab-bar {
-    width: 100%;
-    margin-top: 1rem;
-  }
-  .tab-group {
-    flex: 1;
-    min-width: 0;
-    overflow: visible;
-  }
-  .tab-spacer { display: none; }
-
-  .tab-btn:not(.tab-icon-btn) {
-    flex: 1 1 0;
-    min-width: 0;
-    text-align: center;
-    padding: 0.55rem 0.5rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .opt-pill-btn,
+  .tab-icon-btn,
+  .site-header button {
+    min-height: 0;
   }
 
   .entry-header {
@@ -2263,8 +2243,7 @@ dialog::backdrop {
   .history-section,
   .accounts-section,
   .import-section,
-  .ov-hero,
-  .ov-chart-card {
+  .ov-hero-card {
     margin-top: 0.85rem;
     padding: 1rem;
     border-radius: 12px;
@@ -2288,25 +2267,38 @@ dialog::backdrop {
   }
   .mapping-table { min-width: 560px; }
 
-  .ov-hero {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
+  /* History chart: account select full-width, pills below chart */
+  #chart-section {
+    grid-template-areas:
+      "account  account"
+      "chart    chart"
+      "pills    pills"
+      "toggles  toggles";
+  }
+  #hist-period-pills {
+    justify-self: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #hist-period-pills::-webkit-scrollbar { display: none; }
+
+  /* On mobile: pills stay top-right, chart below */
+  .ov-hero-card {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "left    pills"
+      "toggles toggles"
+      "chart   chart";
+    row-gap: 0.75rem;
+    column-gap: 0.75rem;
   }
 
-  .ov-hero-left {
-    width: 100%;
-    gap: 0.35rem;
-  }
+  .ov-hero-left { gap: 0.3rem; }
 
-  .ov-hero-right {
-    width: 100%;
-    align-items: center;
-    gap: 0.9rem;
+  #ov-period-pills {
+    justify-self: end;
+    align-self: start;
   }
-  .ov-donut-wrap { width: 160px; height: 160px; }
-  .ov-allocation-legend { max-width: 22rem; }
-  .private-mode-btn { align-self: flex-end; }
 
   .ov-big-number {
     font-size: 2rem;
@@ -2331,19 +2323,6 @@ dialog::backdrop {
   }
 
   .ov-card-value { font-size: 1.02rem; }
-
-  .ov-chart-top {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.7rem;
-  }
-
-  .period-pills {
-    width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .period-pills::-webkit-scrollbar { display: none; }
 
   .period-btn {
     min-height: 2rem;
@@ -2385,17 +2364,11 @@ dialog::backdrop {
 }
 
 @media (max-width: 480px) {
-  .site-header { padding: 0.65rem 0.75rem; }
+  .site-header { padding: 0 0.75rem; }
 
-  #auth-area { justify-content: space-between; }
-  #user-email { text-align: left; }
+  #auth-area { gap: 0.35rem; }
 
   main { padding-inline: 0.55rem; }
-
-  .tab-btn:not(.tab-icon-btn) {
-    font-size: 0.72rem;
-    padding-inline: 0.35rem;
-  }
 
   .account-row {
     grid-template-columns: 1fr;
@@ -2431,16 +2404,6 @@ dialog::backdrop {
   input[type="month"],
   select,
   textarea { font-size: 16px; }
-
-  /* Sub-tabs: allow horizontal scroll on narrow widths */
-  .subtab-bar {
-    display: flex;
-    width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .subtab-bar::-webkit-scrollbar { display: none; }
-  .subtab-btn { flex: 1 0 auto; min-width: 6rem; text-align: center; }
 
   /* Theme picker: allow wrapping */
   .theme-toggle { flex-wrap: wrap; }
@@ -2674,10 +2637,25 @@ dialog::backdrop {
   margin-bottom: 1.25rem;
 }
 
-.opt-hero {
+.opt-hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem 1.5rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.opt-hero-top {
   display: flex;
   gap: 2rem;
   align-items: flex-end;
+}
+
+.opt-chart-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
 }
 
 .opt-hero-block {}
@@ -2713,6 +2691,7 @@ dialog::backdrop {
   margin: 0 0 0.75rem;
 }
 
+
 .opt-summary-chart-wrap {
   height: 180px;
 }
@@ -2730,10 +2709,16 @@ dialog::backdrop {
 
 .opt-card-header {
   padding: 1rem 1.25rem 0.75rem;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto auto;
-  gap: 0.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.opt-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .opt-card-title {
@@ -2742,7 +2727,41 @@ dialog::backdrop {
   gap: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
-  grid-column: 1;
+  min-width: 0;
+}
+
+.opt-chart-pill {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  flex-shrink: 0;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.opt-pill-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  letter-spacing: .02em;
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+}
+.opt-pill-btn:hover { color: var(--fg-2); }
+.opt-pill-btn.active {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow-xs);
 }
 
 .opt-company-dot {
@@ -2770,7 +2789,6 @@ dialog::backdrop {
   gap: 0.6rem;
   font-size: 0.8rem;
   color: var(--muted);
-  grid-column: 1;
 }
 
 .opt-fmv-display { color: var(--fg-2); font-weight: 600; }
@@ -2780,8 +2798,8 @@ dialog::backdrop {
 .opt-card-values {
   display: flex;
   gap: 1.5rem;
-  grid-column: 1;
   margin-top: 0.25rem;
+  align-items: baseline;
 }
 
 .opt-vested-val, .opt-unvested-val {
@@ -2954,6 +2972,11 @@ dialog::backdrop {
   color: var(--fg-2);
 }
 
+.opt-grant-unvested-val {
+  font-weight: 400;
+  color: var(--subtle);
+}
+
 /* Empty state */
 .opt-empty-state {
   text-align: center;
@@ -2973,67 +2996,203 @@ dialog::backdrop {
 }
 
 @media (max-width: 600px) {
-  .opt-hero { gap: 1rem; }
+  .opt-hero-top { gap: 1rem; }
   .opt-hero-value { font-size: 1.5rem; }
   .opt-fmv-row { flex-wrap: wrap; }
   .opt-fmv-note-input { display: none; }
+
 }
 
-/* ── Accounts section subnav ─────────────────────────────── */
-.section-subnav {
+/* Truncate user email so it doesn't blow out the header at mid widths */
+#user-email {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Section layout with sticky sidebar ─────────────────── */
+.section-layout {
+  display: flex;
+  align-items: flex-start;
+}
+
+.section-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 145px;
+  flex-shrink: 0;
+  padding: 0 0.75rem 0 0;
+  margin-right: 1.25rem;
+  position: sticky;
+  top: calc(56px + 0.5rem);
+  align-self: flex-start;
+  border-right: 1px solid var(--border);
+}
+
+.section-sidebar-btn {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin: 1.25rem 0 0.75rem;
-  gap: 0.5rem;
-}
-
-.subnav-pills {
-  display: inline-flex;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 2px;
-}
-
-.subnav-btn {
-  background: transparent;
+  justify-content: flex-start;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--r-sm);
   border: none;
-  border-radius: 7px;
-  padding: 0.4rem 1rem;
+  background: transparent;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--muted);
   cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
+  min-height: 0;
 }
-.subnav-btn:hover { color: var(--fg-2); }
-.subnav-btn.active {
-  background: var(--surface);
-  color: var(--fg);
+.section-sidebar-btn:hover { background: var(--surface-2); color: var(--fg-2); }
+.section-sidebar-btn.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
   font-weight: 600;
-  box-shadow: var(--shadow-xs);
 }
 
-.subnav-gear {
-  width: 32px;
-  height: 32px;
-  padding: 0;
+.section-content { flex: 1; min-width: 0; }
+
+.section-sidebar-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  margin-top: 0.2rem;
+  margin-left: 0.5rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--accent);
+}
+
+.section-sidebar-sub-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  width: 100%;
+  text-align: left;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.77rem;
+  font-weight: 400;
   color: var(--muted);
+  background: none;
+  border: none;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: background var(--t-fast), color var(--t-fast);
+  border-radius: 4px;
+  min-height: 0;
+  transition: color var(--t-fast), background var(--t-fast);
+  white-space: nowrap;
 }
-.subnav-gear:hover { background: var(--surface-3); color: var(--fg-2); }
-.subnav-gear.active { background: var(--surface-3); color: var(--accent); border-color: var(--accent); }
+.section-sidebar-sub-btn:hover { color: var(--fg); background: var(--surface-2); }
+
+/* ── Header-only elements now living in Settings ─────────── */
+#sheet-info,
+#signout-btn,
+#user-email { display: none !important; }
+
+/* ── Bottom tab bar (mobile) ─────────────────────────────── */
+#bottom-tab-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #0c1424;
+  z-index: 200;
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bottom-tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,.45);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 0;
+  min-height: 0;
+  transition: color 120ms;
+}
+.bottom-tab-btn:hover { color: rgba(255,255,255,.75); }
+.bottom-tab-btn.active { color: var(--accent); }
+
+.bottom-tab-btn--entry {
+  position: relative;
+}
+.bottom-tab-btn--entry svg {
+  background: rgba(255,255,255,.15);
+  border-radius: 50%;
+  padding: 3px;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  transition: background 120ms;
+}
+.bottom-tab-btn--entry.active svg { background: var(--accent); }
+.bottom-tab-btn--entry:hover svg { background: rgba(255,255,255,.25); }
+.bottom-tab-btn--entry.active:hover svg { background: var(--accent-dark); }
+
+@media (max-width: 768px) {
+  #bottom-tab-bar { display: flex; }
+
+  .section-layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin-top: -0.85rem;
+  }
+
+  .section-sidebar {
+    flex-direction: row;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    position: sticky;
+    top: 44px;
+    z-index: 100;
+    background: #0c1424;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    padding: 0.35rem 1rem;
+    gap: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .section-sidebar::-webkit-scrollbar { display: none; }
+
+  .section-sidebar-btn {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    border-radius: 6px;
+  }
+  .section-sidebar-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.85);
+  }
+  .section-sidebar-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .section-content { padding-top: 1rem; }
+  .section-sidebar-sub { display: none; }
+}
 
 
 /* ── Manage layout with sticky sidebar ───────────────────── */
@@ -3048,7 +3207,7 @@ dialog::backdrop {
   flex-direction: column;
   gap: 0.25rem;
   position: sticky;
-  top: 1rem;
+  top: calc(56px + 1rem);
   min-width: 7rem;
   flex-shrink: 0;
   padding-top: 0.5rem;
@@ -3076,22 +3235,10 @@ dialog::backdrop {
 
 .manage-content { flex: 1; min-width: 0; }
 
-@media (max-width: 600px) {
-  .manage-layout { flex-direction: column; gap: 0; }
-  .manage-sidebar {
-    flex-direction: row;
-    flex-wrap: wrap;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 0.4rem 0;
-    min-width: 0;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .manage-sidebar-link { width: auto; font-size: 0.78rem; padding: 0.35rem 0.6rem; }
-  .manage-content { padding-top: 0.75rem; }
+@media (max-width: 768px) {
+  .manage-sidebar { display: none; }
 }
+
 
 /* ── Options manage panel ────────────────────────────────── */
 .opt-manage-section {

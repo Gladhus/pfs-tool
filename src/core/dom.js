@@ -9,7 +9,6 @@ export const els = {
   sheetLink2:        document.getElementById('sheet-link-2'),
   chooseSheetBtn:    document.getElementById('choose-sheet-btn'),
   exportCsvBtn:      document.getElementById('export-csv-btn'),
-  settingsSubtabs:   document.getElementById('settings-subtabs'),
   status:            document.getElementById('status'),
   entryForm:         document.getElementById('entry-form'),
   dateInput:         document.getElementById('date-input'),
@@ -26,12 +25,15 @@ export const els = {
   historySection:    document.getElementById('history-section'),
   historySummary:    document.getElementById('history-summary'),
   historyCards:      document.getElementById('history-cards'),
+  histPagination:    document.getElementById('hist-pagination'),
   chartSection:      document.getElementById('chart-section'),
   chartCanvas:       document.getElementById('net-worth-chart'),
-  showNet:           document.getElementById('show-net'),
   showInvestments:   document.getElementById('show-investments'),
   showRealEstate:    document.getElementById('show-realestate'),
+  showOther:         document.getElementById('show-other'),
   tabBar:            document.getElementById('tab-bar'),
+  headerEntryBtn:    document.getElementById('header-entry-btn'),
+  headerSettingsBtn: document.getElementById('header-settings-btn'),
   accountsSection:   document.getElementById('accounts-section'),
   accountsList:      document.getElementById('accounts-list'),
   accountsArchived:  document.getElementById('accounts-archived-list'),
@@ -77,9 +79,6 @@ export const els = {
   ovAsOf:            document.getElementById('ov-as-of'),
   ovCards:           document.getElementById('ov-cards'),
   ovChartCanvas:     document.getElementById('overview-chart'),
-  ovDonutWrap:       document.getElementById('ov-donut-wrap'),
-  ovDonutCanvas:     document.getElementById('overview-donut'),
-  ovAllocLegend:     document.getElementById('ov-allocation-legend'),
   ovSeriesToggles:   document.getElementById('ov-series-toggles'),
   ovViewToggle:      document.getElementById('ov-view-toggle'),
   privateModeBtn:    document.getElementById('private-mode-btn'),
@@ -96,19 +95,14 @@ export function _setToastFn(fn) { _toastFn = fn; }
 
 export function setStatus(msg, level = '') {
   if (_statusTimer) { clearTimeout(_statusTimer); _statusTimer = null; }
+  if (level === 'ok') {
+    els.status.textContent = '';
+    els.status.className = 'status';
+    return;
+  }
   els.status.textContent = msg;
   els.status.className = 'status' + (level ? ' ' + level : '');
-  if (level === 'ok' || level === 'warn') {
-    // Surface ok/warn as toasts too — easier to notice
-    _toastFn?.(msg, { level });
-    if (level === 'ok') {
-      _statusTimer = setTimeout(() => {
-        els.status.textContent = '';
-        els.status.className = 'status';
-        _statusTimer = null;
-      }, 3000);
-    }
-  }
+  if (level === 'warn') _toastFn?.(msg, { level });
 }
 
 // Global fixed tooltip — escapes all overflow: hidden containers

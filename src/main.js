@@ -26,7 +26,7 @@ import {
 import {
   configError, onSignedIn, onSignOut, onChooseSheet, onGapiLoad, initTokenClient,
   loadAndRenderForm, setActiveTab, setAccountsSubTab, applyToken, registerApplyTheme,
-  registerApplyStockOptions,
+  registerApplyStockOptions, refreshCurrentTab,
 } from './features/auth/index.js';
 import { writeConfig } from './api/index.js';
 import {
@@ -47,6 +47,7 @@ els.signinBtn.addEventListener('click', () => {
   state.tokenClient.requestAccessToken({ prompt: 'consent' });
 });
 els.signoutBtn.addEventListener('click', onSignOut);
+document.getElementById('settings-signout-btn')?.addEventListener('click', onSignOut);
 els.chooseSheetBtn?.addEventListener('click', onChooseSheet);
 document.getElementById('sheet-picker-close')?.addEventListener('click', () => document.getElementById('sheet-picker-dialog')?.close());
 document.getElementById('sheet-picker-cancel')?.addEventListener('click', () => document.getElementById('sheet-picker-dialog')?.close());
@@ -81,6 +82,26 @@ els.historyCards.addEventListener('click', (e) => {
 // Tab bar
 els.tabBar.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    setActiveTab(btn.dataset.tab);
+  });
+});
+
+// Header action buttons (entry + settings — not in the tab-bar)
+function onHeaderTabClick(btn) {
+  if (btn.dataset.tab === 'entry' && els.dateInput) {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    state.currentDate = today;
+    state.datePicker ? state.datePicker.selectDate(parseLocalDate(today), { silent: true }) : (els.dateInput.value = today);
+  }
+  setActiveTab(btn.dataset.tab);
+}
+els.headerEntryBtn?.addEventListener('click', () => onHeaderTabClick(els.headerEntryBtn));
+els.headerSettingsBtn?.addEventListener('click', () => onHeaderTabClick(els.headerSettingsBtn));
+
+// Bottom tab bar (mobile)
+document.querySelectorAll('#bottom-tab-bar .bottom-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
     if (btn.dataset.tab === 'entry' && els.dateInput) {
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -91,19 +112,14 @@ els.tabBar.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// Accounts sub-navigation
-document.querySelectorAll('#accounts-subnav .subnav-btn').forEach(btn => {
+// Accounts sidebar buttons
+document.querySelectorAll('#accounts-sidebar .section-sidebar-btn').forEach(btn => {
   btn.addEventListener('click', () => setAccountsSubTab(btn.dataset.panel));
 });
-document.getElementById('accounts-gear-btn')?.addEventListener('click', () => {
-  setActiveTab('accounts');
-  setAccountsSubTab('manage');
-});
 
-// Stock Options gear
-document.getElementById('opt-settings-btn')?.addEventListener('click', () => {
-  const isManage = !document.getElementById('opt-sub-manage')?.hidden;
-  setOptionsSubTab(isManage ? 'main' : 'manage');
+// Options sidebar buttons
+document.querySelectorAll('#options-sidebar .section-sidebar-btn').forEach(btn => {
+  btn.addEventListener('click', () => setOptionsSubTab(btn.dataset.panel));
 });
 
 // Stock Options enable/disable
@@ -112,6 +128,8 @@ const _enableStockOptsCb = document.getElementById('enable-stock-options');
 function _applyStockOptions(enabled, persist = true) {
   if (persist) try { localStorage.setItem('pfs_stock_options', enabled ? '1' : '0'); } catch (_) {}
   if (_stockOptTabBtn) _stockOptTabBtn.hidden = !enabled;
+  const bottomOptBtn = document.querySelector('#bottom-tab-bar [data-tab="options"]');
+  if (bottomOptBtn) bottomOptBtn.hidden = !enabled;
   const optionsJumpRow = document.getElementById('settings-goto-options-row');
   if (optionsJumpRow) optionsJumpRow.hidden = !enabled;
   if (!enabled && localStorage.getItem(LS_KEY_ACTIVE_TAB) === 'options') setActiveTab('overview');
@@ -165,17 +183,18 @@ document.querySelectorAll('#hist-period-pills .period-btn').forEach(btn => {
   });
 });
 // Close custom account select when clicking outside
-document.addEventListener('click', () => {
+document.addEventListener('click', (ev) => {
   const wrap = els.histAccountSelect;
-  if (!wrap) return;
-  const menu = wrap.querySelector('.custom-select-menu');
-  if (menu && !menu.hidden) { menu.hidden = true; wrap.classList.remove('open'); }
+  if (wrap) {
+    const menu = wrap.querySelector('.custom-select-menu');
+    if (menu && !menu.hidden) { menu.hidden = true; wrap.classList.remove('open'); }
+  }
 });
 
 // Series toggles
-els.showNet?.addEventListener('change', renderChart);
 els.showInvestments?.addEventListener('change', renderChart);
 els.showRealEstate?.addEventListener('change', renderChart);
+els.showOther?.addEventListener('change', renderChart);
 
 // Accounts management
 els.addAccountBtn.addEventListener('click', onAddAccount);
@@ -229,18 +248,8 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 els.privateModeBtn?.addEventListener('click', () => {
   state.privateMode = !state.privateMode;
   try { localStorage.setItem('pfs_private', state.privateMode ? '1' : '0'); } catch (_) {}
-  renderOverview();
-});
-
-// Settings sub-tabs
-els.settingsSubtabs?.querySelectorAll('.subtab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const target = btn.dataset.subtab;
-    els.settingsSubtabs.querySelectorAll('.subtab-btn').forEach(b =>
-      b.classList.toggle('active', b === btn));
-    document.querySelectorAll('#tab-settings .subtab-panel').forEach(p =>
-      p.hidden = (p.dataset.subtab !== target));
-  });
+  applyI18n();
+  refreshCurrentTab();
 });
 
 // Settings jump links
@@ -253,11 +262,13 @@ document.getElementById('settings-goto-options')?.addEventListener('click', () =
   setOptionsSubTab('manage');
 });
 
-// Manage sidebar scroll links
-document.querySelectorAll('.manage-sidebar-link[data-scroll-to]').forEach(btn => {
+// Section sidebar sub-nav scroll links
+document.querySelectorAll('.section-sidebar-sub-btn[data-scroll-to]').forEach(btn => {
   btn.addEventListener('click', () => {
     const target = document.getElementById(btn.dataset.scrollTo);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!target) return;
+    const top = target.getBoundingClientRect().top + window.scrollY - 72;
+    window.scrollTo({ top, behavior: 'smooth' });
   });
 });
 
@@ -347,7 +358,7 @@ document.addEventListener('keydown', (e) => {
   else if (key === '2') { setActiveTab('accounts'); setAccountsSubTab('detail'); e.preventDefault(); }
   else if (key === '3') { setActiveTab('accounts'); setAccountsSubTab('history'); e.preventDefault(); }
   else if (key === '4' && localStorage.getItem('pfs_stock_options') === '1') { document.querySelector('.tab-btn[data-tab="options"]')?.click(); e.preventDefault(); }
-  else if (key === 'n') { document.querySelector('.tab-btn[data-tab="entry"]')?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
+  else if (key === 'n') { (els.headerEntryBtn || document.querySelector('[data-tab="entry"]'))?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
   else if (key === 's' && !els.saveSnapshotBtn.disabled && !document.getElementById('tab-entry').hidden) { els.saveSnapshotBtn?.click(); e.preventDefault(); }
   else if (key === 'p') { els.privateModeBtn?.click(); e.preventDefault(); }
   else if (key === '?') { toast('Shortcuts: 1 overview · 2 accounts · 3 history · 4 stock options · n entry · s save · p private', { timeout: 5000 }); e.preventDefault(); }

@@ -123,7 +123,7 @@ function buildAccountCard(a) {
       <div class="account-card-meta">${metaBits.map(escapeHtml).join(' · ')}</div>
     </div>
     <div class="account-card-balance">
-      ${latest ? `<div class="account-card-amount">${fmtMoney(latest.balance_raw)}</div>
+      ${latest ? `<div class="account-card-amount">${state.privateMode ? '••••••' : fmtMoney(latest.balance_raw)}</div>
                   <div class="account-card-date">${latest.date}</div>`
                : `<div class="account-card-empty">No data</div>`}
     </div>

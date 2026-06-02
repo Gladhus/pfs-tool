@@ -47,4 +47,5 @@ registerTranslations('fr', {
   manage_label: 'Gérer',
   accounts_label: 'Comptes',
   goto_manage: 'Gérer →',
+  account_label: 'Compte',
 });

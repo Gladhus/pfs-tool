@@ -7,6 +7,7 @@ export const LS_KEY_PRIVATE    = 'pfs_private';
 export const LS_KEY_THEME      = 'pfs_theme';
 export const LS_KEY_SHEET_ID   = 'pfs_sheet_id';
 export const LS_KEY_TOKEN      = 'pfs_token';
+export const LS_KEY_USER_HINT  = 'pfs_user_hint';
 export const TOKEN_SKEW_MS     = 60 * 1000;
 
 export const SHEET_TITLE = cfg.SHEET_TITLE || 'PFS Tool — Bilan financier';
@@ -26,10 +27,12 @@ export const OWNERS = ['self', 'partner', 'joint'];
 export const KINDS  = ['asset', 'debt'];
 
 export const state = {
-  tokenClient:  null,
-  gapiReady:    false,
-  gisReady:     false,
-  accessToken:  null,
+  tokenClient:            null,
+  gapiReady:              false,
+  gisReady:               false,
+  accessToken:            null,
+  silentInFlight:         false,
+  proactiveRefreshInFlight: false,
   sheetId:      null,
   accounts:     [],
   categoryMeta: [],
@@ -42,7 +45,6 @@ export const state = {
   importParsed: null,
   chart:               null,
   overviewChart:       null,
-  donutChart:          null,
   optionSummaryChart:  null,
   optionCompanyCharts: {},
   datePicker:          null,

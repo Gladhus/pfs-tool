@@ -1,6 +1,6 @@
 import "./en.js";
 import "./fr.js";
-import { state, LS_KEY_SHEET_ID, LS_KEY_TOKEN, LS_KEY_ACTIVE_TAB, TOKEN_SKEW_MS, SHEET_TITLE } from '../../core/state.js';
+import { state, LS_KEY_SHEET_ID, LS_KEY_TOKEN, LS_KEY_ACTIVE_TAB, LS_KEY_USER_HINT, TOKEN_SKEW_MS, SHEET_TITLE } from '../../core/state.js';
 import { applyI18n, setLang, t } from '../../core/i18n/index.js';
 import { els, setStatus, showSheetLink } from '../../core/dom.js';
 import { loadAll, verifySheet, findSheetByName, createSheet, seedNewSheet } from '../../api/index.js';
@@ -52,12 +52,22 @@ export function initTokenClient() {
     scope: cfg.SCOPES,
     callback: (resp) => {
       if (resp.error) {
+        if (state.proactiveRefreshInFlight) {
+          state.proactiveRefreshInFlight = false;
+          console.warn('Proactive token refresh failed:', resp.error);
+          return;
+        }
         if (state.silentInFlight) {
           state.silentInFlight = false;
           setStatus("Ready. Click 'Sign in with Google' to continue.");
           return;
         }
         setStatus('Sign-in failed: ' + resp.error, 'warn');
+        return;
+      }
+      if (state.proactiveRefreshInFlight) {
+        state.proactiveRefreshInFlight = false;
+        applyToken(resp.access_token, resp.expires_in);
         return;
       }
       state.silentInFlight = false;
@@ -69,6 +79,27 @@ export function initTokenClient() {
   maybeEnableSignIn();
 }
 
+function getLoginHint() {
+  try { return localStorage.getItem(LS_KEY_USER_HINT) || ''; } catch (_) { return ''; }
+}
+
+let _refreshTimer = null;
+
+function scheduleTokenRefresh(expiresAt) {
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+  const delay = expiresAt - Date.now() - 5 * 60 * 1000;
+  if (delay <= 0) return;
+  _refreshTimer = setTimeout(() => {
+    _refreshTimer = null;
+    if (!state.tokenClient || !state.accessToken) return;
+    state.proactiveRefreshInFlight = true;
+    const opts = { prompt: '' };
+    const hint = getLoginHint();
+    if (hint) opts.login_hint = hint;
+    state.tokenClient.requestAccessToken(opts);
+  }, delay);
+}
+
 export function applyToken(accessToken, expiresInSec) {
   state.accessToken = accessToken;
   gapi.client.setToken({ access_token: accessToken });
@@ -76,6 +107,7 @@ export function applyToken(accessToken, expiresInSec) {
   try {
     localStorage.setItem(LS_KEY_TOKEN, JSON.stringify({ access_token: accessToken, expires_at: expiresAt }));
   } catch (_) {}
+  scheduleTokenRefresh(expiresAt);
 }
 
 export function loadCachedToken() {
@@ -113,7 +145,10 @@ export async function tryRestoreSession() {
   if (state.tokenClient) {
     state.silentInFlight = true;
     setStatus('Refreshing Google session…');
-    state.tokenClient.requestAccessToken({ prompt: '' });
+    const opts = { prompt: '' };
+    const hint = getLoginHint();
+    if (hint) opts.login_hint = hint;
+    state.tokenClient.requestAccessToken(opts);
     return true;
   }
   return false;
@@ -140,6 +175,10 @@ export async function onSignedIn() {
   if (email) {
     els.userEmail.hidden = false;
     els.userEmail.textContent = email;
+    const settingsEmail = document.getElementById('settings-user-email-display');
+    const settingsUserRow = document.getElementById('settings-user-row');
+    if (settingsEmail) settingsEmail.textContent = email;
+    if (settingsUserRow) settingsUserRow.hidden = false;
   }
   setStatus('Signed in. Locating your PFS sheet…');
   try {
@@ -157,11 +196,15 @@ export async function fetchUserEmail() {
     });
     if (!resp.ok) return null;
     const data = await resp.json();
+    if (data.email) {
+      try { localStorage.setItem(LS_KEY_USER_HINT, data.email); } catch (_) {}
+    }
     return data.email || null;
   } catch (_) { return null; }
 }
 
 export function onSignOut() {
+  if (_refreshTimer) { clearTimeout(_refreshTimer); _refreshTimer = null; }
   if (state.accessToken) {
     google.accounts.oauth2.revoke(state.accessToken, () => {});
   }
@@ -176,6 +219,10 @@ export function onSignOut() {
   els.signedIn.hidden = true;
   els.sheetInfo.hidden = true;
   els.entryForm.hidden = true;
+  if (els.privateModeBtn) els.privateModeBtn.hidden = true;
+  const bottomBar = document.getElementById('bottom-tab-bar');
+  if (bottomBar) bottomBar.hidden = true;
+  document.body.classList.remove('is-signed-in');
   setStatus('Signed out.');
 }
 
@@ -288,14 +335,21 @@ export function setAccountsSubTab(panel) {
     const el = document.getElementById(`acct-sub-${p}`);
     if (el) el.hidden = (p !== panel);
   }
-  document.querySelectorAll('#accounts-subnav .subnav-btn').forEach(btn => {
+  document.querySelectorAll('#accounts-sidebar .section-sidebar-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.panel === panel);
   });
-  const gear = document.getElementById('accounts-gear-btn');
-  if (gear) gear.classList.toggle('active', panel === 'manage');
+  const manageSubNav = document.getElementById('manage-sub-nav');
+  if (manageSubNav) manageSubNav.hidden = (panel !== 'manage');
   if (panel === 'detail')  renderDetailTable();
   if (panel === 'history') { populateHistAccountSelect(); renderHistoryTable(); renderChart(); }
   if (panel === 'manage')  { renderAccountsList(); renderGroupsList(); }
+}
+
+export function refreshCurrentTab() {
+  const active = localStorage.getItem(LS_KEY_ACTIVE_TAB) || 'overview';
+  if (active === 'overview') renderOverview();
+  else if (active === 'accounts') setAccountsSubTab(_accountsSubTab);
+  else if (active === 'options') renderOptions();
 }
 
 export function setActiveTab(name) {
@@ -308,7 +362,13 @@ export function setActiveTab(name) {
     btn?.classList.toggle('active', tab === name);
     if (panel) panel.hidden = (tab !== name);
   }
+  els.headerEntryBtn?.classList.toggle('active', name === 'entry');
+  els.headerSettingsBtn?.classList.toggle('active', name === 'settings');
+  document.querySelectorAll('#bottom-tab-bar .bottom-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === name);
+  });
   localStorage.setItem(LS_KEY_ACTIVE_TAB, name);
+  document.body.classList.toggle('has-subnav', name === 'accounts' || name === 'options');
   if (name === 'overview') renderOverview();
   if (name === 'accounts') setAccountsSubTab(_accountsSubTab);
   if (name === 'options')  renderOptions();
@@ -316,6 +376,12 @@ export function setActiveTab(name) {
 
 export function showTabBar() {
   els.tabBar.hidden = false;
+  if (els.headerEntryBtn)    els.headerEntryBtn.hidden = false;
+  if (els.headerSettingsBtn) els.headerSettingsBtn.hidden = false;
+  if (els.privateModeBtn)    els.privateModeBtn.hidden = false;
+  const bottomBar = document.getElementById('bottom-tab-bar');
+  if (bottomBar) bottomBar.hidden = false;
+  document.body.classList.add('is-signed-in');
   let saved = localStorage.getItem(LS_KEY_ACTIVE_TAB) || 'overview';
   if (saved === 'detail')  { _accountsSubTab = 'detail';  saved = 'accounts'; }
   if (saved === 'history') { _accountsSubTab = 'history'; saved = 'accounts'; }

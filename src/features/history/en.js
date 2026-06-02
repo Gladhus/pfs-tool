@@ -5,6 +5,7 @@ registerTranslations('en', {
   show_net_worth: 'Net worth',
   show_investments: 'Investments',
   show_real_estate: 'Real Estate (net)',
+  show_other:       'Other',
   history: 'History',
   investments: 'Investments',
   real_estate_net: 'Real Estate (net)',
@@ -15,4 +16,6 @@ registerTranslations('en', {
   empty_history_body: 'Your snapshots will appear here once saved.',
   incomplete_data: 'Incomplete — some accounts use their last known value.',
   overview_option: 'Overview',
+  hist_newer: 'Newer',
+  hist_older: 'Older',
 });

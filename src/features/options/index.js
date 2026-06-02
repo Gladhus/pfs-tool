@@ -59,12 +59,13 @@ let _optSubTab = 'main';
 
 export function setOptionsSubTab(panel) {
   _optSubTab = panel;
-  const gear = document.getElementById('opt-settings-btn');
   for (const p of ['main', 'manage']) {
     const el = document.getElementById(`opt-sub-${p}`);
     if (el) el.hidden = (p !== panel);
   }
-  if (gear) gear.classList.toggle('active', panel === 'manage');
+  document.querySelectorAll('#options-sidebar .section-sidebar-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.panel === panel);
+  });
   if (panel === 'main')   _renderOptionsMain();
   if (panel === 'manage') renderOptionsManage();
 }
@@ -83,8 +84,9 @@ function _renderOptionsMain() {
 
   const vestedEl   = document.getElementById('opt-vested-value');
   const unvestedEl = document.getElementById('opt-unvested-value');
-  if (vestedEl)   vestedEl.textContent   = fmtMoney(totalVested);
-  if (unvestedEl) unvestedEl.textContent = fmtMoney(totalUnvested);
+  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
+  if (vestedEl)   vestedEl.textContent   = redact(totalVested);
+  if (unvestedEl) unvestedEl.textContent = redact(totalUnvested);
 
   renderSummaryChart(now);
 
@@ -110,19 +112,19 @@ function _renderOptionsMain() {
 // --- Summary chart: options value over time (historical) ---
 
 function renderSummaryChart(now) {
-  const canvas = document.getElementById('opt-summary-canvas');
-  const card   = document.getElementById('opt-summary-card');
-  if (!canvas || !card) return;
+  const canvas       = document.getElementById('opt-summary-canvas');
+  const chartSection = document.getElementById('opt-chart-section');
+  if (!canvas || !chartSection) return;
 
   const companies = state.optionCompanies.filter(c => c.active !== false);
   const allFmvDates = state.optionFmv.map(f => f.date).sort();
 
   if (!companies.length || !allFmvDates.length) {
-    card.hidden = true;
+    chartSection.hidden = true;
     if (state.optionSummaryChart) { state.optionSummaryChart.destroy(); state.optionSummaryChart = null; }
     return;
   }
-  card.hidden = false;
+  chartSection.hidden = false;
 
   const startDate = allFmvDates[0];
   const allDates = generateMonthlyDates(startDate, now);
@@ -175,6 +177,7 @@ function renderSummaryChart(now) {
   });
 
   const tickCallback = v => {
+    if (state.privateMode) return '••';
     const abs = Math.abs(v);
     if (abs >= 1_000_000) return (v/1_000_000).toFixed(1)+'M';
     if (abs >= 1_000)     return (v/1_000).toFixed(0)+'k';
@@ -197,7 +200,7 @@ function renderSummaryChart(now) {
         tooltip: {
           backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
           padding: 12, cornerRadius: 10,
-          callbacks: { label: ctx => `  ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}` },
+          callbacks: { label: ctx => `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(ctx.parsed.y)}` },
         },
       },
       scales: {
@@ -224,64 +227,129 @@ function renderSummaryChart(now) {
 // --- Per-company card ---
 
 function buildCompanyCard(company, ci, now) {
-  const grants     = state.optionGrants.filter(g => g.company_id === company.id);
-  const fmvEntry   = getEffectiveFmv(company.id, now);
-  const fmv        = fmvEntry?.fmv ?? null;
-  const vestedVal  = fmv !== null ? grants.reduce((s,g) => s + computeIntrinsicValue(g, fmv, now), 0) : null;
-  const unvestedVal = fmv !== null ? grants.reduce((s,g) => s + computeUnvestedValue(g, fmv, now), 0) : null;
-  const color      = COMPANY_COLORS[ci % COMPANY_COLORS.length];
+  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
+  const grants         = state.optionGrants.filter(g => g.company_id === company.id);
+  const fmvEntry       = getEffectiveFmv(company.id, now);
+  const fmv            = fmvEntry?.fmv ?? null;
+  const vestedVal      = fmv !== null ? grants.reduce((s,g) => s + computeIntrinsicValue(g, fmv, now), 0) : null;
+  const unvestedVal    = fmv !== null ? grants.reduce((s,g) => s + computeUnvestedValue(g, fmv, now), 0) : null;
+  const vestedShares   = grants.reduce((s,g) => s + computeVestedShares(g, now), 0);
+  const unvestedShares = grants.reduce((s,g) => s + computeUnvestedShares(g, now), 0);
+  const color          = COMPANY_COLORS[ci % COMPANY_COLORS.length];
 
   const card = document.createElement('div');
   card.className = 'opt-company-card';
   card.style.setProperty('--opt-color', color);
 
-  // Header
+  // --- Header ---
   const header = document.createElement('div');
   header.className = 'opt-card-header';
-  header.innerHTML = `
-    <div class="opt-card-title">
-      <span class="opt-company-dot"></span>
-      <strong>${escapeHtml(company.name)}</strong>
-      ${company.ticker ? `<span class="opt-ticker">${escapeHtml(company.ticker)}</span>` : ''}
-    </div>
-    <div class="opt-card-meta">
-      ${fmv !== null
-        ? `<span class="opt-fmv-display">${t('opt_last_fmv')} ${fmtMoney(fmv)}</span><span class="opt-fmv-date">${fmtShortDate(fmvEntry.date)}</span>`
-        : `<span class="opt-no-fmv hint">${t('opt_no_fmv')}</span>`}
-    </div>
-    <div class="opt-card-values">
-      ${vestedVal !== null ? `<span class="opt-vested-val">${fmtMoney(vestedVal)} <span class="opt-val-label">${t('opt_vested_label')}</span></span>` : ''}
-      ${unvestedVal !== null ? `<span class="opt-unvested-val">${fmtMoney(unvestedVal)} <span class="opt-val-label">${t('opt_unvested_label')}</span></span>` : ''}
-    </div>`;
+
+  // Title row: company name left, pill right
+  const titleRow = document.createElement('div');
+  titleRow.className = 'opt-card-title-row';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'opt-card-title';
+  titleEl.innerHTML = `
+    <span class="opt-company-dot"></span>
+    <strong>${escapeHtml(company.name)}</strong>
+    ${company.ticker ? `<span class="opt-ticker">${escapeHtml(company.ticker)}</span>` : ''}
+  `;
+
+  const pillEl = document.createElement('div');
+  pillEl.className = 'opt-chart-pill';
+  pillEl.innerHTML = `
+    <button class="opt-pill-btn active" data-view="vesting">${t('opt_pill_vesting')}</button>
+    <button class="opt-pill-btn" data-view="value">${t('opt_pill_value')}</button>
+  `;
+
+  titleRow.appendChild(titleEl);
+  titleRow.appendChild(pillEl);
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'opt-card-meta';
+  metaEl.innerHTML = fmv !== null
+    ? `<span class="opt-fmv-display">${t('opt_last_fmv')} ${fmtMoney(fmv)}</span><span class="opt-fmv-date">${fmtShortDate(fmvEntry.date)}</span>`
+    : `<span class="opt-no-fmv hint">${t('opt_no_fmv')}</span>`;
+
+  const valuesEl = document.createElement('div');
+  valuesEl.className = 'opt-card-values';
+
+  function renderCardValues(view) {
+    if (view === 'vesting') {
+      valuesEl.innerHTML = `
+        <span class="opt-vested-val">${state.privateMode ? '••••••' : Math.round(vestedShares).toLocaleString()} <span class="opt-val-label">${t('opt_shares_vested')}</span></span>
+        <span class="opt-unvested-val">${state.privateMode ? '••••••' : Math.round(unvestedShares).toLocaleString()} <span class="opt-val-label">${t('opt_shares_unvested')}</span></span>
+      `;
+    } else {
+      valuesEl.innerHTML = `
+        ${vestedVal !== null ? `<span class="opt-vested-val">${redact(vestedVal)} <span class="opt-val-label">${t('opt_vested_label')}</span></span>` : ''}
+        ${unvestedVal !== null ? `<span class="opt-unvested-val">${redact(unvestedVal)} <span class="opt-val-label">${t('opt_unvested_label')}</span></span>` : ''}
+      `;
+    }
+  }
+  renderCardValues('vesting');
+
+  header.appendChild(titleRow);
+  header.appendChild(metaEl);
+  header.appendChild(valuesEl);
   card.appendChild(header);
 
-  // Vesting chart
+  // --- Charts (two canvases, toggled by pill) ---
+  let vestingWrap = null, valueWrap = null;
   if (grants.length) {
-    const chartWrap = document.createElement('div');
-    chartWrap.className = 'opt-chart-wrap';
-    const canvas = document.createElement('canvas');
-    canvas.className = 'opt-company-canvas';
-    chartWrap.appendChild(canvas);
-    card.appendChild(chartWrap);
-    requestAnimationFrame(() => renderCompanyVestingChart(canvas, company, grants, fmv, now));
+    vestingWrap = document.createElement('div');
+    vestingWrap.className = 'opt-chart-wrap';
+    const vestingCanvas = document.createElement('canvas');
+    vestingCanvas.className = 'opt-company-canvas';
+    vestingWrap.appendChild(vestingCanvas);
+    card.appendChild(vestingWrap);
+
+    valueWrap = document.createElement('div');
+    valueWrap.className = 'opt-chart-wrap';
+    valueWrap.hidden = true;
+    const valueCanvas = document.createElement('canvas');
+    valueCanvas.className = 'opt-company-canvas';
+    valueWrap.appendChild(valueCanvas);
+    card.appendChild(valueWrap);
+
+    requestAnimationFrame(() => {
+      renderCompanyVestingChart(vestingCanvas, company, grants, fmv, now);
+      const rendered = renderCompanyValueChart(valueCanvas, company, grants, color, now);
+      if (!rendered) {
+        valueCanvas.remove();
+        const hint = document.createElement('p');
+        hint.className = 'hint';
+        hint.style.cssText = 'padding: 2rem 1.25rem; text-align: center; margin: 0;';
+        hint.textContent = t('opt_no_fmv_history');
+        valueWrap.appendChild(hint);
+      }
+    });
   }
 
-  // Grants list
+  // --- Grants list ---
   const grantsList = document.createElement('div');
   grantsList.className = 'opt-grants-list';
   if (grants.length) {
     grants.forEach((grant, gi) => {
-      const gColor = GRANT_COLORS[gi % GRANT_COLORS.length];
-      const vested    = computeVestedShares(grant, now);
-      const total     = Number(grant.total_shares) || 0;
-      const pct       = total ? Math.min(100, (vested / total) * 100) : 0;
-      const vestVal   = fmv !== null ? computeIntrinsicValue(grant, fmv, now) : null;
-      const fullyVested = vested >= total;
-      const firstVest = grantFirstVestDate(grant);
-      const cliffPending = !fullyVested && firstVest && firstVest > now;
-      const cliffMonths  = cliffPending ? Math.ceil(
+      const gColor          = GRANT_COLORS[gi % GRANT_COLORS.length];
+      const vested          = computeVestedShares(grant, now);
+      const total           = Number(grant.total_shares) || 0;
+      const pct             = total ? Math.min(100, (vested / total) * 100) : 0;
+      const vestVal         = fmv !== null ? computeIntrinsicValue(grant, fmv, now) : null;
+      const unvestedGrantVal = fmv !== null ? computeUnvestedValue(grant, fmv, now) : null;
+      const totalGrantVal   = vestVal !== null && unvestedGrantVal !== null ? vestVal + unvestedGrantVal : null;
+      const fullyVested     = vested >= total;
+      const firstVest       = grantFirstVestDate(grant);
+      const cliffPending    = !fullyVested && firstVest && firstVest > now;
+      const cliffMonths     = cliffPending ? Math.ceil(
         (new Date(firstVest+'T12:00:00') - new Date(now+'T12:00:00')) / (1000*60*60*24*30.44)
       ) : 0;
+
+      const valueHtml = vestVal !== null
+        ? `<span class="opt-grant-value">${redact(vestVal)}${totalGrantVal !== null ? `<span class="opt-grant-unvested-val"> / ${redact(totalGrantVal)}</span>` : ''}</span>`
+        : '';
 
       const row = document.createElement('div');
       row.className = 'opt-grant-row';
@@ -298,8 +366,8 @@ function buildCompanyCard(company, ci, now) {
           <span class="opt-grant-pct">${Math.round(pct)}%</span>
         </div>
         <div class="opt-grant-meta">
-          <span>${fullyVested ? t('opt_fully_vested') : cliffPending ? t('opt_cliff_pending').replace('{months}', cliffMonths) : `${Math.round(vested).toLocaleString()} / ${total.toLocaleString()} ${t('opt_vested_label')}`}</span>
-          ${vestVal !== null ? `<span class="opt-grant-value">${fmtMoney(vestVal)}</span>` : ''}
+          <span>${fullyVested ? t('opt_fully_vested') : cliffPending ? t('opt_cliff_pending').replace('{months}', cliffMonths) : `${state.privateMode ? '•• / ••' : `${Math.round(vested).toLocaleString()} / ${total.toLocaleString()}`} ${t('opt_shares_vested')}`}</span>
+          ${valueHtml}
         </div>`;
       grantsList.appendChild(row);
     });
@@ -308,7 +376,139 @@ function buildCompanyCard(company, ci, now) {
   }
   card.appendChild(grantsList);
 
+  // --- Pill toggle wiring ---
+  pillEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.opt-pill-btn');
+    if (!btn || btn.classList.contains('active')) return;
+    const view = btn.dataset.view;
+    pillEl.querySelectorAll('.opt-pill-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderCardValues(view);
+    if (vestingWrap) vestingWrap.hidden = (view !== 'vesting');
+    if (valueWrap)   valueWrap.hidden   = (view !== 'value');
+  });
+
   return card;
+}
+
+// --- Per-company value-over-time chart ---
+
+function renderCompanyValueChart(canvas, company, grants, color, now) {
+  const fmvHistory = (state.optionFmv || [])
+    .filter(f => f.company_id === company.id)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (fmvHistory.length < 1) return false;
+
+  const dates = generateMonthlyDates(fmvHistory[0].date, now);
+  if (dates.length < 2) return false;
+
+  const vestedData   = dates.map(d => {
+    const e = getEffectiveFmv(company.id, d);
+    return e ? grants.reduce((s, g) => s + computeIntrinsicValue(g, e.fmv, d), 0) : null;
+  });
+  const unvestedData = dates.map(d => {
+    const e = getEffectiveFmv(company.id, d);
+    return e ? grants.reduce((s, g) => s + computeUnvestedValue(g, e.fmv, d), 0) : null;
+  });
+
+  const cs      = getComputedStyle(document.documentElement);
+  const muted   = cs.getPropertyValue('--subtle').trim()  || '#94a3b8';
+  const gridCol = cs.getPropertyValue('--border').trim()  || 'rgba(15,23,42,.06)';
+
+  const tickCallback = v => {
+    if (state.privateMode) return '••';
+    const abs = Math.abs(v);
+    if (abs >= 1_000_000) return '$' + (v/1_000_000).toFixed(1) + 'M';
+    if (abs >= 1_000)     return '$' + (v/1_000).toFixed(0) + 'k';
+    return fmtMoney(v);
+  };
+
+  const yearTicks = new Set();
+  dates.forEach((d, i) => { if (i === 0 || d.slice(0,4) !== dates[i-1].slice(0,4)) yearTicks.add(i); });
+
+  const companyId = company.id + '_value';
+  if (state.optionCompanyCharts[companyId]) {
+    state.optionCompanyCharts[companyId].destroy();
+    delete state.optionCompanyCharts[companyId];
+  }
+
+  const totalData = vestedData.map((v, i) => {
+    const u = unvestedData[i];
+    return (v !== null && u !== null) ? v + u : (v ?? u);
+  });
+
+  state.optionCompanyCharts[companyId] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        {
+          label: t('opt_vested_label'),
+          data: vestedData,
+          borderColor: color,
+          backgroundColor: hexToRgba(color, 0.18),
+          borderWidth: 2,
+          fill: 'origin',
+          tension: 0.2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          spanGaps: true,
+        },
+        {
+          label: t('opt_unvested_label'),
+          data: totalData,
+          borderColor: muted,
+          backgroundColor: hexToRgba(muted, 0.10),
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          fill: '-1',
+          tension: 0.2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          spanGaps: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            title: items => fmtShortDate(dates[items[0].dataIndex]),
+            label: ctx => {
+              const di = ctx.dataIndex;
+              const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
+              if (ctx.datasetIndex === 0) return `  ${t('opt_vested_label')}: ${redact(vestedData[di] ?? 0)}`;
+              const unvested = (totalData[di] ?? 0) - (vestedData[di] ?? 0);
+              return `  ${t('opt_unvested_label')}: ${redact(unvested)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          grid: { color: gridCol, drawTicks: false },
+          border: { display: false },
+          ticks: { color: muted, font: { size: 11 }, padding: 8, maxTicksLimit: 4, callback: tickCallback },
+        },
+        x: {
+          grid: { display: false }, border: { display: false },
+          ticks: {
+            color: muted, font: { size: 11 }, maxRotation: 0, autoSkip: false,
+            callback: (_, idx) => {
+              if (!yearTicks.has(idx)) return null;
+              return new Date(dates[idx] + 'T12:00:00').getFullYear();
+            },
+          },
+        },
+      },
+    },
+  });
+  return true;
 }
 
 // --- Per-company vesting chart ---
@@ -394,6 +594,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
   };
 
   const tickCallback = v => {
+    if (state.privateMode) return '••';
     const abs = Math.abs(v);
     if (abs >= 1_000_000) return (v/1_000_000).toFixed(1)+'M';
     if (abs >= 1_000)     return (v/1_000).toFixed(0)+'k';
@@ -424,7 +625,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
           padding: 10, cornerRadius: 8,
           callbacks: {
             title: items => fmtShortDate(dates[items[0].dataIndex]),
-            label: ctx => `  ${ctx.dataset.label}: ${Math.round(grantValues[ctx.datasetIndex][ctx.dataIndex]).toLocaleString()} shares`,
+            label: ctx => `  ${ctx.dataset.label}: ${state.privateMode ? '••' : Math.round(grantValues[ctx.datasetIndex][ctx.dataIndex]).toLocaleString()} shares`,
           },
         },
       },

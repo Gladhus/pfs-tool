@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.5.0] — 2026-06-02
+## [1.5.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.5.0) — 2026-06-02
 
 ### Added
 - **History pagination**: history cards now paginate at 12 months per page with Newer/Older navigation

@@ -1,10 +1,11 @@
 import './en.js';
 import './fr.js';
-import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { t, lang } from '../../core/i18n/index.js';
-import { fmtMoney, fmtPct } from '../../core/format.js';
-import { setStatus } from '../../core/dom.js';
+import { fmtMoney, hexToRgba } from '../../core/format.js';
+import { privMoney, privShares, MASK } from '../../core/privacy.js';
+import { chartTooltip, moneyTooltipLabel, moneyTickFmt, sharesTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
+import { setStatus, escapeHtml } from '../../core/dom.js';
 import { attachAutocomplete } from '../../core/autocomplete.js';
 import {
   computeVestedShares, computeUnvestedShares,
@@ -13,6 +14,8 @@ import {
   computeTotalEquityValue, computeTotalUnvestedValue,
   grantFullyVestedDate, grantFirstVestDate, generateMonthlyDates,
 } from '../../utils/options.js';
+import { slugify } from '../../utils/import.js';
+import { todayISO, fmtMonth, yearStartIndices } from '../../utils/dates.js';
 import {
   writeOptionCompanies, writeOptionGrants, addOptionFmvEntry, writeOptionFmv,
 } from '../../api/options.js';
@@ -20,34 +23,6 @@ import { writeConfig } from '../../api/config.js';
 
 const GRANT_COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6', '#ec4899', '#eab308'];
 const COMPANY_COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6', '#10b981', '#ec4899'];
-
-function today() {
-  const n = new Date();
-  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
-}
-
-function slugify(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-}
-
-function hexToRgba(hex, a) {
-  const m = hex.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);
-  if (!m) return hex;
-  let h = m[1];
-  if (h.length === 3) h = h.split('').map(c => c + c).join('');
-  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-
-function fmtShortDate(yyyymmdd) {
-  if (!yyyymmdd) return '—';
-  const [y, m] = yyyymmdd.split('-');
-  return new Date(+y, +m-1, 1).toLocaleDateString(lang() === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', year: 'numeric' });
-}
 
 // --- Dialog state ---
 let _editingCompanyId = null;   // null = new
@@ -77,16 +52,15 @@ export function renderOptions() {
 // --- Main sub-panel ---
 
 function _renderOptionsMain() {
-  const now = today();
+  const now = todayISO();
   const companies = state.optionCompanies.filter(c => c.active !== false);
   const totalVested   = computeTotalEquityValue(now);
   const totalUnvested = computeTotalUnvestedValue(now);
 
   const vestedEl   = document.getElementById('opt-vested-value');
   const unvestedEl = document.getElementById('opt-unvested-value');
-  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
-  if (vestedEl)   vestedEl.textContent   = redact(totalVested);
-  if (unvestedEl) unvestedEl.textContent = redact(totalUnvested);
+  if (vestedEl)   vestedEl.textContent   = privMoney(totalVested);
+  if (unvestedEl) unvestedEl.textContent = privMoney(totalUnvested);
 
   renderSummaryChart(now);
 
@@ -130,9 +104,7 @@ function renderSummaryChart(now) {
   const allDates = generateMonthlyDates(startDate, now);
   if (allDates.length < 2) return;
 
-  const cs = getComputedStyle(document.documentElement);
-  const muted   = cs.getPropertyValue('--subtle').trim() || '#94a3b8';
-  const gridCol = cs.getPropertyValue('--border').trim() || 'rgba(15,23,42,.06)';
+  const { muted, grid: gridCol } = chartColors();
 
   // Use null (not 0) when a company has no FMV data yet for a date.
   // This prevents mid-month FMV entries from producing a false zero on the
@@ -176,20 +148,12 @@ function renderSummaryChart(now) {
     };
   });
 
-  const tickCallback = v => {
-    if (state.privateMode) return '••';
-    const abs = Math.abs(v);
-    if (abs >= 1_000_000) return (v/1_000_000).toFixed(1)+'M';
-    if (abs >= 1_000)     return (v/1_000).toFixed(0)+'k';
-    return v;
-  };
+  const tickCallback = moneyTickFmt({ mask: MASK.short });
 
   // x-axis ticks: one per year
-  const yearTicks = new Set();
-  dates.forEach((d, i) => { if (i === 0 || d.slice(0,4) !== dates[i-1].slice(0,4)) yearTicks.add(i); });
+  const yearTicks = yearStartIndices(dates);
 
-  if (state.optionSummaryChart) { state.optionSummaryChart.destroy(); state.optionSummaryChart = null; }
-  state.optionSummaryChart = new Chart(canvas, {
+  swapChart(state, 'optionSummaryChart', canvas, {
     type: 'line',
     data: { labels: dates, datasets },
     options: {
@@ -197,11 +161,7 @@ function renderSummaryChart(now) {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
-          padding: 12, cornerRadius: 10,
-          callbacks: { label: ctx => `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(ctx.parsed.y)}` },
-        },
+        tooltip: chartTooltip({ labelFn: moneyTooltipLabel }),
       },
       scales: {
         y: {
@@ -227,7 +187,6 @@ function renderSummaryChart(now) {
 // --- Per-company card ---
 
 function buildCompanyCard(company, ci, now) {
-  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
   const grants         = state.optionGrants.filter(g => g.company_id === company.id);
   const fmvEntry       = getEffectiveFmv(company.id, now);
   const fmv            = fmvEntry?.fmv ?? null;
@@ -270,7 +229,7 @@ function buildCompanyCard(company, ci, now) {
   const metaEl = document.createElement('div');
   metaEl.className = 'opt-card-meta';
   metaEl.innerHTML = fmv !== null
-    ? `<span class="opt-fmv-display">${t('opt_last_fmv')} ${fmtMoney(fmv)}</span><span class="opt-fmv-date">${fmtShortDate(fmvEntry.date)}</span>`
+    ? `<span class="opt-fmv-display">${t('opt_last_fmv')} ${fmtMoney(fmv)}</span><span class="opt-fmv-date">${fmtMonth(fmvEntry.date, { style: 'short' })}</span>`
     : `<span class="opt-no-fmv hint">${t('opt_no_fmv')}</span>`;
 
   const valuesEl = document.createElement('div');
@@ -279,13 +238,13 @@ function buildCompanyCard(company, ci, now) {
   function renderCardValues(view) {
     if (view === 'vesting') {
       valuesEl.innerHTML = `
-        <span class="opt-vested-val">${state.privateMode ? '••••••' : Math.round(vestedShares).toLocaleString()} <span class="opt-val-label">${t('opt_shares_vested')}</span></span>
-        <span class="opt-unvested-val">${state.privateMode ? '••••••' : Math.round(unvestedShares).toLocaleString()} <span class="opt-val-label">${t('opt_shares_unvested')}</span></span>
+        <span class="opt-vested-val">${privShares(vestedShares)} <span class="opt-val-label">${t('opt_shares_vested')}</span></span>
+        <span class="opt-unvested-val">${privShares(unvestedShares)} <span class="opt-val-label">${t('opt_shares_unvested')}</span></span>
       `;
     } else {
       valuesEl.innerHTML = `
-        ${vestedVal !== null ? `<span class="opt-vested-val">${redact(vestedVal)} <span class="opt-val-label">${t('opt_vested_label')}</span></span>` : ''}
-        ${unvestedVal !== null ? `<span class="opt-unvested-val">${redact(unvestedVal)} <span class="opt-val-label">${t('opt_unvested_label')}</span></span>` : ''}
+        ${vestedVal !== null ? `<span class="opt-vested-val">${privMoney(vestedVal)} <span class="opt-val-label">${t('opt_vested_label')}</span></span>` : ''}
+        ${unvestedVal !== null ? `<span class="opt-unvested-val">${privMoney(unvestedVal)} <span class="opt-val-label">${t('opt_unvested_label')}</span></span>` : ''}
       `;
     }
   }
@@ -348,7 +307,7 @@ function buildCompanyCard(company, ci, now) {
       ) : 0;
 
       const valueHtml = vestVal !== null
-        ? `<span class="opt-grant-value">${redact(vestVal)}${totalGrantVal !== null ? `<span class="opt-grant-unvested-val"> / ${redact(totalGrantVal)}</span>` : ''}</span>`
+        ? `<span class="opt-grant-value">${privMoney(vestVal)}${totalGrantVal !== null ? `<span class="opt-grant-unvested-val"> / ${privMoney(totalGrantVal)}</span>` : ''}</span>`
         : '';
 
       const row = document.createElement('div');
@@ -366,7 +325,7 @@ function buildCompanyCard(company, ci, now) {
           <span class="opt-grant-pct">${Math.round(pct)}%</span>
         </div>
         <div class="opt-grant-meta">
-          <span>${fullyVested ? t('opt_fully_vested') : cliffPending ? t('opt_cliff_pending').replace('{months}', cliffMonths) : `${state.privateMode ? '•• / ••' : `${Math.round(vested).toLocaleString()} / ${total.toLocaleString()}`} ${t('opt_shares_vested')}`}</span>
+          <span>${fullyVested ? t('opt_fully_vested') : cliffPending ? t('opt_cliff_pending').replace('{months}', cliffMonths) : `${privShares(vested)} / ${privShares(total)} ${t('opt_shares_vested')}`}</span>
           ${valueHtml}
         </div>`;
       grantsList.appendChild(row);
@@ -411,33 +370,19 @@ function renderCompanyValueChart(canvas, company, grants, color, now) {
     return e ? grants.reduce((s, g) => s + computeUnvestedValue(g, e.fmv, d), 0) : null;
   });
 
-  const cs      = getComputedStyle(document.documentElement);
-  const muted   = cs.getPropertyValue('--subtle').trim()  || '#94a3b8';
-  const gridCol = cs.getPropertyValue('--border').trim()  || 'rgba(15,23,42,.06)';
+  const { muted, grid: gridCol } = chartColors();
 
-  const tickCallback = v => {
-    if (state.privateMode) return '••';
-    const abs = Math.abs(v);
-    if (abs >= 1_000_000) return '$' + (v/1_000_000).toFixed(1) + 'M';
-    if (abs >= 1_000)     return '$' + (v/1_000).toFixed(0) + 'k';
-    return fmtMoney(v);
-  };
+  const tickCallback = moneyTickFmt({ prefix: '$', mask: MASK.short, smallFmt: fmtMoney });
 
-  const yearTicks = new Set();
-  dates.forEach((d, i) => { if (i === 0 || d.slice(0,4) !== dates[i-1].slice(0,4)) yearTicks.add(i); });
+  const yearTicks = yearStartIndices(dates);
 
   const companyId = company.id + '_value';
-  if (state.optionCompanyCharts[companyId]) {
-    state.optionCompanyCharts[companyId].destroy();
-    delete state.optionCompanyCharts[companyId];
-  }
-
   const totalData = vestedData.map((v, i) => {
     const u = unvestedData[i];
     return (v !== null && u !== null) ? v + u : (v ?? u);
   });
 
-  state.optionCompanyCharts[companyId] = new Chart(canvas, {
+  swapChart(state.optionCompanyCharts, companyId, canvas, {
     type: 'line',
     data: {
       labels: dates,
@@ -478,13 +423,12 @@ function renderCompanyValueChart(canvas, company, grants, color, now) {
           backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
           padding: 10, cornerRadius: 8,
           callbacks: {
-            title: items => fmtShortDate(dates[items[0].dataIndex]),
+            title: items => fmtMonth(dates[items[0].dataIndex], { style: 'short' }),
             label: ctx => {
               const di = ctx.dataIndex;
-              const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
-              if (ctx.datasetIndex === 0) return `  ${t('opt_vested_label')}: ${redact(vestedData[di] ?? 0)}`;
+              if (ctx.datasetIndex === 0) return `  ${t('opt_vested_label')}: ${privMoney(vestedData[di] ?? 0)}`;
               const unvested = (totalData[di] ?? 0) - (vestedData[di] ?? 0);
-              return `  ${t('opt_unvested_label')}: ${redact(unvested)}`;
+              return `  ${t('opt_unvested_label')}: ${privMoney(unvested)}`;
             },
           },
         },
@@ -539,9 +483,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
 
   const todayIdx = dates.findLastIndex(d => d <= now);
 
-  const cs = getComputedStyle(document.documentElement);
-  const muted   = cs.getPropertyValue('--subtle').trim() || '#94a3b8';
-  const gridCol = cs.getPropertyValue('--border').trim() || 'rgba(15,23,42,.06)';
+  const { muted, grid: gridCol } = chartColors();
 
   // Build cumulative vested share counts per date
   const grantValues = grants.map(grant =>
@@ -593,25 +535,13 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
     },
   };
 
-  const tickCallback = v => {
-    if (state.privateMode) return '••';
-    const abs = Math.abs(v);
-    if (abs >= 1_000_000) return (v/1_000_000).toFixed(1)+'M';
-    if (abs >= 1_000)     return (v/1_000).toFixed(0)+'k';
-    return Math.round(v);
-  };
+  const tickCallback = sharesTickFmt();
 
   // x-axis: one tick per year
-  const yearTicks = new Set();
-  dates.forEach((d, i) => { if (i === 0 || d.slice(0,4) !== dates[i-1].slice(0,4)) yearTicks.add(i); });
+  const yearTicks = yearStartIndices(dates);
 
   const companyId = company.id;
-  if (state.optionCompanyCharts[companyId]) {
-    state.optionCompanyCharts[companyId].destroy();
-    delete state.optionCompanyCharts[companyId];
-  }
-
-  state.optionCompanyCharts[companyId] = new Chart(canvas, {
+  swapChart(state.optionCompanyCharts, companyId, canvas, {
     type: 'line',
     data: { labels: dates, datasets },
     plugins: [todayLinePlugin],
@@ -624,8 +554,8 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
           backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
           padding: 10, cornerRadius: 8,
           callbacks: {
-            title: items => fmtShortDate(dates[items[0].dataIndex]),
-            label: ctx => `  ${ctx.dataset.label}: ${state.privateMode ? '••' : Math.round(grantValues[ctx.datasetIndex][ctx.dataIndex]).toLocaleString()} shares`,
+            title: items => fmtMonth(dates[items[0].dataIndex], { style: 'short' }),
+            label: ctx => `  ${ctx.dataset.label}: ${privShares(grantValues[ctx.datasetIndex][ctx.dataIndex])} shares`,
           },
         },
       },
@@ -823,7 +753,7 @@ function buildCompanyManageSection(company, ci) {
   // Add FMV form
   const addForm = document.createElement('div');
   addForm.className = 'opt-fmv-manage-add';
-  const nowStr = today();
+  const nowStr = todayISO();
   addForm.innerHTML = `
     <input type="date" class="fmv-add-date" value="${nowStr}">
     <input type="number" class="fmv-add-val" placeholder="${escapeHtml(t('opt_fmv_placeholder'))}" step="0.01" min="0">

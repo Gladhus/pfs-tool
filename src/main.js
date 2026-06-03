@@ -10,6 +10,8 @@ import { state, LS_KEY_THEME, LS_KEY_ACTIVE_TAB, HEADERS } from './core/state.js
 import { setLang, applyI18n, t, lang, registerWriteConfig } from './core/i18n/index.js';
 import { els, _setToastFn } from './core/dom.js';
 import { toast } from './core/toast.js';
+import { togglePrivate } from './core/privacy.js';
+import { todayISO } from './utils/dates.js';
 
 _setToastFn(toast);
 import { renderOverview } from './features/overview/index.js';
@@ -89,8 +91,7 @@ els.tabBar.querySelectorAll('.tab-btn').forEach(btn => {
 // Header action buttons (entry + settings — not in the tab-bar)
 function onHeaderTabClick(btn) {
   if (btn.dataset.tab === 'entry' && els.dateInput) {
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const today = todayISO();
     state.currentDate = today;
     state.datePicker ? state.datePicker.selectDate(parseLocalDate(today), { silent: true }) : (els.dateInput.value = today);
   }
@@ -103,8 +104,7 @@ els.headerSettingsBtn?.addEventListener('click', () => onHeaderTabClick(els.head
 document.querySelectorAll('#bottom-tab-bar .bottom-tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.dataset.tab === 'entry' && els.dateInput) {
-      const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const today = todayISO();
       state.currentDate = today;
       state.datePicker ? state.datePicker.selectDate(parseLocalDate(today), { silent: true }) : (els.dateInput.value = today);
     }
@@ -246,9 +246,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 
 // Private mode toggle
 els.privateModeBtn?.addEventListener('click', () => {
-  state.privateMode = !state.privateMode;
-  try { localStorage.setItem('pfs_private', state.privateMode ? '1' : '0'); } catch (_) {}
-  applyI18n();
+  togglePrivate();
   refreshCurrentTab();
 });
 
@@ -320,9 +318,7 @@ els.exportCsvBtn?.addEventListener('click', () => {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const _n = new Date();
-  const _d = `${_n.getFullYear()}-${String(_n.getMonth()+1).padStart(2,'0')}-${String(_n.getDate()).padStart(2,'0')}`;
-  a.href = url; a.download = `pfs-snapshots-${_d}.csv`;
+  a.href = url; a.download = `pfs-snapshots-${todayISO()}.csv`;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 });

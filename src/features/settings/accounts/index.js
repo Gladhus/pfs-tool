@@ -5,10 +5,11 @@ import "./fr.js";
 import { state, HEADERS, OWNERS, KINDS } from '../../../core/state.js';
 import { t, tr, lang } from '../../../core/i18n/index.js';
 import { fmtMoney, parseMoney } from '../../../core/format.js';
+import { privMoney } from '../../../core/privacy.js';
 import { categoriesInOrder, activeAccounts } from '../../../utils/balance.js';
 import { normalizeDate, rebuildDatesList, parseMonthLabel } from '../../../utils/dates.js';
 import { parseDelimited, suggestAccount, rememberMapping } from '../../../utils/import.js';
-import { els, setStatus } from '../../../core/dom.js';
+import { els, setStatus, escapeHtml } from '../../../core/dom.js';
 import { icon, iconEl, categoryIcon, categoryKey } from '../../../core/icons.js';
 import { renderOverview } from '../../overview/index.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../../history/index.js';
@@ -123,7 +124,7 @@ function buildAccountCard(a) {
       <div class="account-card-meta">${metaBits.map(escapeHtml).join(' · ')}</div>
     </div>
     <div class="account-card-balance">
-      ${latest ? `<div class="account-card-amount">${state.privateMode ? '••••••' : fmtMoney(latest.balance_raw)}</div>
+      ${latest ? `<div class="account-card-amount">${privMoney(latest.balance_raw)}</div>
                   <div class="account-card-date">${latest.date}</div>`
                : `<div class="account-card-empty">No data</div>`}
     </div>
@@ -133,9 +134,6 @@ function buildAccountCard(a) {
   return card;
 }
 
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-}
 
 // --- Account edit dialog ---
 

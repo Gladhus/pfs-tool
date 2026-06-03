@@ -1,5 +1,35 @@
 import { state } from '../core/state.js';
 
+// "YYYY-MM-DD" for today, in the user's local timezone.
+export function todayISO() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+
+// Return indices in `dates` (YYYY-MM-DD strings, monotonically sorted) where
+// the year changes from the previous entry. Used to place year tick marks on
+// chart x-axes when the range is too short for buildXAxisTicks's heuristics.
+export function yearStartIndices(dates) {
+  const out = new Set();
+  for (let i = 0; i < dates.length; i++) {
+    if (i === 0 || dates[i].slice(0, 4) !== dates[i - 1].slice(0, 4)) out.add(i);
+  }
+  return out;
+}
+
+// Format a YYYY-MM string in the user's current locale.
+//   style 'long'  → "December 2024"
+//   style 'short' → "Dec 2024"
+export function fmtMonth(yyyymm, { style = 'long' } = {}) {
+  if (!yyyymm) return '—';
+  const [y, m] = yyyymm.split('-');
+  const locale = (state.lang || 'fr') === 'fr' ? 'fr-CA' : 'en-CA';
+  return new Date(+y, +m - 1, 1).toLocaleDateString(locale, {
+    year: 'numeric',
+    month: style === 'short' ? 'short' : 'long',
+  });
+}
+
 export const MONTH_NAMES = {
   jan: 1, janv: 1, january: 1, janvier: 1,
   feb: 2, 'fév': 2, fevr: 2, fevrier: 2, 'février': 2, february: 2,

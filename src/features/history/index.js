@@ -1,13 +1,16 @@
 import "./en.js";
 import "./fr.js";
-import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { t, tFn, tr, lang } from '../../core/i18n/index.js';
-import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';
+import { fmtMoney, hexToRgba } from '../../core/format.js';
+import { privMoney } from '../../core/privacy.js';
+import { chartTooltip, moneyTooltipLabel, moneyTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
+import { deltaEl } from '../../core/components/Delta.js';
 import { getDatesForPeriod } from '../../utils/dates.js';
 import { buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';
+import { fmtMonth } from '../../utils/dates.js';
 import { activeAccounts } from '../../utils/balance.js';
-import { els } from '../../core/dom.js';
+import { els, escapeHtml } from '../../core/dom.js';
 import { icon } from '../../core/icons.js';
 
 export function getHistFilteredDates() {
@@ -102,8 +105,7 @@ export function populateHistAccountSelect() {
       btn.className = 'custom-select-item' + (item.value === currentVal ? ' selected' : '');
       btn.textContent = item.label;
       if (item.value === currentVal) {
-        const esc = String(item.label).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        btn.innerHTML = `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`;
+        btn.innerHTML = `${escapeHtml(item.label)}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`;
       }
       btn.dataset.label = item.label;
       btn.addEventListener('click', () => {
@@ -113,8 +115,7 @@ export function populateHistAccountSelect() {
         menu.querySelectorAll('.custom-select-item').forEach(b => {
           const isSel = b === btn;
           b.classList.toggle('selected', isSel);
-          const lbl = b.dataset.label || '';
-          const esc = lbl.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+          const esc = escapeHtml(b.dataset.label || '');
           b.innerHTML = isSel
             ? `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`
             : esc;
@@ -134,14 +135,6 @@ export function populateHistAccountSelect() {
     menu.hidden = !opening;
     wrap.classList.toggle('open', opening);
   });
-}
-
-function fmtMonthHeading(yyyymm) {
-  const [y, m] = yyyymm.split('-');
-  return new Date(+y, +m - 1, 1).toLocaleDateString(
-    document.documentElement.lang === 'fr' ? 'fr-CA' : 'en-CA',
-    { year: 'numeric', month: 'long' }
-  );
 }
 
 const HIST_PAGE_SIZE = 12;
@@ -218,9 +211,6 @@ export function renderHistoryTable() {
   const container = els.historyCards;
   container.innerHTML = '';
 
-  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
-  const redactDelta = d => state.privateMode ? '••' : fmtDelta(d);
-
   for (const mo of pageMonths) {
     const datesInMonth = byMonth.get(mo).slice().reverse(); // newest first
     const latestDate = datesInMonth[0];
@@ -248,7 +238,7 @@ export function renderHistoryTable() {
 
     const moLabel = document.createElement('div');
     moLabel.className = 'hist-card-month';
-    moLabel.textContent = fmtMonthHeading(mo);
+    moLabel.textContent = fmtMonth(mo);
 
     const dateLabel = document.createElement('div');
     dateLabel.className = 'hist-card-date';
@@ -269,18 +259,20 @@ export function renderHistoryTable() {
 
     const netEl = document.createElement('div');
     netEl.className = 'hist-card-net';
-    netEl.textContent = redact(latest.net);
-
-    const deltaEl = document.createElement('div');
-    deltaEl.className = 'hist-card-delta';
-    if (delta !== null) {
-      const pct = fmtPct(delta, byDate.get(prevDateKey).net);
-      deltaEl.textContent = redactDelta(delta) + (pct ? ` (${pct})` : '');
-      deltaEl.classList.add(delta >= 0 ? 'up' : 'down');
-    }
+    netEl.textContent = privMoney(latest.net);
 
     right.appendChild(netEl);
-    right.appendChild(deltaEl);
+    if (delta !== null) {
+      right.appendChild(deltaEl({
+        value: delta,
+        ref: byDate.get(prevDateKey).net,
+        baseClass: 'hist-card-delta',
+      }));
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'hist-card-delta';
+      right.appendChild(empty);
+    }
 
     main.appendChild(left);
     main.appendChild(right);
@@ -338,19 +330,22 @@ export function renderHistoryTable() {
 
         const rNet = document.createElement('span');
         rNet.className = 'hist-older-net';
-        rNet.textContent = redact(d.net);
-
-        const rDelta = document.createElement('span');
-        rDelta.className = 'hist-older-delta';
-        if (dDelta !== null) {
-          const pct = fmtPct(dDelta, byDate.get(prevK).net);
-          rDelta.textContent = redactDelta(dDelta) + (pct ? ` (${pct})` : '');
-          rDelta.classList.add(dDelta >= 0 ? 'up' : 'down');
-        }
+        rNet.textContent = privMoney(d.net);
 
         row.appendChild(rDate);
         row.appendChild(rNet);
-        row.appendChild(rDelta);
+        if (dDelta !== null) {
+          row.appendChild(deltaEl({
+            value: dDelta,
+            ref: byDate.get(prevK).net,
+            baseClass: 'hist-older-delta',
+            tag: 'span',
+          }));
+        } else {
+          const empty = document.createElement('span');
+          empty.className = 'hist-older-delta';
+          row.appendChild(empty);
+        }
         olderList.appendChild(row);
       }
 
@@ -406,14 +401,7 @@ export function renderChart() {
 
   if (els.histChartToggles) els.histChartToggles.hidden = !isOverview;
 
-  const cs = getComputedStyle(document.documentElement);
-  const color = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
-  const COLOR_INVEST = color('--cat-investments', '#3b82f6');
-  const COLOR_RE     = color('--cat-real-estate', '#f59e0b');
-  const COLOR_ASSET  = color('--accent', '#10b981');
-  const COLOR_DEBT   = color('--cat-debts', '#f43f5e');
-  const COLOR_MUTED  = color('--subtle', '#94a3b8');
-  const COLOR_GRID   = color('--border', 'rgba(15,23,42,.06)');
+  const { muted: COLOR_MUTED, grid: COLOR_GRID, accent: COLOR_ASSET, debt: COLOR_DEBT, invest: COLOR_INVEST, realEstate: COLOR_RE, cash: COLOR_OTHER } = chartColors();
 
   const datasets = [];
   const chartCtx = els.chartCanvas.getContext('2d');
@@ -458,7 +446,6 @@ export function renderChart() {
       si++;
     };
 
-    const COLOR_OTHER = color('--cat-cash', '#10b981');
     if (els.showInvestments?.checked) pushArea(t('investments'),     data.investments,   COLOR_INVEST);
     if (els.showRealEstate?.checked)  pushArea(t('real_estate_net'), data.realEstateNet, COLOR_RE);
     if (els.showOther?.checked)       pushArea(t('show_other'),      data.other,         COLOR_OTHER);
@@ -494,23 +481,18 @@ export function renderChart() {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
-          padding: 12, cornerRadius: 10, titleFont: { size: 11 },
-          bodyFont: { size: 13, weight: '600' },
-          callbacks: {
-            label: (ctx) => {
-              const val = ctx.dataset._rawData ? (ctx.dataset._rawData[ctx.dataIndex] ?? ctx.parsed.y) : ctx.parsed.y;
-              return `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(val)}`;
-            },
+        tooltip: chartTooltip({
+          labelFn: (ctx) => {
+            const val = ctx.dataset._rawData ? (ctx.dataset._rawData[ctx.dataIndex] ?? ctx.parsed.y) : ctx.parsed.y;
+            return `  ${ctx.dataset.label}: ${privMoney(val)}`;
           },
-        },
+        }),
       },
       scales: {
         y: {
           grid: { color: COLOR_GRID, drawTicks: false }, border: { display: false },
           ticks: { color: COLOR_MUTED, font: { size: 11, family: "'Inter', sans-serif" }, padding: 10, maxTicksLimit: 6,
-            callback: (v) => { if (state.privateMode) return '••••'; const abs = Math.abs(v); if (abs >= 1000000) return (v/1000000).toFixed(1)+'M $'; if (abs >= 1000) return (v/1000).toFixed(0)+'k $'; return v+' $'; },
+            callback: moneyTickFmt({ suffix: ' $' }),
           },
         },
         x: {
@@ -528,17 +510,5 @@ export function renderChart() {
     },
   };
 
-  if (state.chart) { state.chart.destroy(); state.chart = null; }
-  state.chart = new Chart(els.chartCanvas, config);
-}
-
-function hexToRgba(hex, a) {
-  const m = hex.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);
-  if (!m) return hex;
-  let h = m[1];
-  if (h.length === 3) h = h.split('').map(c => c + c).join('');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${a})`;
+  swapChart(state, 'chart', els.chartCanvas, config);
 }

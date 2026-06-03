@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.7.0] — 2026-06-03
+
+### Added
+- **Option exercise tracking**: each grant can now record one or more exercises (date, shares exercised, price paid — pre-filled with the grant's strike price — and an optional note). A collapsible **Exercises** block appears under each grant in both the main view and the manage tab, listing past exercises with edit/delete, plus an **Add exercise** action.
+- Grant share counts now display as `vested (exercisable) / total shares vested`, where the parenthesized exercisable figure (vested minus already exercised) carries a tooltip. The exercisable count only appears once at least one exercise has been recorded.
+- Exercisable shares drive intrinsic value everywhere it is calculated (per-grant, per-company, and overview net worth). Vested share totals and the vesting schedule chart are unaffected.
+- Hard block prevents exercising more shares than are exercisable as of the exercise date (which also prevents exercises before the cliff, since vested = 0 then).
+- New `option_exercises` sheet tab with columns `id, grant_id, date, shares_exercised, price_paid, note`.
+
+---
+
 ## [1.6.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.6.0) — 2026-06-02
 
 ### Changed

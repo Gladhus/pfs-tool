@@ -87,6 +87,28 @@ export async function loadOptionFmv() {
   }
 }
 
+export async function loadOptionExercises() {
+  try {
+    const resp = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: state.sheetId, range: 'option_exercises!A:Z',
+      valueRenderOption: 'UNFORMATTED_VALUE',
+    });
+    const rows = resp.result.values || [];
+    if (rows.length < 2) { state.optionExercises = []; return; }
+    const headers = rows[0];
+    state.optionExercises = rows.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = r[i] ?? ''; });
+      obj.shares_exercised = parseNum(obj.shares_exercised);
+      obj.price_paid       = parseNum(obj.price_paid);
+      return obj;
+    }).filter(e => e.id && e.grant_id);
+  } catch (_) {
+    await ensureTab('option_exercises', HEADERS.option_exercises);
+    state.optionExercises = [];
+  }
+}
+
 async function writeTab(tabName, headers, rows) {
   await ensureTab(tabName, headers);
   await gapi.client.sheets.spreadsheets.values.clear({
@@ -131,4 +153,10 @@ export async function writeOptionFmv(entries) {
   await writeTab('option_fmv', HEADERS.option_fmv,
     entries.map(f => HEADERS.option_fmv.map(h => f[h] ?? '')));
   state.optionFmv = entries;
+}
+
+export async function writeOptionExercises(entries) {
+  await writeTab('option_exercises', HEADERS.option_exercises,
+    entries.map(e => HEADERS.option_exercises.map(h => e[h] ?? '')));
+  state.optionExercises = entries;
 }

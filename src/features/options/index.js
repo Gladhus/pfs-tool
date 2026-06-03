@@ -13,11 +13,13 @@ import {
   getEffectiveFmv, computeCompanyEquityValue, computeCompanyUnvestedValue,
   computeTotalEquityValue, computeTotalUnvestedValue,
   grantFullyVestedDate, grantFirstVestDate, generateMonthlyDates,
+  exercisableShares, exercisedSharesForGrant,
 } from '../../utils/options.js';
 import { slugify } from '../../utils/import.js';
 import { todayISO, fmtMonth, yearStartIndices } from '../../utils/dates.js';
 import {
   writeOptionCompanies, writeOptionGrants, addOptionFmvEntry, writeOptionFmv,
+  writeOptionExercises,
 } from '../../api/options.js';
 import { writeConfig } from '../../api/config.js';
 
@@ -28,6 +30,8 @@ const COMPANY_COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6', '
 let _editingCompanyId = null;   // null = new
 let _editingGrantId   = null;   // null = new
 let _editingGrantCoId = null;   // which company the grant belongs to
+let _editingExerciseId      = null;  // null = new
+let _editingExerciseGrantId = null;  // which grant the exercise belongs to
 
 // --- Sub-tab state ---
 let _optSubTab = 'main';
@@ -294,6 +298,8 @@ function buildCompanyCard(company, ci, now) {
     grants.forEach((grant, gi) => {
       const gColor          = GRANT_COLORS[gi % GRANT_COLORS.length];
       const vested          = computeVestedShares(grant, now);
+      const exercised       = exercisedSharesForGrant(grant.id, now);
+      const exercisable     = exercisableShares(grant, now);
       const total           = Number(grant.total_shares) || 0;
       const pct             = total ? Math.min(100, (vested / total) * 100) : 0;
       const vestVal         = fmv !== null ? computeIntrinsicValue(grant, fmv, now) : null;
@@ -310,6 +316,18 @@ function buildCompanyCard(company, ci, now) {
         ? `<span class="opt-grant-value">${privMoney(vestVal)}${totalGrantVal !== null ? `<span class="opt-grant-unvested-val"> / ${privMoney(totalGrantVal)}</span>` : ''}</span>`
         : '';
 
+      // Vested count, with an exercisable count in parentheses when some
+      // shares have been exercised: "11,250 (10,000) / 12,000 shares vested".
+      const exercisablePart = exercised > 0
+        ? ` (<span class="opt-exercisable" data-tooltip="${escapeHtml(t('opt_exercisable_tip'))}">${privShares(exercisable)}</span>)`
+        : '';
+      const sharesText = `${privShares(vested)}${exercisablePart} / ${privShares(total)} ${t('opt_shares_vested')}`;
+      const metaLeft = cliffPending
+        ? t('opt_cliff_pending').replace('{months}', cliffMonths)
+        : (fullyVested && exercised === 0)
+          ? t('opt_fully_vested')
+          : sharesText;
+
       const row = document.createElement('div');
       row.className = 'opt-grant-row';
       row.innerHTML = `
@@ -325,9 +343,10 @@ function buildCompanyCard(company, ci, now) {
           <span class="opt-grant-pct">${Math.round(pct)}%</span>
         </div>
         <div class="opt-grant-meta">
-          <span>${fullyVested ? t('opt_fully_vested') : cliffPending ? t('opt_cliff_pending').replace('{months}', cliffMonths) : `${privShares(vested)} / ${privShares(total)} ${t('opt_shares_vested')}`}</span>
+          <span>${metaLeft}</span>
           ${valueHtml}
         </div>`;
+      row.appendChild(buildGrantExercisesBlock(grant));
       grantsList.appendChild(row);
     });
   } else {
@@ -347,6 +366,69 @@ function buildCompanyCard(company, ci, now) {
   });
 
   return card;
+}
+
+// --- Per-grant exercises (collapsible log + add/edit) ---
+
+function buildGrantExercisesBlock(grant) {
+  const exercises = (state.optionExercises || [])
+    .filter(e => e.grant_id === grant.id)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const count = exercises.length;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'opt-exercises-block';
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'opt-exercises-toggle';
+
+  const body = document.createElement('div');
+  body.className = 'opt-exercises-body';
+  body.hidden = true;
+
+  const labelFor = (open) =>
+    `${open ? '▾' : '▸'} ${t('opt_exercises_label')}` +
+    (count ? ` · ${t('opt_exercises_count').replace('{count}', count)}` : '');
+  toggle.textContent = labelFor(false);
+
+  if (count) {
+    exercises.forEach(ex => {
+      const exRow = document.createElement('div');
+      exRow.className = 'opt-exercise-row';
+      exRow.innerHTML = `
+        <span class="opt-exercise-date">${escapeHtml(ex.date)}</span>
+        <span class="opt-exercise-shares">${privShares(Number(ex.shares_exercised) || 0)} ${escapeHtml(t('opt_shares_exercised_suffix'))}</span>
+        <span class="opt-exercise-price">@ ${fmtMoney(Number(ex.price_paid) || 0)}</span>
+        <span class="opt-exercise-note">${escapeHtml(ex.note || '')}</span>
+        <button type="button" class="link-btn opt-exercise-edit-btn">${t('edit_label')}</button>`;
+      exRow.querySelector('.opt-exercise-edit-btn')
+        .addEventListener('click', () => openExerciseDialog(ex.id, grant.id));
+      body.appendChild(exRow);
+    });
+  } else {
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.style.margin = '.25rem 0 .5rem';
+    hint.textContent = t('opt_no_exercises');
+    body.appendChild(hint);
+  }
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'link-btn opt-add-exercise-btn';
+  addBtn.textContent = t('opt_add_exercise');
+  addBtn.addEventListener('click', () => openExerciseDialog(null, grant.id));
+  body.appendChild(addBtn);
+
+  toggle.addEventListener('click', () => {
+    body.hidden = !body.hidden;
+    toggle.textContent = labelFor(!body.hidden);
+  });
+
+  wrap.appendChild(toggle);
+  wrap.appendChild(body);
+  return wrap;
 }
 
 // --- Per-company value-over-time chart ---
@@ -793,6 +875,7 @@ function buildCompanyManageSection(company, ci) {
         <button type="button" class="link-btn manage-edit-grant-btn">${t('edit_label')}</button>`;
       row.querySelector('.manage-edit-grant-btn').addEventListener('click', () => openGrantDialog(grant.id, company.id));
       grantsBlock.appendChild(row);
+      grantsBlock.appendChild(buildGrantExercisesBlock(grant));
     });
   } else {
     const hint = document.createElement('p');
@@ -1077,4 +1160,117 @@ async function deleteGrant(grantId, companyId) {
 
 export function closeGrantDialog() {
   document.getElementById('opt-grant-dialog')?.close();
+}
+
+// --- Exercise dialog ---
+
+let _exerciseSaveHandler   = null;
+let _exerciseDeleteHandler = null;
+
+export function openExerciseDialog(exerciseId, grantId) {
+  _editingExerciseId      = exerciseId || null;
+  _editingExerciseGrantId = grantId;
+  const dlg = document.getElementById('opt-exercise-dialog');
+  if (!dlg) return;
+
+  const grant    = state.optionGrants.find(g => g.id === grantId);
+  const existing = exerciseId ? state.optionExercises.find(e => e.id === exerciseId) : null;
+
+  dlg.querySelector('#opt-exercise-dlg-title').textContent =
+    existing ? t('opt_edit_exercise') : t('opt_new_exercise');
+  dlg.querySelector('#opt-exercise-context').textContent =
+    t('opt_exercise_for').replace('{grant}', grant?.label || grant?.grant_type || 'grant');
+
+  dlg.querySelector('#opt-exercise-date').value   = existing?.date || todayISO();
+  dlg.querySelector('#opt-exercise-shares').value = existing?.shares_exercised ?? '';
+  // Pre-fill the price paid with the grant's strike price for new exercises.
+  dlg.querySelector('#opt-exercise-price').value  =
+    existing?.price_paid ?? (Number(grant?.strike_price) || 0);
+  dlg.querySelector('#opt-exercise-note').value   = existing?.note || '';
+
+  const deleteBtn = dlg.querySelector('#opt-exercise-delete-btn');
+  deleteBtn.hidden = !existing;
+
+  const saveBtn = dlg.querySelector('#opt-exercise-save-btn');
+  if (_exerciseSaveHandler)   saveBtn.removeEventListener('click', _exerciseSaveHandler);
+  if (_exerciseDeleteHandler) deleteBtn.removeEventListener('click', _exerciseDeleteHandler);
+  _exerciseSaveHandler   = () => saveExerciseDialog();
+  _exerciseDeleteHandler = () => deleteExercise(exerciseId);
+  saveBtn.addEventListener('click', _exerciseSaveHandler);
+  deleteBtn.addEventListener('click', _exerciseDeleteHandler);
+
+  dlg.showModal();
+  dlg.querySelector('#opt-exercise-shares').focus();
+}
+
+async function saveExerciseDialog() {
+  const dlg    = document.getElementById('opt-exercise-dialog');
+  const grant  = state.optionGrants.find(g => g.id === _editingExerciseGrantId);
+  const date   = dlg.querySelector('#opt-exercise-date').value;
+  const shares = Number(dlg.querySelector('#opt-exercise-shares').value);
+  const price  = Number(dlg.querySelector('#opt-exercise-price').value) || 0;
+  const note   = dlg.querySelector('#opt-exercise-note').value.trim();
+
+  if (!date || !Number.isFinite(shares) || shares <= 0) {
+    setStatus(t('opt_exercise_invalid'), 'warn');
+    return;
+  }
+
+  // Hard block: cannot exercise more than the shares that are vested-but-not-yet
+  // exercised as of the exercise date (excluding the row being edited). This also
+  // blocks exercising before the cliff, since vested === 0 there.
+  const vested = computeVestedShares(grant, date);
+  let used = 0;
+  for (const ex of state.optionExercises) {
+    if (ex.grant_id !== _editingExerciseGrantId) continue;
+    if (ex.id === _editingExerciseId) continue;
+    if (ex.date > date) continue;
+    used += Number(ex.shares_exercised) || 0;
+  }
+  const maxShares = Math.max(0, vested - used);
+  if (shares > maxShares) {
+    setStatus(t('opt_exercise_too_many').replace('{max}', Math.round(maxShares).toLocaleString()), 'warn');
+    return;
+  }
+
+  const exercises = [...state.optionExercises];
+  if (_editingExerciseId) {
+    const idx = exercises.findIndex(e => e.id === _editingExerciseId);
+    if (idx >= 0) exercises[idx] = { ...exercises[idx], grant_id: _editingExerciseGrantId, date, shares_exercised: shares, price_paid: price, note };
+  } else {
+    const id = `${_editingExerciseGrantId}_ex_${Date.now().toString(36).slice(-6)}`;
+    exercises.push({ id, grant_id: _editingExerciseGrantId, date, shares_exercised: shares, price_paid: price, note });
+  }
+  exercises.sort((a, b) => a.date.localeCompare(b.date));
+
+  dlg.querySelector('#opt-exercise-save-btn').disabled = true;
+  try {
+    setStatus('Saving exercise…');
+    await writeOptionExercises(exercises);
+    dlg.close();
+    setStatus('Saved.', 'ok');
+    renderOptions();
+  } catch (err) {
+    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+  } finally {
+    dlg.querySelector('#opt-exercise-save-btn').disabled = false;
+  }
+}
+
+async function deleteExercise(exerciseId) {
+  const exercises = state.optionExercises.filter(e => e.id !== exerciseId);
+  const dlg = document.getElementById('opt-exercise-dialog');
+  try {
+    setStatus('Deleting exercise…');
+    await writeOptionExercises(exercises);
+    dlg.close();
+    setStatus('Deleted.', 'ok');
+    renderOptions();
+  } catch (err) {
+    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+  }
+}
+
+export function closeExerciseDialog() {
+  document.getElementById('opt-exercise-dialog')?.close();
 }

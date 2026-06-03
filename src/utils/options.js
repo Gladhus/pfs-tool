@@ -24,10 +24,26 @@ export function computeUnvestedShares(grant, asOfDate) {
   return Math.max(0, (Number(grant.total_shares) || 0) - computeVestedShares(grant, asOfDate));
 }
 
+// Total shares exercised for a grant up to (and including) asOfDate.
+export function exercisedSharesForGrant(grantId, asOfDate) {
+  let sum = 0;
+  for (const ex of state.optionExercises || []) {
+    if (ex.grant_id !== grantId) continue;
+    if (asOfDate && ex.date > asOfDate) continue;
+    sum += Number(ex.shares_exercised) || 0;
+  }
+  return sum;
+}
+
+// Vested shares that have not yet been exercised — these still carry value.
+export function exercisableShares(grant, asOfDate) {
+  return Math.max(0, computeVestedShares(grant, asOfDate) - exercisedSharesForGrant(grant.id, asOfDate));
+}
+
 export function computeIntrinsicValue(grant, fmv, asOfDate) {
-  const vested = computeVestedShares(grant, asOfDate);
+  const exercisable = exercisableShares(grant, asOfDate);
   const strike = Number(grant.strike_price) || 0;
-  return Math.max(0, vested * (fmv - strike));
+  return Math.max(0, exercisable * (fmv - strike));
 }
 
 export function computeUnvestedValue(grant, fmv, asOfDate) {

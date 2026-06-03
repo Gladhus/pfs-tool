@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.7.0] — 2026-06-03
+## [1.7.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.0) — 2026-06-03
 
 ### Added
 - **Option exercise tracking**: each grant can now record one or more exercises (date, shares exercised, price paid — pre-filled with the grant's strike price — and an optional note). A collapsible **Exercises** block appears under each grant in both the main view and the manage tab, listing past exercises with edit/delete, plus an **Add exercise** action.

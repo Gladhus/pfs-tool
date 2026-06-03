@@ -2979,6 +2979,54 @@ dialog::backdrop {
   color: var(--subtle);
 }
 
+/* Exercisable count (parenthetical, with tooltip) */
+.opt-exercisable {
+  color: var(--fg-2);
+  font-weight: 600;
+  cursor: help;
+  border-bottom: 1px dotted var(--subtle);
+}
+
+/* Per-grant exercises (collapsible log) */
+.opt-exercises-block {
+  margin-top: 0.4rem;
+}
+
+.opt-exercises-toggle {
+  background: none;
+  border: none;
+  padding: 0.15rem 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.opt-exercises-toggle:hover { color: var(--fg-2); }
+
+.opt-exercises-body {
+  padding: 0.35rem 0 0.1rem;
+}
+
+.opt-exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--subtle);
+  padding: 0.2rem 0;
+}
+
+.opt-exercise-date { color: var(--fg-2); font-weight: 600; width: 5.5rem; flex-shrink: 0; }
+.opt-exercise-shares { font-weight: 600; color: var(--fg-2); }
+.opt-exercise-price { color: var(--muted); }
+.opt-exercise-note { color: var(--subtle); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opt-exercise-edit-btn { margin-left: auto; font-size: 0.72rem; flex-shrink: 0; }
+
+.opt-add-exercise-btn {
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+}
+
 /* Empty state */
 .opt-empty-state {
   text-align: center;

@@ -2,7 +2,7 @@ import { loadAccounts, loadSnapshots, loadCategoryMeta } from './accounts.js';
 import { loadTagsCatalog, mergeAndSyncTagsCatalog } from './tags.js';
 import { loadGroupsCatalog } from './groups.js';
 import { loadConfig } from './config.js';
-import { loadOptionCompanies, loadOptionGrants, loadOptionFmv } from './options.js';
+import { loadOptionCompanies, loadOptionGrants, loadOptionFmv, loadOptionExercises } from './options.js';
 import { rebuildDatesList, logCoverageDiagnostic } from '../utils/dates.js';
 import { setStatus } from '../core/dom.js';
 
@@ -11,7 +11,7 @@ export async function loadAll() {
   await Promise.all([
     loadAccounts(), loadSnapshots(), loadCategoryMeta(),
     loadTagsCatalog(), loadGroupsCatalog(), loadConfig(),
-    loadOptionCompanies(), loadOptionGrants(), loadOptionFmv(),
+    loadOptionCompanies(), loadOptionGrants(), loadOptionFmv(), loadOptionExercises(),
   ]);
   await mergeAndSyncTagsCatalog();
   rebuildDatesList();

@@ -21,6 +21,7 @@ export const HEADERS = {
   option_companies: ['id', 'name', 'ticker', 'active'],
   option_grants:    ['id', 'company_id', 'label', 'grant_type', 'grant_date', 'total_shares', 'strike_price', 'vesting_start', 'cliff_months', 'vesting_months', 'vesting_interval', 'expiry_date'],
   option_fmv:       ['date', 'company_id', 'fmv', 'note'],
+  option_exercises: ['id', 'grant_id', 'date', 'shares_exercised', 'price_paid', 'note'],
 };
 
 export const OWNERS = ['self', 'partner', 'joint'];
@@ -51,6 +52,7 @@ export const state = {
   optionCompanies:     [],
   optionGrants:        [],
   optionFmv:           [],
+  optionExercises:     [],
   configLang:          null,
   configTheme:         null,
   configStockOptions:  null,

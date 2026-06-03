@@ -690,6 +690,39 @@
     </form>
   </dialog>
 
+  <dialog id="opt-exercise-dialog" class="form-dialog">
+    <form method="dialog" class="dialog-body">
+      <div class="dialog-header">
+        <h2 id="opt-exercise-dlg-title">Exercise</h2>
+        <button type="button" class="dialog-close" id="opt-exercise-dlg-close" aria-label="Close">✕</button>
+      </div>
+      <p class="hint" id="opt-exercise-context" style="margin:0 0 .75rem"></p>
+      <div class="dialog-grid-2">
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-exercise-date" data-i18n="opt_exercise_date">Exercise date</label>
+          <input type="date" id="opt-exercise-date">
+        </div>
+        <div class="dialog-field">
+          <label class="dialog-field-label" for="opt-exercise-shares" data-i18n="opt_exercise_shares">Shares exercised</label>
+          <input type="number" id="opt-exercise-shares" min="0" step="1">
+        </div>
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-exercise-price" data-i18n="opt_exercise_price">Price paid per share</label>
+        <input type="number" id="opt-exercise-price" min="0" step="0.01">
+      </div>
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="opt-exercise-note" data-i18n="opt_exercise_note">Note (optional)</label>
+        <input type="text" id="opt-exercise-note" autocomplete="off">
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="opt-exercise-save-btn" data-i18n="save_changes">Save</button>
+        <button type="button" class="link-btn" id="opt-exercise-cancel-btn" data-i18n="cancel">Cancel</button>
+        <button type="button" class="link-btn danger" id="opt-exercise-delete-btn" hidden data-i18n="opt_delete_exercise">Delete exercise</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
   <script src="config.js"></script>

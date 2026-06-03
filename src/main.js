@@ -35,7 +35,7 @@ import {
   renderGroupsList, openNewGroupDialog, saveGroupDialog,
   closeGroupDialog, deleteGroupFromDialog,
 } from './features/settings/groups/index.js';
-import { openCompanyDialog, closeCompanyDialog, openGrantDialog, closeGrantDialog, setOptionsSubTab } from './features/options/index.js';
+import { openCompanyDialog, closeCompanyDialog, openGrantDialog, closeGrantDialog, closeExerciseDialog, setOptionsSubTab } from './features/options/index.js';
 
 // Stamp the build version into the footer
 const vEl = document.getElementById('app-version');
@@ -288,6 +288,9 @@ document.getElementById('opt-grant-cancel-btn')?.addEventListener('click', close
 document.getElementById('opt-grant-dlg-close')?.addEventListener('click', closeGrantDialog);
 document.getElementById('opt-company-dialog')?.addEventListener('click', e => { if (e.target === document.getElementById('opt-company-dialog')) closeCompanyDialog(); });
 document.getElementById('opt-grant-dialog')?.addEventListener('click', e => { if (e.target === document.getElementById('opt-grant-dialog')) closeGrantDialog(); });
+document.getElementById('opt-exercise-cancel-btn')?.addEventListener('click', closeExerciseDialog);
+document.getElementById('opt-exercise-dlg-close')?.addEventListener('click', closeExerciseDialog);
+document.getElementById('opt-exercise-dialog')?.addEventListener('click', e => { if (e.target === document.getElementById('opt-exercise-dialog')) closeExerciseDialog(); });
 
 // Theme picker
 function applyTheme(mode, { persist = true } = {}) {

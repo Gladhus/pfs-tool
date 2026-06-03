@@ -168,6 +168,15 @@ export function showConfirm({ message, items = [], okLabel = 'OK', cancelLabel =
   });
 }
 
+// HTML-entity-escape a string for safe interpolation into innerHTML.
+// Used everywhere we build HTML from user-provided strings (account names,
+// company names, tag values, etc.). Centralised so a future change to the
+// entity table touches one place.
+export function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 export function showSheetLink(id) {
   els.sheetInfo.hidden = false;
   const url = `https://docs.google.com/spreadsheets/d/${id}/edit`;

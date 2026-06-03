@@ -3,6 +3,7 @@ import "./fr.js";
 import { state } from '../../core/state.js';
 import { t, tr } from '../../core/i18n/index.js';
 import { privMoney, privDelta, privPct } from '../../core/privacy.js';
+import { escapeHtml } from '../../core/dom.js';
 import { buildEffectiveBalances } from '../../utils/stats.js';
 import { categoriesInOrder, accountsForCategory } from '../../utils/balance.js';
 import { icon, categoryIcon, categoryKey } from '../../core/icons.js';
@@ -43,11 +44,6 @@ function mkValueCell(curr, prev) {
     td.appendChild(deltaDiv);
   }
   return td;
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 export function renderDetailTable() {

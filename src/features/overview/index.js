@@ -1,16 +1,16 @@
 import "./en.js";
 import "./fr.js";
-import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { lang, t, tFn, tr } from '../../core/i18n/index.js';
 import { privMoney, updatePrivateButton } from '../../core/privacy.js';
-import { chartTooltip, moneyTooltipLabel, moneyTickFmt } from '../../core/chartOptions.js';
+import { hexToRgba } from '../../core/format.js';
+import { chartTooltip, moneyTooltipLabel, moneyTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
 import { deltaEl } from '../../core/components/Delta.js';
 import { statCard } from '../../core/components/StatCard.js';
 import { computeDateStats, buildEffectiveBalances, buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';
 import { computeTotalEquityValue } from '../../utils/options.js';
 import { getDatesForPeriod } from '../../utils/dates.js';
-import { els } from '../../core/dom.js';
+import { els, escapeHtml } from '../../core/dom.js';
 import { icon, categoryIcon, categoryKey } from '../../core/icons.js';
 
 const LS_KEY_SERIES = 'pfs_ov_series_visible';
@@ -392,14 +392,13 @@ export function renderOverviewChart() {
 
   const ctx = canvas.getContext('2d');
   const h = canvas.parentElement?.offsetHeight || 280;
+  const colors = chartColors();
   const cs = getComputedStyle(document.documentElement);
-  const catColor = (id) => {
-    const key = categoryKey(id);
-    return cs.getPropertyValue('--cat-' + key).trim() || cs.getPropertyValue('--accent').trim();
-  };
-  const netColor = cs.getPropertyValue('--accent').trim() || '#10b981';
-  const muted    = cs.getPropertyValue('--subtle').trim() || '#94a3b8';
-  const gridCol  = cs.getPropertyValue('--border').trim() || 'rgba(15,23,42,.06)';
+  // catColor needs a per-id CSS-var lookup (custom categories aren't in chartColors).
+  const catColor = (id) => cs.getPropertyValue('--cat-' + categoryKey(id)).trim() || colors.accent;
+  const netColor = colors.accent;
+  const muted    = colors.muted;
+  const gridCol  = colors.grid;
 
   // Fill in colors for category buckets now (depends on cs)
   for (const b of buckets) if (!b.color) b.color = catColor(b.catId);
@@ -455,11 +454,7 @@ export function renderOverviewChart() {
   const locale = lang() === 'fr' ? 'fr-CA' : 'en-CA';
   const { tickSet: xTickSet, xFmt } = buildXAxisTicks(chartDates, canvas.parentElement?.offsetWidth || 600, locale);
 
-  if (state.overviewChart) {
-    state.overviewChart.destroy();
-    state.overviewChart = null;
-  }
-  state.overviewChart = new Chart(canvas, {
+  swapChart(state, 'overviewChart', canvas, {
     type: 'line',
     data: { labels: chartDates, datasets },
     options: {
@@ -532,8 +527,7 @@ function renderSeriesToggles() {
     return lbl;
   };
 
-  const cs = getComputedStyle(document.documentElement);
-  const netColor = cs.getPropertyValue('--accent').trim() || '#10b981';
+  const netColor = chartColors().accent;
 
   if (view === 'group') {
     const groups = state.groupsCatalog || [];
@@ -628,17 +622,4 @@ function drawSpark(canvas, spec) {
   ctx.fill();
 }
 
-function hexToRgba(hex, a) {
-  const m = hex.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);
-  if (!m) return hex;
-  let h = m[1];
-  if (h.length === 3) h = h.split('').map(c => c + c).join('');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${a})`;
-}
 
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-}

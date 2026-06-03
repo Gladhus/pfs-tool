@@ -2,6 +2,7 @@
 // tooltip + dotted axes + privacy-aware tick callbacks; this collects the
 // boilerplate so the call sites stay focused on their data.
 
+import Chart from 'chart.js/auto';
 import { state } from './state.js';
 import { fmtMoney, fmtMoneyShort } from './format.js';
 import { privMoney, MASK } from './privacy.js';
@@ -52,6 +53,32 @@ export function moneyTickFmt({
     if (abs >= 1_000)     return `${prefix}${(v / 1_000).toFixed(0)}k${suffix}`;
     return smallFmt ? smallFmt(v) : `${prefix}${v}${suffix}`;
   };
+}
+
+// Read the theme palette from CSS custom properties on :root.
+// All charts pull the same set; keeping this in one place means a theme change
+// doesn't need to update each feature's local colour constants.
+export function chartColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const get = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
+  return {
+    muted:      get('--subtle',           '#94a3b8'),
+    grid:       get('--border',           'rgba(15,23,42,.06)'),
+    accent:     get('--accent',           '#10b981'),
+    debt:       get('--cat-debts',        '#f43f5e'),
+    invest:     get('--cat-investments',  '#3b82f6'),
+    realEstate: get('--cat-real-estate',  '#f59e0b'),
+    cash:       get('--cat-cash',         '#10b981'),
+  };
+}
+
+// Destroy any existing Chart on `holder[key]` and replace it with a new one.
+// Handles both top-level state (e.g. swapChart(state, 'overviewChart', ...))
+// and per-id collections (swapChart(state.optionCompanyCharts, companyId, ...)).
+export function swapChart(holder, key, canvas, config) {
+  if (holder[key]) { holder[key].destroy(); holder[key] = null; }
+  holder[key] = new Chart(canvas, config);
+  return holder[key];
 }
 
 // Y-axis tick callback for share counts (no $ formatting; private-mode shows '••').

@@ -9,7 +9,7 @@ import { privMoney } from '../../../core/privacy.js';
 import { categoriesInOrder, activeAccounts } from '../../../utils/balance.js';
 import { normalizeDate, rebuildDatesList, parseMonthLabel } from '../../../utils/dates.js';
 import { parseDelimited, suggestAccount, rememberMapping } from '../../../utils/import.js';
-import { els, setStatus } from '../../../core/dom.js';
+import { els, setStatus, escapeHtml } from '../../../core/dom.js';
 import { icon, iconEl, categoryIcon, categoryKey } from '../../../core/icons.js';
 import { renderOverview } from '../../overview/index.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../../history/index.js';
@@ -134,9 +134,6 @@ function buildAccountCard(a) {
   return card;
 }
 
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-}
 
 // --- Account edit dialog ---
 

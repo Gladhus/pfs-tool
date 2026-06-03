@@ -2,7 +2,7 @@ import "./en.js";
 import "./fr.js";
 import { state } from '../../../core/state.js';
 import { t } from '../../../core/i18n/index.js';
-import { els } from '../../../core/dom.js';
+import { els, escapeHtml } from '../../../core/dom.js';
 import { writeGroupsCatalog } from '../../../api/groups.js';
 import { attachAutocomplete } from '../../../core/autocomplete.js';
 import { groupColor, TAG_PALETTE, renderOverview } from '../../overview/index.js';
@@ -15,11 +15,6 @@ let _selectedColor = GROUP_COLORS[0];
 
 // Per-section chip state
 const _chips = { all: [], any: [], exclude: [] };
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
 
 function allKnownTags() {
   const set = new Set((state.tagsCatalog || []).map(t => t.name));

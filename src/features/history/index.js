@@ -1,16 +1,16 @@
 import "./en.js";
 import "./fr.js";
-import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { t, tFn, tr, lang } from '../../core/i18n/index.js';
-import { fmtMoney } from '../../core/format.js';
+import { fmtMoney, hexToRgba } from '../../core/format.js';
 import { privMoney } from '../../core/privacy.js';
-import { chartTooltip, moneyTooltipLabel, moneyTickFmt } from '../../core/chartOptions.js';
+import { chartTooltip, moneyTooltipLabel, moneyTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
 import { deltaEl } from '../../core/components/Delta.js';
 import { getDatesForPeriod } from '../../utils/dates.js';
 import { buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';
+import { fmtMonth } from '../../utils/dates.js';
 import { activeAccounts } from '../../utils/balance.js';
-import { els } from '../../core/dom.js';
+import { els, escapeHtml } from '../../core/dom.js';
 import { icon } from '../../core/icons.js';
 
 export function getHistFilteredDates() {
@@ -105,8 +105,7 @@ export function populateHistAccountSelect() {
       btn.className = 'custom-select-item' + (item.value === currentVal ? ' selected' : '');
       btn.textContent = item.label;
       if (item.value === currentVal) {
-        const esc = String(item.label).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        btn.innerHTML = `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`;
+        btn.innerHTML = `${escapeHtml(item.label)}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`;
       }
       btn.dataset.label = item.label;
       btn.addEventListener('click', () => {
@@ -116,8 +115,7 @@ export function populateHistAccountSelect() {
         menu.querySelectorAll('.custom-select-item').forEach(b => {
           const isSel = b === btn;
           b.classList.toggle('selected', isSel);
-          const lbl = b.dataset.label || '';
-          const esc = lbl.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+          const esc = escapeHtml(b.dataset.label || '');
           b.innerHTML = isSel
             ? `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`
             : esc;
@@ -137,14 +135,6 @@ export function populateHistAccountSelect() {
     menu.hidden = !opening;
     wrap.classList.toggle('open', opening);
   });
-}
-
-function fmtMonthHeading(yyyymm) {
-  const [y, m] = yyyymm.split('-');
-  return new Date(+y, +m - 1, 1).toLocaleDateString(
-    document.documentElement.lang === 'fr' ? 'fr-CA' : 'en-CA',
-    { year: 'numeric', month: 'long' }
-  );
 }
 
 const HIST_PAGE_SIZE = 12;
@@ -248,7 +238,7 @@ export function renderHistoryTable() {
 
     const moLabel = document.createElement('div');
     moLabel.className = 'hist-card-month';
-    moLabel.textContent = fmtMonthHeading(mo);
+    moLabel.textContent = fmtMonth(mo);
 
     const dateLabel = document.createElement('div');
     dateLabel.className = 'hist-card-date';
@@ -411,14 +401,7 @@ export function renderChart() {
 
   if (els.histChartToggles) els.histChartToggles.hidden = !isOverview;
 
-  const cs = getComputedStyle(document.documentElement);
-  const color = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
-  const COLOR_INVEST = color('--cat-investments', '#3b82f6');
-  const COLOR_RE     = color('--cat-real-estate', '#f59e0b');
-  const COLOR_ASSET  = color('--accent', '#10b981');
-  const COLOR_DEBT   = color('--cat-debts', '#f43f5e');
-  const COLOR_MUTED  = color('--subtle', '#94a3b8');
-  const COLOR_GRID   = color('--border', 'rgba(15,23,42,.06)');
+  const { muted: COLOR_MUTED, grid: COLOR_GRID, accent: COLOR_ASSET, debt: COLOR_DEBT, invest: COLOR_INVEST, realEstate: COLOR_RE, cash: COLOR_OTHER } = chartColors();
 
   const datasets = [];
   const chartCtx = els.chartCanvas.getContext('2d');
@@ -463,7 +446,6 @@ export function renderChart() {
       si++;
     };
 
-    const COLOR_OTHER = color('--cat-cash', '#10b981');
     if (els.showInvestments?.checked) pushArea(t('investments'),     data.investments,   COLOR_INVEST);
     if (els.showRealEstate?.checked)  pushArea(t('real_estate_net'), data.realEstateNet, COLOR_RE);
     if (els.showOther?.checked)       pushArea(t('show_other'),      data.other,         COLOR_OTHER);
@@ -528,17 +510,5 @@ export function renderChart() {
     },
   };
 
-  if (state.chart) { state.chart.destroy(); state.chart = null; }
-  state.chart = new Chart(els.chartCanvas, config);
-}
-
-function hexToRgba(hex, a) {
-  const m = hex.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);
-  if (!m) return hex;
-  let h = m[1];
-  if (h.length === 3) h = h.split('').map(c => c + c).join('');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${a})`;
+  swapChart(state, 'chart', els.chartCanvas, config);
 }

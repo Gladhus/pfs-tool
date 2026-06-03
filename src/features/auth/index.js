@@ -11,6 +11,7 @@ import { renderAccountsList } from '../settings/accounts/index.js';
 import { renderGroupsList } from '../settings/groups/index.js';
 import { renderDetailTable } from '../detail/index.js';
 import { renderOptions } from '../options/index.js';
+import { todayISO } from '../../utils/dates.js';
 
 const cfg = window.PFS_CONFIG || {};
 
@@ -310,8 +311,7 @@ export async function loadAndRenderForm() {
   if (state.configTheme) applyThemeFromSheet(state.configTheme);
   if (state.configStockOptions !== null) applyStockOptionsFromSheet(state.configStockOptions);
 
-  const now = new Date();
-  state.currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  state.currentDate = todayISO();
   const [y, m, d] = state.currentDate.split('-');
   state.datePicker ? state.datePicker.selectDate(new Date(+y, +m - 1, +d), { silent: true }) : (els.dateInput.value = state.currentDate);
 

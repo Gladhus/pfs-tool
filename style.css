@@ -2136,8 +2136,8 @@ dialog::backdrop {
   .is-signed-in .site-header { height: 44px; padding: 0 1rem; }
   .is-signed-in.has-subnav .site-header { border-bottom: none; }
   .is-signed-in #tab-bar,
-  .is-signed-in #status,
-  .is-signed-in #auth-area { display: none; }
+  .is-signed-in #status { display: none; }
+  .is-signed-in #auth-area > :not(#private-mode-btn) { display: none; }
 
   button,
   input[type="month"],
@@ -2282,23 +2282,25 @@ dialog::backdrop {
   }
   #hist-period-pills::-webkit-scrollbar { display: none; }
 
-  /* On mobile: pills stay top-right, chart below */
+  /* On mobile: pills move below chart, toggles stay above */
   .ov-hero-card {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     grid-template-areas:
-      "left    pills"
-      "toggles toggles"
-      "chart   chart";
+      "left"
+      "toggles"
+      "chart"
+      "pills";
     row-gap: 0.75rem;
-    column-gap: 0.75rem;
   }
 
   .ov-hero-left { gap: 0.3rem; }
 
   #ov-period-pills {
-    justify-self: end;
-    align-self: start;
+    justify-self: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  #ov-period-pills::-webkit-scrollbar { display: none; }
 
   .ov-big-number {
     font-size: 2rem;

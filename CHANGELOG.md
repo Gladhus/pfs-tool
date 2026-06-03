@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.5.1] — 2026-06-02
+
+### Fixed
+- **Mobile overview layout**: period pills now appear below the chart on mobile instead of top-right (which caused the chart to overflow the page width)
+- **Mobile header**: private mode button is now visible in the header on mobile; previously it was hidden along with the rest of the auth area
+
+---
+
 ## [1.5.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.5.0) — 2026-06-02
 
 ### Added

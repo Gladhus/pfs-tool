@@ -10,6 +10,7 @@ import { state, LS_KEY_THEME, LS_KEY_ACTIVE_TAB, HEADERS } from './core/state.js
 import { setLang, applyI18n, t, lang, registerWriteConfig } from './core/i18n/index.js';
 import { els, _setToastFn } from './core/dom.js';
 import { toast } from './core/toast.js';
+import { togglePrivate } from './core/privacy.js';
 
 _setToastFn(toast);
 import { renderOverview } from './features/overview/index.js';
@@ -246,9 +247,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 
 // Private mode toggle
 els.privateModeBtn?.addEventListener('click', () => {
-  state.privateMode = !state.privateMode;
-  try { localStorage.setItem('pfs_private', state.privateMode ? '1' : '0'); } catch (_) {}
-  applyI18n();
+  togglePrivate();
   refreshCurrentTab();
 });
 

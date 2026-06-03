@@ -3,7 +3,10 @@ import "./fr.js";
 import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { t, tFn, tr, lang } from '../../core/i18n/index.js';
-import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';
+import { fmtMoney } from '../../core/format.js';
+import { privMoney } from '../../core/privacy.js';
+import { chartTooltip, moneyTooltipLabel, moneyTickFmt } from '../../core/chartOptions.js';
+import { deltaEl } from '../../core/components/Delta.js';
 import { getDatesForPeriod } from '../../utils/dates.js';
 import { buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';
 import { activeAccounts } from '../../utils/balance.js';
@@ -218,9 +221,6 @@ export function renderHistoryTable() {
   const container = els.historyCards;
   container.innerHTML = '';
 
-  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
-  const redactDelta = d => state.privateMode ? '••' : fmtDelta(d);
-
   for (const mo of pageMonths) {
     const datesInMonth = byMonth.get(mo).slice().reverse(); // newest first
     const latestDate = datesInMonth[0];
@@ -269,18 +269,20 @@ export function renderHistoryTable() {
 
     const netEl = document.createElement('div');
     netEl.className = 'hist-card-net';
-    netEl.textContent = redact(latest.net);
-
-    const deltaEl = document.createElement('div');
-    deltaEl.className = 'hist-card-delta';
-    if (delta !== null) {
-      const pct = fmtPct(delta, byDate.get(prevDateKey).net);
-      deltaEl.textContent = redactDelta(delta) + (pct ? ` (${pct})` : '');
-      deltaEl.classList.add(delta >= 0 ? 'up' : 'down');
-    }
+    netEl.textContent = privMoney(latest.net);
 
     right.appendChild(netEl);
-    right.appendChild(deltaEl);
+    if (delta !== null) {
+      right.appendChild(deltaEl({
+        value: delta,
+        ref: byDate.get(prevDateKey).net,
+        baseClass: 'hist-card-delta',
+      }));
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'hist-card-delta';
+      right.appendChild(empty);
+    }
 
     main.appendChild(left);
     main.appendChild(right);
@@ -338,19 +340,22 @@ export function renderHistoryTable() {
 
         const rNet = document.createElement('span');
         rNet.className = 'hist-older-net';
-        rNet.textContent = redact(d.net);
-
-        const rDelta = document.createElement('span');
-        rDelta.className = 'hist-older-delta';
-        if (dDelta !== null) {
-          const pct = fmtPct(dDelta, byDate.get(prevK).net);
-          rDelta.textContent = redactDelta(dDelta) + (pct ? ` (${pct})` : '');
-          rDelta.classList.add(dDelta >= 0 ? 'up' : 'down');
-        }
+        rNet.textContent = privMoney(d.net);
 
         row.appendChild(rDate);
         row.appendChild(rNet);
-        row.appendChild(rDelta);
+        if (dDelta !== null) {
+          row.appendChild(deltaEl({
+            value: dDelta,
+            ref: byDate.get(prevK).net,
+            baseClass: 'hist-older-delta',
+            tag: 'span',
+          }));
+        } else {
+          const empty = document.createElement('span');
+          empty.className = 'hist-older-delta';
+          row.appendChild(empty);
+        }
         olderList.appendChild(row);
       }
 
@@ -494,23 +499,18 @@ export function renderChart() {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
-          padding: 12, cornerRadius: 10, titleFont: { size: 11 },
-          bodyFont: { size: 13, weight: '600' },
-          callbacks: {
-            label: (ctx) => {
-              const val = ctx.dataset._rawData ? (ctx.dataset._rawData[ctx.dataIndex] ?? ctx.parsed.y) : ctx.parsed.y;
-              return `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(val)}`;
-            },
+        tooltip: chartTooltip({
+          labelFn: (ctx) => {
+            const val = ctx.dataset._rawData ? (ctx.dataset._rawData[ctx.dataIndex] ?? ctx.parsed.y) : ctx.parsed.y;
+            return `  ${ctx.dataset.label}: ${privMoney(val)}`;
           },
-        },
+        }),
       },
       scales: {
         y: {
           grid: { color: COLOR_GRID, drawTicks: false }, border: { display: false },
           ticks: { color: COLOR_MUTED, font: { size: 11, family: "'Inter', sans-serif" }, padding: 10, maxTicksLimit: 6,
-            callback: (v) => { if (state.privateMode) return '••••'; const abs = Math.abs(v); if (abs >= 1000000) return (v/1000000).toFixed(1)+'M $'; if (abs >= 1000) return (v/1000).toFixed(0)+'k $'; return v+' $'; },
+            callback: moneyTickFmt({ suffix: ' $' }),
           },
         },
         x: {

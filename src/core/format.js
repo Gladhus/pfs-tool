@@ -14,6 +14,15 @@ export const fmtPct = (delta, ref) => {
   return (p >= 0 ? '+' : '') + p.toFixed(1) + '%';
 };
 
+// Compact money formatter for chart axes: "1.2M" / "5k" / raw.
+// Pass `prefix` / `suffix` to wrap the result (e.g. "$" prefix or " $" suffix).
+export function fmtMoneyShort(n, { prefix = '', suffix = '' } = {}) {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${prefix}${(n / 1_000_000).toFixed(1)}M${suffix}`;
+  if (abs >= 1_000)     return `${prefix}${(n / 1_000).toFixed(0)}k${suffix}`;
+  return `${prefix}${n}${suffix}`;
+}
+
 export function parseMoney(str) {
   if (str == null) return null;
   let s = String(str).trim();

@@ -3,7 +3,9 @@ import './fr.js';
 import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { t, lang } from '../../core/i18n/index.js';
-import { fmtMoney, fmtPct } from '../../core/format.js';
+import { fmtMoney } from '../../core/format.js';
+import { privMoney, privShares, MASK } from '../../core/privacy.js';
+import { chartTooltip, moneyTooltipLabel, moneyTickFmt, sharesTickFmt } from '../../core/chartOptions.js';
 import { setStatus } from '../../core/dom.js';
 import { attachAutocomplete } from '../../core/autocomplete.js';
 import {
@@ -84,9 +86,8 @@ function _renderOptionsMain() {
 
   const vestedEl   = document.getElementById('opt-vested-value');
   const unvestedEl = document.getElementById('opt-unvested-value');
-  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
-  if (vestedEl)   vestedEl.textContent   = redact(totalVested);
-  if (unvestedEl) unvestedEl.textContent = redact(totalUnvested);
+  if (vestedEl)   vestedEl.textContent   = privMoney(totalVested);
+  if (unvestedEl) unvestedEl.textContent = privMoney(totalUnvested);
 
   renderSummaryChart(now);
 
@@ -176,13 +177,7 @@ function renderSummaryChart(now) {
     };
   });
 
-  const tickCallback = v => {
-    if (state.privateMode) return '••';
-    const abs = Math.abs(v);
-    if (abs >= 1_000_000) return (v/1_000_000).toFixed(1)+'M';
-    if (abs >= 1_000)     return (v/1_000).toFixed(0)+'k';
-    return v;
-  };
+  const tickCallback = moneyTickFmt({ mask: MASK.short });
 
   // x-axis ticks: one per year
   const yearTicks = new Set();
@@ -197,11 +192,7 @@ function renderSummaryChart(now) {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
-          padding: 12, cornerRadius: 10,
-          callbacks: { label: ctx => `  ${ctx.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(ctx.parsed.y)}` },
-        },
+        tooltip: chartTooltip({ labelFn: moneyTooltipLabel }),
       },
       scales: {
         y: {
@@ -227,7 +218,6 @@ function renderSummaryChart(now) {
 // --- Per-company card ---
 
 function buildCompanyCard(company, ci, now) {
-  const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
   const grants         = state.optionGrants.filter(g => g.company_id === company.id);
   const fmvEntry       = getEffectiveFmv(company.id, now);
   const fmv            = fmvEntry?.fmv ?? null;
@@ -279,13 +269,13 @@ function buildCompanyCard(company, ci, now) {
   function renderCardValues(view) {
     if (view === 'vesting') {
       valuesEl.innerHTML = `
-        <span class="opt-vested-val">${state.privateMode ? '••••••' : Math.round(vestedShares).toLocaleString()} <span class="opt-val-label">${t('opt_shares_vested')}</span></span>
-        <span class="opt-unvested-val">${state.privateMode ? '••••••' : Math.round(unvestedShares).toLocaleString()} <span class="opt-val-label">${t('opt_shares_unvested')}</span></span>
+        <span class="opt-vested-val">${privShares(vestedShares)} <span class="opt-val-label">${t('opt_shares_vested')}</span></span>
+        <span class="opt-unvested-val">${privShares(unvestedShares)} <span class="opt-val-label">${t('opt_shares_unvested')}</span></span>
       `;
     } else {
       valuesEl.innerHTML = `
-        ${vestedVal !== null ? `<span class="opt-vested-val">${redact(vestedVal)} <span class="opt-val-label">${t('opt_vested_label')}</span></span>` : ''}
-        ${unvestedVal !== null ? `<span class="opt-unvested-val">${redact(unvestedVal)} <span class="opt-val-label">${t('opt_unvested_label')}</span></span>` : ''}
+        ${vestedVal !== null ? `<span class="opt-vested-val">${privMoney(vestedVal)} <span class="opt-val-label">${t('opt_vested_label')}</span></span>` : ''}
+        ${unvestedVal !== null ? `<span class="opt-unvested-val">${privMoney(unvestedVal)} <span class="opt-val-label">${t('opt_unvested_label')}</span></span>` : ''}
       `;
     }
   }
@@ -348,7 +338,7 @@ function buildCompanyCard(company, ci, now) {
       ) : 0;
 
       const valueHtml = vestVal !== null
-        ? `<span class="opt-grant-value">${redact(vestVal)}${totalGrantVal !== null ? `<span class="opt-grant-unvested-val"> / ${redact(totalGrantVal)}</span>` : ''}</span>`
+        ? `<span class="opt-grant-value">${privMoney(vestVal)}${totalGrantVal !== null ? `<span class="opt-grant-unvested-val"> / ${privMoney(totalGrantVal)}</span>` : ''}</span>`
         : '';
 
       const row = document.createElement('div');
@@ -366,7 +356,7 @@ function buildCompanyCard(company, ci, now) {
           <span class="opt-grant-pct">${Math.round(pct)}%</span>
         </div>
         <div class="opt-grant-meta">
-          <span>${fullyVested ? t('opt_fully_vested') : cliffPending ? t('opt_cliff_pending').replace('{months}', cliffMonths) : `${state.privateMode ? '•• / ••' : `${Math.round(vested).toLocaleString()} / ${total.toLocaleString()}`} ${t('opt_shares_vested')}`}</span>
+          <span>${fullyVested ? t('opt_fully_vested') : cliffPending ? t('opt_cliff_pending').replace('{months}', cliffMonths) : `${privShares(vested)} / ${privShares(total)} ${t('opt_shares_vested')}`}</span>
           ${valueHtml}
         </div>`;
       grantsList.appendChild(row);
@@ -415,13 +405,7 @@ function renderCompanyValueChart(canvas, company, grants, color, now) {
   const muted   = cs.getPropertyValue('--subtle').trim()  || '#94a3b8';
   const gridCol = cs.getPropertyValue('--border').trim()  || 'rgba(15,23,42,.06)';
 
-  const tickCallback = v => {
-    if (state.privateMode) return '••';
-    const abs = Math.abs(v);
-    if (abs >= 1_000_000) return '$' + (v/1_000_000).toFixed(1) + 'M';
-    if (abs >= 1_000)     return '$' + (v/1_000).toFixed(0) + 'k';
-    return fmtMoney(v);
-  };
+  const tickCallback = moneyTickFmt({ prefix: '$', mask: MASK.short, smallFmt: fmtMoney });
 
   const yearTicks = new Set();
   dates.forEach((d, i) => { if (i === 0 || d.slice(0,4) !== dates[i-1].slice(0,4)) yearTicks.add(i); });
@@ -481,10 +465,9 @@ function renderCompanyValueChart(canvas, company, grants, color, now) {
             title: items => fmtShortDate(dates[items[0].dataIndex]),
             label: ctx => {
               const di = ctx.dataIndex;
-              const redact = v => state.privateMode ? '••••••' : fmtMoney(v);
-              if (ctx.datasetIndex === 0) return `  ${t('opt_vested_label')}: ${redact(vestedData[di] ?? 0)}`;
+              if (ctx.datasetIndex === 0) return `  ${t('opt_vested_label')}: ${privMoney(vestedData[di] ?? 0)}`;
               const unvested = (totalData[di] ?? 0) - (vestedData[di] ?? 0);
-              return `  ${t('opt_unvested_label')}: ${redact(unvested)}`;
+              return `  ${t('opt_unvested_label')}: ${privMoney(unvested)}`;
             },
           },
         },
@@ -593,13 +576,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
     },
   };
 
-  const tickCallback = v => {
-    if (state.privateMode) return '••';
-    const abs = Math.abs(v);
-    if (abs >= 1_000_000) return (v/1_000_000).toFixed(1)+'M';
-    if (abs >= 1_000)     return (v/1_000).toFixed(0)+'k';
-    return Math.round(v);
-  };
+  const tickCallback = sharesTickFmt();
 
   // x-axis: one tick per year
   const yearTicks = new Set();
@@ -625,7 +602,7 @@ function renderCompanyVestingChart(canvas, company, grants, currentFmv, now) {
           padding: 10, cornerRadius: 8,
           callbacks: {
             title: items => fmtShortDate(dates[items[0].dataIndex]),
-            label: ctx => `  ${ctx.dataset.label}: ${state.privateMode ? '••' : Math.round(grantValues[ctx.datasetIndex][ctx.dataIndex]).toLocaleString()} shares`,
+            label: ctx => `  ${ctx.dataset.label}: ${privShares(grantValues[ctx.datasetIndex][ctx.dataIndex])} shares`,
           },
         },
       },

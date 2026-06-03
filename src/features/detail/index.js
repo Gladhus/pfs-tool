@@ -2,7 +2,7 @@ import "./en.js";
 import "./fr.js";
 import { state } from '../../core/state.js';
 import { t, tr } from '../../core/i18n/index.js';
-import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';
+import { privMoney, privDelta, privPct } from '../../core/privacy.js';
 import { buildEffectiveBalances } from '../../utils/stats.js';
 import { categoriesInOrder, accountsForCategory } from '../../utils/balance.js';
 import { icon, categoryIcon, categoryKey } from '../../core/icons.js';
@@ -22,7 +22,7 @@ function signed(balance_raw, acct) {
 }
 
 // Creates a table cell showing the value and, if prev is known, an inline delta below it.
-function mkValueCell(curr, prev, pm) {
+function mkValueCell(curr, prev) {
   const td = document.createElement('td');
   if (curr === null) {
     td.className = 'detail-value';
@@ -32,14 +32,14 @@ function mkValueCell(curr, prev, pm) {
   td.className = 'detail-value' + (curr < 0 ? ' negative' : '');
   const valDiv = document.createElement('div');
   valDiv.className = 'detail-cell-value';
-  valDiv.textContent = pm ? '••••••' : fmtMoney(curr);
+  valDiv.textContent = privMoney(curr);
   td.appendChild(valDiv);
   if (prev !== null) {
     const d = curr - prev;
-    const pct = fmtPct(d, Math.abs(prev));
+    const pct = privPct(d, Math.abs(prev));
     const deltaDiv = document.createElement('div');
     deltaDiv.className = 'detail-cell-delta ' + (d >= 0 ? 'up' : 'down');
-    deltaDiv.textContent = (pm ? '••' : fmtDelta(d)) + (pct ? ` (${pct})` : '');
+    deltaDiv.textContent = privDelta(d) + (pct ? ` (${pct})` : '');
     td.appendChild(deltaDiv);
   }
   return td;
@@ -70,7 +70,6 @@ export function renderDetailTable() {
   for (const y of years) yearBals[y] = buildEffectiveBalances(y + '-01-01');
 
   const totalCols = years.length + 1; // account col + year cols
-  const pm = state.privateMode;
 
   const getVal = (acct, year) => {
     const raw = yearBals[year][acct.id];
@@ -148,7 +147,7 @@ export function renderDetailTable() {
         for (let yi = 0; yi < years.length; yi++) {
           const y = years[yi];
           const prev = yi > 0 ? vals[years[yi - 1]] : null;
-          row.appendChild(mkValueCell(vals[y], prev, pm));
+          row.appendChild(mkValueCell(vals[y], prev));
         }
         tbody.appendChild(row);
       }
@@ -164,7 +163,7 @@ export function renderDetailTable() {
     for (let yi = 0; yi < years.length; yi++) {
       const y = years[yi];
       const prev = yi > 0 ? catByYear[years[yi - 1]] : null;
-      totalR.appendChild(mkValueCell(catByYear[y], prev, pm));
+      totalR.appendChild(mkValueCell(catByYear[y], prev));
     }
     tbody.appendChild(totalR);
   }
@@ -189,7 +188,7 @@ export function renderDetailTable() {
     const curr = netHasData[y] ? netByYear[y] : null;
     const prevY = yi > 0 ? years[yi - 1] : null;
     const prev = prevY && netHasData[prevY] ? netByYear[prevY] : null;
-    netR.appendChild(mkValueCell(curr, prev, pm));
+    netR.appendChild(mkValueCell(curr, prev));
   }
   tbody.appendChild(netR);
 

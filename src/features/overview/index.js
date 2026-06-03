@@ -3,7 +3,10 @@ import "./fr.js";
 import Chart from 'chart.js/auto';
 import { state } from '../../core/state.js';
 import { lang, t, tFn, tr } from '../../core/i18n/index.js';
-import { fmtMoney, fmtDelta, fmtPct } from '../../core/format.js';
+import { privMoney, updatePrivateButton } from '../../core/privacy.js';
+import { chartTooltip, moneyTooltipLabel, moneyTickFmt } from '../../core/chartOptions.js';
+import { deltaEl } from '../../core/components/Delta.js';
+import { statCard } from '../../core/components/StatCard.js';
 import { computeDateStats, buildEffectiveBalances, buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';
 import { computeTotalEquityValue } from '../../utils/options.js';
 import { getDatesForPeriod } from '../../utils/dates.js';
@@ -127,12 +130,7 @@ export function renderOverview() {
 
   const ovTab = document.getElementById('tab-overview');
   ovTab?.classList.toggle('pfs-private', state.privateMode);
-  if (els.privateModeBtn) {
-    els.privateModeBtn.classList.toggle('is-private', state.privateMode);
-    els.privateModeBtn.innerHTML = state.privateMode
-      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
-      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  }
+  updatePrivateButton(els.privateModeBtn);
 
   if (!state.datesSorted.length) {
     els.ovNetWorth.textContent = '—';
@@ -169,27 +167,23 @@ export function renderOverview() {
   const current   = foldedStatsFor(latestDate);
   const periodRef = periodRefDate ? foldedStatsFor(periodRefDate) : null;
 
-  const redact = (formatted) => state.privateMode ? '••••••' : formatted;
-
-  els.ovNetWorth.textContent = redact(fmtMoney(current.netWorth));
+  els.ovNetWorth.textContent = privMoney(current.netWorth);
   els.ovAsOf.textContent = tFn('data_as_of', fmtDateLong(latestDate));
 
   if (els.ovDelta) {
     els.ovDelta.innerHTML = '';
     els.ovDelta.className = 'delta';
     if (periodRef != null) {
-      const d = current.netWorth - periodRef.netWorth;
-      const pct = fmtPct(d, periodRef.netWorth);
-      const numSpan = document.createElement('span');
-      numSpan.className = 'ov-card-delta-num ' + (d >= 0 ? 'up' : 'down');
-      numSpan.textContent = `${redact(fmtDelta(d))}${pct ? ` (${pct})` : ''}`;
-      els.ovDelta.appendChild(numSpan);
-      if (periodLabel) {
-        const perSpan = document.createElement('span');
-        perSpan.className = 'ov-card-delta-period';
-        perSpan.textContent = periodLabel;
-        els.ovDelta.appendChild(perSpan);
-      }
+      const hero = deltaEl({
+        value: current.netWorth - periodRef.netWorth,
+        ref: periodRef.netWorth,
+        periodLabel,
+        layout: 'stacked',
+        baseClass: 'ov-card-delta',
+      });
+      // Move the children onto els.ovDelta so the existing CSS targeting
+      // .delta (rather than .ov-card-delta on this element) keeps applying.
+      while (hero.firstChild) els.ovDelta.appendChild(hero.firstChild);
     }
   }
 
@@ -197,9 +191,9 @@ export function renderOverview() {
   const view = getView();
   syncViewToggleUI(view);
   if (view === 'group') {
-    renderGroupCards(latestDate, periodRefDate, periodLabel, redact);
+    renderGroupCards(latestDate, periodRefDate, periodLabel);
   } else {
-    renderCategoryCards(current, periodRef, periodLabel, redact);
+    renderCategoryCards(current, periodRef, periodLabel);
   }
 
   renderOverviewChart();
@@ -212,97 +206,63 @@ function syncViewToggleUI(view) {
   });
 }
 
-function renderCategoryCards(current, periodRef, periodLabel, redact) {
+function makeSpark(spec) {
+  const c = document.createElement('canvas');
+  c.className = 'ov-card-spark';
+  c.width = 200; c.height = 28;
+  queueSparkline(c, spec);
+  return c;
+}
+
+function inlineCardDelta(curr, prev, periodLabel) {
+  const d = curr - prev;
+  if (d === 0) return null;
+  return deltaEl({
+    value: d,
+    ref: prev,
+    periodLabel,
+    layout: 'inline',
+    baseClass: 'ov-card-delta',
+  });
+}
+
+// Custom inline SVG for the equity card — not a registered icon glyph.
+const EQUITY_ICON_HTML =
+  '<span class="cat-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>';
+
+function renderCategoryCards(current, periodRef, periodLabel) {
   const cards = els.ovCards;
   cards.innerHTML = '';
   const cats = effectiveCategories();
   for (const cat of cats) {
     const val = current.byCategory[cat.id];
     if (val == null) continue;
-    const card = document.createElement('div');
-    card.className = `ov-stat-card cat-${categoryKey(cat.id)}`;
-
-    const head = document.createElement('div');
-    head.className = 'ov-card-head';
-    const iconWrap = document.createElement('span');
-    iconWrap.className = 'cat-icon';
-    iconWrap.innerHTML = icon(categoryIcon(cat.id), { size: 14 });
-    const lbl = document.createElement('div');
-    lbl.className = 'ov-card-label';
-    lbl.textContent = tr(cat);
-    head.appendChild(iconWrap);
-    head.appendChild(lbl);
-
-    const valEl = document.createElement('div');
-    valEl.className = 'ov-card-value' + (cat.kind === 'debt' ? ' negative' : '');
-    valEl.textContent = redact(fmtMoney(val));
-
-    card.appendChild(head);
-    card.appendChild(valEl);
-
-    const spark = document.createElement('canvas');
-    spark.className = 'ov-card-spark';
-    spark.width = 200; spark.height = 28;
-    card.appendChild(spark);
-    queueSparkline(spark, { kind: 'category', id: cat.id });
-
-    if (periodRef) {
-      const prev = periodRef.byCategory[cat.id] || 0;
-      const d = val - prev;
-      if (d !== 0) {
-        const deltaEl = document.createElement('div');
-        deltaEl.className = 'ov-card-delta ' + (d >= 0 ? 'up' : 'down');
-        const pct = fmtPct(d, prev);
-        const label = periodLabel ? ` ${periodLabel}` : '';
-        deltaEl.textContent = redact(fmtDelta(d)) + (pct ? ` (${pct})` : '') + label;
-        card.appendChild(deltaEl);
-      }
-    }
-    cards.appendChild(card);
+    const prev = periodRef ? (periodRef.byCategory[cat.id] || 0) : null;
+    cards.appendChild(statCard({
+      className: `ov-stat-card cat-${categoryKey(cat.id)}`,
+      head: { iconKey: categoryIcon(cat.id), label: tr(cat) },
+      value: val,
+      valueNegative: cat.kind === 'debt',
+      spark: makeSpark({ kind: 'category', id: cat.id }),
+      delta: prev != null ? inlineCardDelta(val, prev, periodLabel) : null,
+    }));
   }
 
   // Equity card (stock options) — injected separately since it's not an account category
   const equityVal = current.byCategory['equity'];
   if (equityVal > 0) {
-    const card = document.createElement('div');
-    card.className = 'ov-stat-card cat-equity';
-    const head = document.createElement('div');
-    head.className = 'ov-card-head';
-    const iconWrap = document.createElement('span');
-    iconWrap.className = 'cat-icon';
-    iconWrap.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`;
-    const lbl = document.createElement('div');
-    lbl.className = 'ov-card-label';
-    lbl.textContent = t('equity_label');
-    head.appendChild(iconWrap);
-    head.appendChild(lbl);
-    const valEl = document.createElement('div');
-    valEl.className = 'ov-card-value';
-    valEl.textContent = redact(fmtMoney(equityVal));
-    card.appendChild(head);
-    card.appendChild(valEl);
-    const spark = document.createElement('canvas');
-    spark.className = 'ov-card-spark';
-    spark.width = 200; spark.height = 28;
-    card.appendChild(spark);
-    queueSparkline(spark, { kind: 'equity' });
-    if (periodRef) {
-      const prev = periodRef.byCategory['equity'] || 0;
-      const d = equityVal - prev;
-      if (d !== 0) {
-        const deltaEl = document.createElement('div');
-        deltaEl.className = 'ov-card-delta ' + (d >= 0 ? 'up' : 'down');
-        const pct = fmtPct(d, prev);
-        const label = periodLabel ? ` ${periodLabel}` : '';
-        deltaEl.textContent = redact(fmtDelta(d)) + (pct ? ` (${pct})` : '') + label;
-        card.appendChild(deltaEl);
-      }
-    }
-    cards.appendChild(card);
+    const prev = periodRef ? (periodRef.byCategory['equity'] || 0) : null;
+    cards.appendChild(statCard({
+      className: 'ov-stat-card cat-equity',
+      head: { html: EQUITY_ICON_HTML + `<div class="ov-card-label">${t('equity_label')}</div>` },
+      value: equityVal,
+      spark: makeSpark({ kind: 'equity' }),
+      delta: prev != null ? inlineCardDelta(equityVal, prev, periodLabel) : null,
+    }));
   }
 }
 
-function renderGroupCards(latestDate, periodRefDate, periodLabel, redact) {
+function renderGroupCards(latestDate, periodRefDate, periodLabel) {
   const cards = els.ovCards;
   cards.innerHTML = '';
   const groups = state.groupsCatalog || [];
@@ -325,55 +285,19 @@ function renderGroupCards(latestDate, periodRefDate, periodLabel, redact) {
 
   for (const group of groups) {
     const val = groupStatsFor(latestDate, group);
-    const color = groupColor(group);
-    const card = document.createElement('div');
-    card.className = 'ov-stat-card ov-group-card';
-    card.style.setProperty('--group-color', color);
-
-    const head = document.createElement('div');
-    head.className = 'ov-card-head';
-    const dot = document.createElement('span');
-    dot.className = 'group-stat-dot';
-    const lbl = document.createElement('div');
-    lbl.className = 'ov-card-label';
-    lbl.textContent = group.name;
-    head.appendChild(dot);
-    head.appendChild(lbl);
-
-    const valEl = document.createElement('div');
-    valEl.className = 'ov-card-value' + (val < 0 ? ' negative' : '');
-    valEl.textContent = redact(fmtMoney(val));
-
-    card.appendChild(head);
-    card.appendChild(valEl);
-
-    const spark = document.createElement('canvas');
-    spark.className = 'ov-card-spark';
-    spark.width = 200; spark.height = 28;
-    card.appendChild(spark);
-    queueSparkline(spark, { kind: 'group', group });
-
-    if (periodRefDate) {
-      const prev = groupStatsFor(periodRefDate, group);
-      const d = val - prev;
-      if (d !== 0) {
-        const deltaEl = document.createElement('div');
-        deltaEl.className = 'ov-card-delta';
-        const pct = fmtPct(d, prev);
-        const numSpan = document.createElement('span');
-        numSpan.className = 'ov-card-delta-num ' + (d >= 0 ? 'up' : 'down');
-        numSpan.textContent = redact(fmtDelta(d)) + (pct ? ` (${pct})` : '');
-        deltaEl.appendChild(numSpan);
-        if (periodLabel) {
-          const perSpan = document.createElement('span');
-          perSpan.className = 'ov-card-delta-period';
-          perSpan.textContent = periodLabel;
-          deltaEl.appendChild(perSpan);
-        }
-        card.appendChild(deltaEl);
-      }
-    }
-    cards.appendChild(card);
+    const prev = periodRefDate ? groupStatsFor(periodRefDate, group) : null;
+    const d = prev != null ? val - prev : 0;
+    cards.appendChild(statCard({
+      className: 'ov-stat-card ov-group-card',
+      groupColor: groupColor(group),
+      head: { dot: true, label: group.name },
+      value: val,
+      valueNegative: val < 0,
+      spark: makeSpark({ kind: 'group', group }),
+      delta: prev != null && d !== 0
+        ? deltaEl({ value: d, ref: prev, periodLabel, layout: 'stacked', baseClass: 'ov-card-delta' })
+        : null,
+    }));
   }
 }
 
@@ -526,13 +450,7 @@ export function renderOverviewChart() {
     });
   }
 
-  const tickCallback = (v) => {
-    if (state.privateMode) return '••••';
-    const abs = Math.abs(v);
-    if (abs >= 1000000) return (v / 1000000).toFixed(1) + 'M';
-    if (abs >= 1000) return (v / 1000).toFixed(0) + 'k';
-    return v;
-  };
+  const tickCallback = moneyTickFmt();
 
   const locale = lang() === 'fr' ? 'fr-CA' : 'en-CA';
   const { tickSet: xTickSet, xFmt } = buildXAxisTicks(chartDates, canvas.parentElement?.offsetWidth || 600, locale);
@@ -550,12 +468,7 @@ export function renderOverviewChart() {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
-          padding: 12, cornerRadius: 10, titleFont: { size: 11 },
-          bodyFont: { size: 13, weight: '600', family: "'Inter', sans-serif" },
-          callbacks: { label: (c) => `  ${c.dataset.label}: ${state.privateMode ? '••••••' : fmtMoney(c.parsed.y)}` },
-        },
+        tooltip: chartTooltip({ labelFn: moneyTooltipLabel }),
       },
       scales: {
         y: {

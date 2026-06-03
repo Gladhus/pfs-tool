@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.6.0] — 2026-06-02
+## [1.6.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.6.0) — 2026-06-02
 
 ### Changed
 - **Internal refactor — shared component library**: extracted privacy-aware formatters, reusable Delta and StatCard components, and a Chart.js options factory; deduplicated `hexToRgba`, `escapeHtml`, `slugify`, today/month helpers, year-tick computation, chart create/replace boilerplate, and CSS-variable palette extraction. No behaviour change — overview, history, detail, and stock-options tabs render identically. `state.privateMode` is now read in exactly one module (`core/privacy.js`) instead of being checked in 30+ inline ternaries across 7 feature files, so future tweaks to the mask glyph or delta rendering touch a single file.

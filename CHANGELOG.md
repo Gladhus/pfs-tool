@@ -12,7 +12,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.5.1] — 2026-06-02
+## [1.5.1](https://github.com/Gladhus/pfs-tool/releases/tag/v1.5.1) — 2026-06-02
 
 ### Fixed
 - **Mobile overview layout**: period pills now appear below the chart on mobile instead of top-right (which caused the chart to overflow the page width)

@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.1](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.1) — 2026-06-04
+
+### Fixed
+- **gapiCall 401 retry** (#21): all Sheets/Drive API calls now auto-retry once after silently refreshing the token on HTTP 401, instead of surfacing an auth error to the user
+- **Atomic sheet writes** (#22): replaced `clear → write` pattern with `write-first, trim-stale-tail` (`safeWriteTab`) in all save paths — the sheet is never left empty mid-write
+- **Friendly error messages** (#23): `classifyApiError()` / `getUserMessage()` map raw API errors to translated user-readable strings (auth expired, offline, quota, server error, etc.) across all save/delete paths in EN and FR
+- **Warn logging on load failures** (#24): silent catch blocks in `loadConfig` and the 4 options loaders now emit `console.warn` so failures are visible in devtools
+- **Proactive token refresh on tab re-focus** (#25): `visibilitychange` listener refreshes the GIS token when switching back to the tab if expiry is within 5 minutes, preventing the next API call from hitting a 401
+
+---
+
 ## [1.9.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.0) — 2026-06-04
 
 ### Added

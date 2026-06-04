@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.7.3] — 2026-06-04
+## [1.7.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.3) — 2026-06-04
 
 ### Security
 - **OAuth token**: access token no longer persisted in `localStorage` — kept in memory only; silent GIS refresh handles session restore on reload; existing cached tokens are cleaned up on first load

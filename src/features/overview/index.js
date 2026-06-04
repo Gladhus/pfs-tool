@@ -507,6 +507,7 @@ function categoriesWithData() {
 function renderSeriesToggles() {
   const wrap = els.ovSeriesToggles;
   if (!wrap) return;
+  const cs = getComputedStyle(document.documentElement);
   const view = getView();
   wrap.innerHTML = '';
 

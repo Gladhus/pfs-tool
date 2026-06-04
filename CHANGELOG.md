@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.7.6](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.6) — 2026-06-04
+
+### Fixed
+- **CSP**: added `https://fonts.googleapis.com` to `style-src` and `https://fonts.gstatic.com` to `font-src` — gapi loads Google Fonts which were blocked, preventing the library from initialising
+
+---
+
 ## [1.7.5](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.5) — 2026-06-04
 
 ### Fixed

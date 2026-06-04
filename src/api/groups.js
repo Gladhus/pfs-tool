@@ -1,4 +1,5 @@
 import { state, HEADERS } from '../core/state.js';
+import { safeWriteTab } from './sheets.js';
 
 async function ensureGroupsTab() {
   try {
@@ -59,11 +60,5 @@ export async function writeGroupsCatalog(groups) {
     (g.any || []).join(', '),
     (g.exclude || []).join(', '),
   ])];
-  await gapi.client.sheets.spreadsheets.values.clear({
-    spreadsheetId: state.sheetId, range: 'groups!A:Z',
-  });
-  await gapi.client.sheets.spreadsheets.values.update({
-    spreadsheetId: state.sheetId, range: 'groups!A1',
-    valueInputOption: 'RAW', resource: { values: rows },
-  });
+  await safeWriteTab('groups', rows, state.groupsCatalog.length);
 }

@@ -3,6 +3,7 @@ import "./fr.js";
 import { state } from '../../../core/state.js';
 import { t } from '../../../core/i18n/index.js';
 import { escapeHtml } from '../../../core/dom.js';
+import { getUserMessage } from '../../../core/errors.js';
 import { writeGroupsCatalog } from '../../../api/groups.js';
 import { attachAutocomplete } from '../../../core/autocomplete.js';
 import { groupColor, TAG_PALETTE, renderOverview } from '../../overview/index.js';
@@ -208,7 +209,7 @@ export async function saveGroupDialog() {
     toast(t('group_saved'), { level: 'ok' });
   } catch (err) {
     console.error(err);
-    toast(t('group_save_failed') + ': ' + (err.result?.error?.message || err.message || err), { level: 'warn' });
+    toast(`${t('group_save_failed')}: ${getUserMessage(err)}`, { level: 'warn' });
   } finally {
     if (saveBtn) saveBtn.disabled = false;
   }
@@ -231,7 +232,7 @@ export async function deleteGroupFromDialog() {
     toast(t('group_deleted'), { level: 'ok' });
   } catch (err) {
     console.error(err);
-    toast(t('group_save_failed') + ': ' + (err.result?.error?.message || err.message || err), { level: 'warn' });
+    toast(`${t('group_save_failed')}: ${getUserMessage(err)}`, { level: 'warn' });
   } finally {
     if (deleteBtn) deleteBtn.disabled = false;
   }

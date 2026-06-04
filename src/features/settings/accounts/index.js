@@ -3,6 +3,7 @@ import "../fr.js";
 import "./en.js";
 import "./fr.js";
 import { state, HEADERS, OWNERS, KINDS } from '../../../core/state.js';
+import { safeWriteTab } from '../../../api/sheets.js';
 import { t, tr, lang } from '../../../core/i18n/index.js';
 import { parseMoney } from '../../../core/format.js';
 import { privMoney } from '../../../core/privacy.js';
@@ -10,6 +11,7 @@ import { categoriesInOrder, activeAccounts } from '../../../utils/balance.js';
 import { normalizeDate, rebuildDatesList, parseMonthLabel } from '../../../utils/dates.js';
 import { parseDelimited, suggestAccount, rememberMapping } from '../../../utils/import.js';
 import { els, setStatus, escapeHtml } from '../../../core/dom.js';
+import { getUserMessage } from '../../../core/errors.js';
 import { icon, categoryIcon, categoryKey } from '../../../core/icons.js';
 import { renderOverview } from '../../overview/index.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../../history/index.js';
@@ -394,7 +396,7 @@ export async function saveAccountDialog() {
     closeAccountDialog();
   } catch (err) {
     console.error(err);
-    setStatusMsg('Save failed: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatusMsg(`${t('acct_save_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     els.acctSaveBtn.disabled = false;
   }
@@ -421,22 +423,19 @@ export async function deleteAccountFromDialog() {
     closeAccountDialog();
   } catch (err) {
     console.error(err);
-    setStatusMsg('Delete failed: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatusMsg(`${t('acct_delete_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     els.acctDeleteBtn.disabled = false;
   }
 }
 
 async function writeAccountsToSheet(rows) {
+  const prev = state.accounts.length;
   const sheetRows = [HEADERS.accounts, ...rows.map(a => HEADERS.accounts.map(h => {
     if (h === 'tags') return Array.isArray(a.tags) ? a.tags.join(', ') : (a.tags || '');
     return a[h] ?? '';
   }))];
-  await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'accounts!A:Z' });
-  await gapi.client.sheets.spreadsheets.values.update({
-    spreadsheetId: state.sheetId, range: 'accounts!A1',
-    valueInputOption: 'RAW', resource: { values: sheetRows },
-  });
+  await safeWriteTab('accounts', sheetRows, prev);
 }
 
 export function onAddAccount() {
@@ -535,19 +534,11 @@ export async function executeMigrate() {
     for (const s of state.snapshots) if (s.account_id === oldId) s.account_id = newId;
 
     const accountsRows = [HEADERS.accounts, ...state.accounts.map(a => HEADERS.accounts.map(h => a[h] ?? ''))];
-    await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'accounts!A:Z' });
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: state.sheetId, range: 'accounts!A1',
-      valueInputOption: 'RAW', resource: { values: accountsRows },
-    });
+    await safeWriteTab('accounts', accountsRows, state.accounts.length);
 
     if (affected > 0) {
       const snapshotRows = [HEADERS.snapshots, ...state.snapshots.map(s => [s.date, s.account_id, s.balance_raw, s.comment || '', s.entered_at || ''])];
-      await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'snapshots!A:Z' });
-      await gapi.client.sheets.spreadsheets.values.update({
-        spreadsheetId: state.sheetId, range: 'snapshots!A1',
-        valueInputOption: 'RAW', resource: { values: snapshotRows },
-      });
+      await safeWriteTab('snapshots', snapshotRows, state.snapshots.length);
     }
 
     renderAccountsTable();
@@ -560,7 +551,7 @@ export async function executeMigrate() {
   } catch (err) {
     console.error(err);
     els.accountsStatus.style.color = 'var(--warn)';
-    els.accountsStatus.textContent = 'Rename failed: ' + (err.result?.error?.message || err.message || err);
+    els.accountsStatus.textContent = `${t('acct_rename_failed')}: ${getUserMessage(err)}`;
   }
 }
 
@@ -708,11 +699,7 @@ export async function onConfirmImport() {
   setStatus(`Importing ${finalImported.length} rows…`);
   els.confirmImportBtn.disabled = true;
   try {
-    await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'snapshots!A:Z' });
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: state.sheetId, range: 'snapshots!A1',
-      valueInputOption: 'RAW', resource: { values: allRows },
-    });
+    await safeWriteTab('snapshots', allRows, state.snapshots.length);
 
     state.snapshots = allRows.slice(1).map(r => ({
       date: normalizeDate(r[0]), account_id: r[1], balance_raw: Number(r[2]) || 0,
@@ -727,7 +714,7 @@ export async function onConfirmImport() {
     setStatus(`Imported ${finalImported.length} rows across ${datesTouched.size} dates.`, 'ok');
   } catch (err) {
     console.error(err);
-    setStatus('Import failed: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('import_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     els.confirmImportBtn.disabled = false;
   }

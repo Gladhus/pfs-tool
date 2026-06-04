@@ -13,7 +13,9 @@ export async function loadConfig() {
       state.configStockOptions = map.stock_options_enabled === '1' ? true : map.stock_options_enabled === '0' ? false : null;
     if (map.equity_tags !== undefined)
       state.configEquityTags = String(map.equity_tags || '').split(',').map(t => t.trim()).filter(Boolean);
-  } catch {}
+  } catch (err) {
+    console.warn('[pfs] loadConfig failed', err);
+  }
 }
 
 export async function writeConfig(key, value) {

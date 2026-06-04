@@ -30,4 +30,8 @@ registerTranslations('en', {
   new_account_type_label: 'New account type',
   new_id_label: 'New ID',
   confirm_rename: 'Confirm rename',
+  acct_save_failed:   'Save failed',
+  acct_delete_failed: 'Delete failed',
+  acct_rename_failed: 'Rename failed',
+  import_failed:      'Import failed',
 });

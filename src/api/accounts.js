@@ -1,6 +1,7 @@
 import seedData from '../../seed/default-accounts.json';
 import { state } from '../core/state.js';
 import { normalizeDate } from '../utils/dates.js';
+import { gapiCall } from './sheets.js';
 
 function parseTags(raw) {
   if (Array.isArray(raw)) return raw.map(t => String(t).trim()).filter(Boolean);
@@ -9,11 +10,11 @@ function parseTags(raw) {
 }
 
 export async function loadAccounts() {
-  const resp = await gapi.client.sheets.spreadsheets.values.get({
+  const resp = await gapiCall(() => gapi.client.sheets.spreadsheets.values.get({
     spreadsheetId: state.sheetId,
     range: 'accounts!A:Z',
     valueRenderOption: 'UNFORMATTED_VALUE',
-  });
+  }));
   const rows = resp.result.values || [];
   if (rows.length < 2) { state.accounts = []; return; }
   const headers = rows[0];
@@ -38,12 +39,12 @@ export async function loadAccounts() {
 }
 
 export async function loadSnapshots() {
-  const resp = await gapi.client.sheets.spreadsheets.values.get({
+  const resp = await gapiCall(() => gapi.client.sheets.spreadsheets.values.get({
     spreadsheetId: state.sheetId,
     range: 'snapshots!A:Z',
     valueRenderOption: 'UNFORMATTED_VALUE',
     dateTimeRenderOption: 'SERIAL_NUMBER',
-  });
+  }));
   const rows = resp.result.values || [];
   if (rows.length < 2) { state.snapshots = []; return; }
   const headers = rows[0];

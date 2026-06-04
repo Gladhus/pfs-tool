@@ -1,4 +1,5 @@
 import { state, HEADERS } from '../core/state.js';
+import { safeWriteTab } from './sheets.js';
 
 async function ensureTagsTab() {
   try {
@@ -46,13 +47,7 @@ export async function loadTagsCatalog() {
 export async function writeTagsCatalog(tags) {
   await ensureTagsTab();
   const rows = [HEADERS.tags, ...tags.map(t => [t.name])];
-  await gapi.client.sheets.spreadsheets.values.clear({
-    spreadsheetId: state.sheetId, range: 'tags!A:Z',
-  });
-  await gapi.client.sheets.spreadsheets.values.update({
-    spreadsheetId: state.sheetId, range: 'tags!A1',
-    valueInputOption: 'RAW', resource: { values: rows },
-  });
+  await safeWriteTab('tags', rows, state.tagsCatalog.length);
 }
 
 // Union of catalog + any tag found on accounts (so manual edits to the

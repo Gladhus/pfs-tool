@@ -1,6 +1,7 @@
 import './en.js';
 import './fr.js';
 import { state } from '../../core/state.js';
+import { getUserMessage } from '../../core/errors.js';
 import { t } from '../../core/i18n/index.js';
 import { fmtMoney, hexToRgba } from '../../core/format.js';
 import { privMoney, privShares, MASK } from '../../core/privacy.js';
@@ -693,7 +694,7 @@ export function renderOptionsManage() {
     try {
       await writeConfig('equity_tags', _equityTags.join(','));
     } catch (err) {
-      setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+      setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
     }
   }
 
@@ -921,7 +922,7 @@ function editFmvRow(tbody, tr, companyId, entry) {
       await writeOptionFmv(updated);
       setStatus('Saved.', 'ok');
     } catch (err) {
-      setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+      setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
     }
     renderOptionsManage();
   });
@@ -938,7 +939,7 @@ async function deleteFmvEntry(companyId, entry) {
     await writeOptionFmv(newFmv);
     setStatus('Deleted.', 'ok');
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   }
   renderOptionsManage();
 }
@@ -958,7 +959,7 @@ async function saveFmvEntryFromManage(companyId, dateInput, amtInput, noteInput,
     noteInput.value = '';
     setStatus('FMV saved.', 'ok');
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     btn.disabled = false;
   }
@@ -1027,7 +1028,7 @@ async function saveCompanyDialog() {
     setStatus('Saved.', 'ok');
     renderOptions();
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     dlg.querySelector('#opt-company-save-btn').disabled = false;
   }
@@ -1045,7 +1046,7 @@ async function deleteCompany(companyId) {
     setStatus('Deleted.', 'ok');
     renderOptions();
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   }
 }
 
@@ -1136,7 +1137,7 @@ async function saveGrantDialog() {
     setStatus('Saved.', 'ok');
     renderOptions();
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     dlg.querySelector('#opt-grant-save-btn').disabled = false;
   }
@@ -1152,7 +1153,7 @@ async function deleteGrant(grantId, _companyId) {
     setStatus('Deleted.', 'ok');
     renderOptions();
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   }
 }
 
@@ -1249,7 +1250,7 @@ async function saveExerciseDialog() {
     setStatus('Saved.', 'ok');
     renderOptions();
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     dlg.querySelector('#opt-exercise-save-btn').disabled = false;
   }
@@ -1265,7 +1266,7 @@ async function deleteExercise(exerciseId) {
     setStatus('Deleted.', 'ok');
     renderOptions();
   } catch (err) {
-    setStatus('Error: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('opt_save_failed')}: ${getUserMessage(err)}`, 'warn');
   }
 }
 

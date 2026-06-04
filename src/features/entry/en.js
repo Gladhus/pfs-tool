@@ -20,4 +20,5 @@ registerTranslations('en', {
   confirm_reset_entry: 'Clear all entered values?',
   confirm_delete_entries: 'These accounts had a saved value for this date and will be removed:',
   confirm_delete_ok: 'Delete',
+  save_snapshot_failed: 'Save failed',
 });

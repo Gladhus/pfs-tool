@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [1.7.2] — 2026-06-04
+## [1.7.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.2) — 2026-06-04
 
 ### Fixed
 - **Lint**: resolved all ESLint warnings across `src/` — removed unused imports (`HEADERS`, `state`, `fmtMoney`/`fmtMoneyShort`, `moneyTooltipLabel`, `computeCompanyEquityValue`/`UnvestedValue`, `addOptionFmvEntry`, `lang`, `iconEl`, `els`, `t`, `onSignedIn`, `applyToken`, `openGrantDialog`), dead local variables (`totalCols`, `dateIdx`, `_typesPopulated`, `cancelBtn` ×2, `ATTRS`), dead functions (`setView`, `onRenameAccountId`), unused catch bindings converted to bare `catch {}`, unused callback args renamed with `_` prefix

@@ -1,6 +1,7 @@
 import "./en.js";
 import "./fr.js";
 import { state, HEADERS } from '../../core/state.js';
+import { safeWriteTab } from '../../api/sheets.js';
 import { t, tr } from '../../core/i18n/index.js';
 import { fmtMoney, fmtDelta, fmtPct, parseMoney } from '../../core/format.js';
 import { categoriesInOrder, accountsForCategory, activeAccounts } from '../../utils/balance.js';
@@ -8,6 +9,7 @@ import { projectBalance } from '../../utils/balance.js';
 import { snapshotForDate, computeNetWorthFromSnapshots, buildEffectiveBalances } from '../../utils/stats.js';
 import { normalizeDate, rebuildDatesList, prevDate } from '../../utils/dates.js';
 import { els, setStatus, showConfirm } from '../../core/dom.js';
+import { getUserMessage } from '../../core/errors.js';
 import { icon, categoryIcon, categoryKey } from '../../core/icons.js';
 import { renderOverview } from '../overview/index.js';
 import { renderHistoryTable, renderChart } from '../history/index.js';
@@ -327,11 +329,7 @@ export async function saveSnapshot() {
     for (const r of keptRows) allRows.push(r);
     for (const r of newRows) allRows.push(r);
 
-    await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: state.sheetId, range: 'snapshots!A:Z' });
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: state.sheetId, range: 'snapshots!A1',
-      valueInputOption: 'RAW', resource: { values: allRows },
-    });
+    await safeWriteTab('snapshots', allRows, state.snapshots.length);
 
     state.snapshots = allRows.slice(1).map(r => ({
       date: normalizeDate(r[0]), account_id: r[1], balance_raw: Number(r[2]) || 0,
@@ -345,7 +343,7 @@ export async function saveSnapshot() {
     setStatus(`Saved snapshot for ${date}.`, 'ok');
   } catch (err) {
     console.error(err);
-    setStatus('Save failed: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('save_snapshot_failed')}: ${getUserMessage(err)}`, 'warn');
   } finally {
     els.saveSnapshotBtn.disabled = false;
   }

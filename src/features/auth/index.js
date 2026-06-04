@@ -3,6 +3,7 @@ import "./fr.js";
 import { state, LS_KEY_SHEET_ID, LS_KEY_ACTIVE_TAB, LS_KEY_USER_HINT, SHEET_TITLE } from '../../core/state.js';
 import { applyI18n, setLang, t } from '../../core/i18n/index.js';
 import { els, setStatus, showSheetLink } from '../../core/dom.js';
+import { getUserMessage } from '../../core/errors.js';
 import { loadAll, verifySheet, findSheetByName, createSheet, seedNewSheet } from '../../api/index.js';
 import { renderOverview } from '../overview/index.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../history/index.js';
@@ -87,6 +88,8 @@ function getLoginHint() {
   try { return localStorage.getItem(LS_KEY_USER_HINT) || ''; } catch { return ''; }
 }
 
+const TOKEN_SKEW_MS = 5 * 60 * 1000; // refresh when within 5 min of expiry
+
 let _refreshTimer = null;
 
 function scheduleTokenRefresh(expiresAt) {
@@ -111,6 +114,19 @@ export function applyToken(accessToken, expiresInSec) {
   state.tokenExpiresAt = expiresAt;
   scheduleTokenRefresh(expiresAt);
 }
+
+// Browsers throttle setTimeout in backgrounded tabs; refresh the token
+// proactively when the user returns to a tab with a stale/near-expiry token.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !state.tokenClient || !state.accessToken) return;
+  if (!state.tokenExpiresAt || state.tokenExpiresAt - Date.now() < TOKEN_SKEW_MS) {
+    state.proactiveRefreshInFlight = true;
+    const opts = { prompt: '' };
+    const hint = getLoginHint();
+    if (hint) opts.login_hint = hint;
+    state.tokenClient.requestAccessToken(opts);
+  }
+});
 
 export async function tryRestoreSession() {
   if (state.tokenClient) {
@@ -156,7 +172,7 @@ export async function onSignedIn() {
     await bootstrapSheet();
   } catch (err) {
     console.error(err);
-    setStatus('Bootstrap failed: ' + (err.result?.error?.message || err.message || err), 'warn');
+    setStatus(`${t('bootstrap_failed')}: ${getUserMessage(err)}`, 'warn');
   }
 }
 

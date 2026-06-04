@@ -74,4 +74,5 @@ registerTranslations('en', {
   opt_shares_exercised_suffix: 'shares',
   opt_exercise_too_many: 'Cannot exercise more than {max} exercisable shares as of that date.',
   opt_exercise_invalid:  'Enter a valid exercise date and a positive number of shares.',
+  opt_save_failed:       'Save failed',
 });

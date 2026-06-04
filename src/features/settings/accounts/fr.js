@@ -30,4 +30,8 @@ registerTranslations('fr', {
   new_account_type_label: 'Nouveau type de compte',
   new_id_label: 'Nouvel ID',
   confirm_rename: 'Confirmer',
+  acct_save_failed:   'Échec de la sauvegarde',
+  acct_delete_failed: 'Échec de la suppression',
+  acct_rename_failed: 'Échec du renommage',
+  import_failed:      'Échec de l\'importation',
 });

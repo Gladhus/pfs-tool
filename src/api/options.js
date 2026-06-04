@@ -1,4 +1,5 @@
 import { state, HEADERS } from '../core/state.js';
+import { safeWriteTab } from './sheets.js';
 
 async function ensureTab(title, headers) {
   try {
@@ -36,7 +37,8 @@ export async function loadOptionCompanies() {
       obj.active = obj.active === true || String(obj.active).toUpperCase() !== 'FALSE';
       return obj;
     }).filter(c => c.id);
-  } catch (_) {
+  } catch (err) {
+    console.warn('[pfs] failed to load option_companies', err);
     await ensureTab('option_companies', HEADERS.option_companies);
     state.optionCompanies = [];
   }
@@ -60,7 +62,8 @@ export async function loadOptionGrants() {
       obj.vesting_months = parseNum(obj.vesting_months);
       return obj;
     }).filter(g => g.id && g.company_id);
-  } catch (_) {
+  } catch (err) {
+    console.warn('[pfs] failed to load option_grants', err);
     await ensureTab('option_grants', HEADERS.option_grants);
     state.optionGrants = [];
   }
@@ -81,7 +84,8 @@ export async function loadOptionFmv() {
       obj.fmv = parseNum(obj.fmv);
       return obj;
     }).filter(f => f.date && f.company_id);
-  } catch (_) {
+  } catch (err) {
+    console.warn('[pfs] failed to load option_fmv', err);
     await ensureTab('option_fmv', HEADERS.option_fmv);
     state.optionFmv = [];
   }
@@ -103,23 +107,17 @@ export async function loadOptionExercises() {
       obj.price_paid       = parseNum(obj.price_paid);
       return obj;
     }).filter(e => e.id && e.grant_id);
-  } catch (_) {
+  } catch (err) {
+    console.warn('[pfs] failed to load option_exercises', err);
     await ensureTab('option_exercises', HEADERS.option_exercises);
     state.optionExercises = [];
   }
 }
 
-async function writeTab(tabName, headers, rows) {
+async function writeTab(tabName, headers, rows, prevCount) {
   await ensureTab(tabName, headers);
-  await gapi.client.sheets.spreadsheets.values.clear({
-    spreadsheetId: state.sheetId, range: `${tabName}!A:Z`,
-  });
   const allRows = rows.length ? [headers, ...rows] : [headers];
-  await gapi.client.sheets.spreadsheets.values.update({
-    spreadsheetId: state.sheetId, range: `${tabName}!A1`,
-    valueInputOption: 'RAW',
-    resource: { values: allRows },
-  });
+  await safeWriteTab(tabName, allRows, prevCount);
 }
 
 export async function writeOptionCompanies(companies) {
@@ -127,13 +125,13 @@ export async function writeOptionCompanies(companies) {
     companies.map(c => HEADERS.option_companies.map(h => {
       if (h === 'active') return c.active === false ? 'FALSE' : 'TRUE';
       return c[h] ?? '';
-    })));
+    })), state.optionCompanies.length);
   state.optionCompanies = companies;
 }
 
 export async function writeOptionGrants(grants) {
   await writeTab('option_grants', HEADERS.option_grants,
-    grants.map(g => HEADERS.option_grants.map(h => g[h] ?? '')));
+    grants.map(g => HEADERS.option_grants.map(h => g[h] ?? '')), state.optionGrants.length);
   state.optionGrants = grants;
 }
 
@@ -151,12 +149,12 @@ export async function addOptionFmvEntry(entry) {
 
 export async function writeOptionFmv(entries) {
   await writeTab('option_fmv', HEADERS.option_fmv,
-    entries.map(f => HEADERS.option_fmv.map(h => f[h] ?? '')));
+    entries.map(f => HEADERS.option_fmv.map(h => f[h] ?? '')), state.optionFmv.length);
   state.optionFmv = entries;
 }
 
 export async function writeOptionExercises(entries) {
   await writeTab('option_exercises', HEADERS.option_exercises,
-    entries.map(e => HEADERS.option_exercises.map(h => e[h] ?? '')));
+    entries.map(e => HEADERS.option_exercises.map(h => e[h] ?? '')), state.optionExercises.length);
   state.optionExercises = entries;
 }

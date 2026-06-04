@@ -74,4 +74,5 @@ registerTranslations('fr', {
   opt_shares_exercised_suffix: 'actions',
   opt_exercise_too_many: 'Impossible d\'exercer plus de {max} actions exerçables à cette date.',
   opt_exercise_invalid:  'Saisissez une date d\'exercice valide et un nombre d\'actions positif.',
+  opt_save_failed:       'Échec de la sauvegarde',
 });

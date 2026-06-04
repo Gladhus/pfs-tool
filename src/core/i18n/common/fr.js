@@ -47,4 +47,11 @@ registerTranslations('fr', {
   accounts_label: 'Comptes',
   goto_manage: 'Gérer →',
   account_label: 'Compte',
+  err_authExpired:      'Session expirée — reconnectez-vous.',
+  err_permissionDenied: 'Accès refusé — vérifiez les permissions du fichier.',
+  err_notFound:         'Fichier introuvable — il a peut-être été supprimé.',
+  err_quotaExceeded:    'Quota Google Sheets dépassé — réessayez dans quelques minutes.',
+  err_serverError:      'Erreur serveur Google — réessayez.',
+  err_offline:          'Pas de connexion Internet.',
+  err_unknown:          'Une erreur inattendue s\'est produite.',
 });

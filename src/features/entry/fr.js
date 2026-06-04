@@ -20,4 +20,5 @@ registerTranslations('fr', {
   confirm_reset_entry: 'Effacer toutes les valeurs saisies ?',
   confirm_delete_entries: 'Ces comptes avaient une valeur enregistrée pour cette date et seront supprimés :',
   confirm_delete_ok: 'Supprimer',
+  save_snapshot_failed: 'Échec de l\'enregistrement',
 });

@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.0) — 2026-06-04
+
+### Added
+- **Test backfill** (#15–#20): 69 new unit tests across 5 new test files — 128 tests total
+  - `stats.test.js` — `computeNetWorthFromSnapshots` (asset/debt sign, ownership_share scaling, unknown account skip, `ownership_share=0` fallback) and `buildBalanceSweep` (LOCF carry-forward, pre-seeding from before first date, boundary inclusion, `__day__` row exclusion)
+  - `getDatesForPeriod.test.js` — all/empty, YTD (keyed off data year not today's calendar year), 3M/6M/1Y/2Y/5Y windows, unknown period fallback, month-end overflow guard
+  - `normalizeDate.test.js` — null/empty, YYYY-MM-DD passthrough, zero-padding, YYYY-MM→day-01, valid/boundary/out-of-range Sheets serials, leap-year serial (43890 → 2020-02-29)
+  - `options.test.js` — `computeVestedShares` (cliff gating, cliff boundary, partial/full/over-vest cap, quarterly/annual intervals, degenerate inputs) and `exercisableShares` (no/partial/over exercise)
+  - `parseDelimited.test.js` — comma/tab detection, quoted comma, escaped double-quote, CRLF endings, embedded newline in quoted field, blank-row filtering, no-trailing-newline, unclosed quote characterization
+
+---
+
 ## [1.8.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.8.0) — 2026-06-04
 
 ### Fixed

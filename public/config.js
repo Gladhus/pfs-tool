@@ -6,9 +6,10 @@ window.PFS_CONFIG = {
   // See docs/SETUP.md.
   CLIENT_ID: "90763525172-0a05k5ejqn2rsgnt148g4evu25an4bb8.apps.googleusercontent.com",
 
-  // Scopes the app requests. spreadsheets = read/write any sheet the user grants;
-  // drive.file = create new sheets the app owns (much safer than full drive scope).
-  SCOPES: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
+  // drive.file: read/write only files this app created or that the user explicitly
+  // opened via picker. Much safer than the broad `spreadsheets` scope which grants
+  // access to every sheet in the account.
+  SCOPES: "https://www.googleapis.com/auth/drive.file",
 
   // UI language: "fr" or "en". Account display labels respect this.
   LANGUAGE: "fr",

@@ -71,7 +71,7 @@ export function renderAccountsList() {
       const cat = state.categoryMeta.find(c => c.id === a.category);
       header.innerHTML = `
         <span class="cat-icon">${icon(categoryIcon(a.category), { size: 16 })}</span>
-        <span class="accounts-group-name">${cat ? tr(cat) : a.category}</span>
+        <span class="accounts-group-name">${cat ? escapeHtml(tr(cat)) : escapeHtml(a.category)}</span>
       `;
       list.appendChild(header);
       lastCat = a.category;

@@ -1,6 +1,6 @@
 import "./en.js";
 import "./fr.js";
-import { state, LS_KEY_SHEET_ID, LS_KEY_TOKEN, LS_KEY_ACTIVE_TAB, LS_KEY_USER_HINT, TOKEN_SKEW_MS, SHEET_TITLE } from '../../core/state.js';
+import { state, LS_KEY_SHEET_ID, LS_KEY_ACTIVE_TAB, LS_KEY_USER_HINT, SHEET_TITLE } from '../../core/state.js';
 import { applyI18n, setLang, t } from '../../core/i18n/index.js';
 import { els, setStatus, showSheetLink } from '../../core/dom.js';
 import { loadAll, verifySheet, findSheetByName, createSheet, seedNewSheet } from '../../api/index.js';
@@ -22,6 +22,9 @@ function applyThemeFromSheet(mode) { _applyThemeFn?.(mode); }
 let _applyStockOptionsFn = null;
 export function registerApplyStockOptions(fn) { _applyStockOptionsFn = fn; }
 function applyStockOptionsFromSheet(enabled) { _applyStockOptionsFn?.(enabled); }
+
+// One-time cleanup: remove any token previously cached in localStorage
+try { localStorage.removeItem('pfs_token'); } catch {}
 
 export function configError() {
   if (!cfg.CLIENT_ID || cfg.CLIENT_ID === 'YOUR_CLIENT_ID_HERE') {
@@ -105,44 +108,11 @@ export function applyToken(accessToken, expiresInSec) {
   state.accessToken = accessToken;
   gapi.client.setToken({ access_token: accessToken });
   const expiresAt = Date.now() + (Number(expiresInSec) || 3600) * 1000;
-  try {
-    localStorage.setItem(LS_KEY_TOKEN, JSON.stringify({ access_token: accessToken, expires_at: expiresAt }));
-  } catch {}
+  state.tokenExpiresAt = expiresAt;
   scheduleTokenRefresh(expiresAt);
 }
 
-export function loadCachedToken() {
-  try {
-    const raw = localStorage.getItem(LS_KEY_TOKEN);
-    if (!raw) return null;
-    const cached = JSON.parse(raw);
-    if (!cached.access_token || !cached.expires_at) return null;
-    if (cached.expires_at - Date.now() < TOKEN_SKEW_MS) return null;
-    return cached;
-  } catch { return null; }
-}
-
-export function clearCachedToken() {
-  try { localStorage.removeItem(LS_KEY_TOKEN); } catch (_) {}
-}
-
 export async function tryRestoreSession() {
-  const cached = loadCachedToken();
-  if (cached) {
-    state.accessToken = cached.access_token;
-    gapi.client.setToken({ access_token: cached.access_token });
-    setStatus('Restoring session…');
-    try {
-      await onSignedIn();
-      return true;
-    } catch (err) {
-      console.warn('Cached token rejected:', err);
-      clearCachedToken();
-      gapi.client.setToken(null);
-      state.accessToken = null;
-    }
-  }
-
   if (state.tokenClient) {
     state.silentInFlight = true;
     setStatus('Refreshing Google session…');
@@ -210,8 +180,8 @@ export function onSignOut() {
     google.accounts.oauth2.revoke(state.accessToken, () => {});
   }
   state.accessToken = null;
+  state.tokenExpiresAt = null;
   gapi.client.setToken(null);
-  clearCachedToken();
   els.signinBtn.hidden = false;
   els.signoutBtn.hidden = true;
   els.userEmail.hidden = true;

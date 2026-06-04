@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.7.3] — 2026-06-04
+
+### Security
+- **OAuth token**: access token no longer persisted in `localStorage` — kept in memory only; silent GIS refresh handles session restore on reload; existing cached tokens are cleaned up on first load
+- **CSP**: strict `Content-Security-Policy` meta tag added as the first element in `<head>`; covers all Google API endpoints; no `unsafe-inline` in `script-src`
+- **XSS**: `escapeHtml()` now wraps both branches of the accounts-list group header `innerHTML` interpolation (`tr(cat)` and `a.category` fallback)
+- **OAuth scope**: reduced from broad `spreadsheets` (all sheets in account) to `drive.file` (only files this app created or the user explicitly opened)
+- **Dependencies**: removed `headroom-ai` (was never imported); pinned `chart.js` and `air-datepicker` to exact versions (dropped `^` ranges)
+
+---
+
 ## [1.7.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.2) — 2026-06-04
 
 ### Fixed

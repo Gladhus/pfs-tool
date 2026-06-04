@@ -9,7 +9,7 @@ window.PFS_CONFIG = {
   // drive.file: read/write only files this app created or that the user explicitly
   // opened via picker. Much safer than the broad `spreadsheets` scope which grants
   // access to every sheet in the account.
-  SCOPES: "https://www.googleapis.com/auth/drive.file",
+  SCOPES: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
 
   // UI language: "fr" or "en". Account display labels respect this.
   LANGUAGE: "fr",

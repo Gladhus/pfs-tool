@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.8.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.8.0) — 2026-06-04
+
+### Fixed
+- **setMonth overflow** (#13): `Date.setMonth()` overflows on end-of-month dates (e.g. Jan 31 + 1 month → Mar 3 instead of Feb 28); replaced all three raw `setMonth` call sites (`getDatesForPeriod`, `grantFullyVestedDate`, `grantFirstVestDate`) with a new `addMonths(date, n)` helper in `src/utils/dates.js` that clamps to the last day of the target month
+
+### Removed
+- **Dead `app.js`** (#14): deleted the 2460-line legacy single-file version from the repo root — it was never loaded by `index.html` or Vite; git history preserves it; removed the stale reference from `CLAUDE.md`
+
+---
+
 ## [1.7.6](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.6) — 2026-06-04
 
 ### Fixed

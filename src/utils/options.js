@@ -1,4 +1,5 @@
 import { state } from '../core/state.js';
+import { addMonths } from './dates.js';
 
 function monthsBetween(startStr, endStr) {
   const s = new Date(startStr + 'T12:00:00');
@@ -93,8 +94,7 @@ export function computeTotalUnvestedValue(asOfDate) {
 export function grantFullyVestedDate(grant) {
   const start = grant.vesting_start || grant.grant_date;
   if (!start) return null;
-  const s = new Date(start + 'T12:00:00');
-  s.setMonth(s.getMonth() + (Number(grant.vesting_months) || 0));
+  const s = addMonths(new Date(start + 'T12:00:00'), Number(grant.vesting_months) || 0);
   return s.toISOString().slice(0, 10);
 }
 
@@ -102,8 +102,7 @@ export function grantFirstVestDate(grant) {
   const start = grant.vesting_start || grant.grant_date;
   if (!start) return null;
   const cliff = Number(grant.cliff_months) || 0;
-  const s = new Date(start + 'T12:00:00');
-  s.setMonth(s.getMonth() + cliff);
+  const s = addMonths(new Date(start + 'T12:00:00'), cliff);
   return s.toISOString().slice(0, 10);
 }
 

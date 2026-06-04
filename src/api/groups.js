@@ -6,7 +6,7 @@ async function ensureGroupsTab() {
       spreadsheetId: state.sheetId,
       resource: { requests: [{ addSheet: { properties: { title: 'groups' } } }] },
     });
-  } catch (e) { /* Already exists */ }
+  } catch { /* Already exists */ }
   await gapi.client.sheets.spreadsheets.values.update({
     spreadsheetId: state.sheetId, range: 'groups!A1',
     valueInputOption: 'RAW',
@@ -43,7 +43,7 @@ export async function loadGroupsCatalog() {
         exclude: ei >= 0  ? splitTags(r[ei])  : [],
       });
     }
-  } catch (err) {
+  } catch {
     console.log('[pfs] groups tab missing — creating');
     await ensureGroupsTab();
     state.groupsCatalog = [];

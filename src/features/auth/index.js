@@ -81,7 +81,7 @@ export function initTokenClient() {
 }
 
 function getLoginHint() {
-  try { return localStorage.getItem(LS_KEY_USER_HINT) || ''; } catch (_) { return ''; }
+  try { return localStorage.getItem(LS_KEY_USER_HINT) || ''; } catch { return ''; }
 }
 
 let _refreshTimer = null;
@@ -107,7 +107,7 @@ export function applyToken(accessToken, expiresInSec) {
   const expiresAt = Date.now() + (Number(expiresInSec) || 3600) * 1000;
   try {
     localStorage.setItem(LS_KEY_TOKEN, JSON.stringify({ access_token: accessToken, expires_at: expiresAt }));
-  } catch (_) {}
+  } catch {}
   scheduleTokenRefresh(expiresAt);
 }
 
@@ -119,7 +119,7 @@ export function loadCachedToken() {
     if (!cached.access_token || !cached.expires_at) return null;
     if (cached.expires_at - Date.now() < TOKEN_SKEW_MS) return null;
     return cached;
-  } catch (_) { return null; }
+  } catch { return null; }
 }
 
 export function clearCachedToken() {
@@ -201,7 +201,7 @@ export async function fetchUserEmail() {
       try { localStorage.setItem(LS_KEY_USER_HINT, data.email); } catch (_) {}
     }
     return data.email || null;
-  } catch (_) { return null; }
+  } catch { return null; }
 }
 
 export function onSignOut() {

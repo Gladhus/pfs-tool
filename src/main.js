@@ -7,7 +7,7 @@ import AirDatepicker from 'air-datepicker';
 import localeEn from 'air-datepicker/locale/en';
 import localeFr from 'air-datepicker/locale/fr';
 import { state, LS_KEY_THEME, LS_KEY_ACTIVE_TAB, HEADERS } from './core/state.js';
-import { setLang, applyI18n, t, lang, registerWriteConfig } from './core/i18n/index.js';
+import { setLang, applyI18n, lang, registerWriteConfig } from './core/i18n/index.js';
 import { els, _setToastFn } from './core/dom.js';
 import { toast } from './core/toast.js';
 import { togglePrivate } from './core/privacy.js';
@@ -26,8 +26,8 @@ import {
   executeMigrate, updateMigratePreview,
 } from './features/settings/accounts/index.js';
 import {
-  configError, onSignedIn, onSignOut, onChooseSheet, onGapiLoad, initTokenClient,
-  loadAndRenderForm, setActiveTab, setAccountsSubTab, applyToken, registerApplyTheme,
+  configError, onSignOut, onChooseSheet, onGapiLoad, initTokenClient,
+  loadAndRenderForm, setActiveTab, setAccountsSubTab, registerApplyTheme,
   registerApplyStockOptions, refreshCurrentTab,
 } from './features/auth/index.js';
 import { writeConfig } from './api/index.js';
@@ -35,7 +35,7 @@ import {
   renderGroupsList, openNewGroupDialog, saveGroupDialog,
   closeGroupDialog, deleteGroupFromDialog,
 } from './features/settings/groups/index.js';
-import { openCompanyDialog, closeCompanyDialog, openGrantDialog, closeGrantDialog, closeExerciseDialog, setOptionsSubTab } from './features/options/index.js';
+import { openCompanyDialog, closeCompanyDialog, closeGrantDialog, closeExerciseDialog, setOptionsSubTab } from './features/options/index.js';
 
 // Stamp the build version into the footer
 const vEl = document.getElementById('app-version');
@@ -126,7 +126,7 @@ document.querySelectorAll('#options-sidebar .section-sidebar-btn').forEach(btn =
 const _stockOptTabBtn = els.tabBar.querySelector('[data-tab="options"]');
 const _enableStockOptsCb = document.getElementById('enable-stock-options');
 function _applyStockOptions(enabled, persist = true) {
-  if (persist) try { localStorage.setItem('pfs_stock_options', enabled ? '1' : '0'); } catch (_) {}
+  if (persist) try { localStorage.setItem('pfs_stock_options', enabled ? '1' : '0'); } catch {}
   if (_stockOptTabBtn) _stockOptTabBtn.hidden = !enabled;
   const bottomOptBtn = document.querySelector('#bottom-tab-bar [data-tab="options"]');
   if (bottomOptBtn) bottomOptBtn.hidden = !enabled;
@@ -183,7 +183,7 @@ document.querySelectorAll('#hist-period-pills .period-btn').forEach(btn => {
   });
 });
 // Close custom account select when clicking outside
-document.addEventListener('click', (ev) => {
+document.addEventListener('click', (_ev) => {
   const wrap = els.histAccountSelect;
   if (wrap) {
     const menu = wrap.querySelector('.custom-select-menu');
@@ -295,7 +295,7 @@ document.getElementById('opt-exercise-dialog')?.addEventListener('click', e => {
 // Theme picker
 function applyTheme(mode, { persist = true } = {}) {
   state.theme = mode;
-  try { localStorage.setItem(LS_KEY_THEME, mode); } catch (_) {}
+  try { localStorage.setItem(LS_KEY_THEME, mode); } catch {}
   if (mode === 'system') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', mode);
   document.querySelectorAll('.theme-btn').forEach(b =>

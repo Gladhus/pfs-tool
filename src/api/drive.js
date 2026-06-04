@@ -1,5 +1,5 @@
 import seedData from '../../seed/default-accounts.json';
-import { state, HEADERS, SHEET_TITLE } from '../core/state.js';
+import { HEADERS, SHEET_TITLE } from '../core/state.js';
 
 const cfg = window.PFS_CONFIG || {};
 
@@ -7,7 +7,7 @@ export async function verifySheet(id) {
   try {
     await gapi.client.sheets.spreadsheets.get({ spreadsheetId: id, fields: 'spreadsheetId' });
     return true;
-  } catch (_) {
+  } catch {
     return false;
   }
 }

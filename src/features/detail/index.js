@@ -65,8 +65,6 @@ export function renderDetailTable() {
   const yearBals = {};
   for (const y of years) yearBals[y] = buildEffectiveBalances(y + '-01-01');
 
-  const totalCols = years.length + 1; // account col + year cols
-
   const getVal = (acct, year) => {
     const raw = yearBals[year][acct.id];
     return raw !== undefined ? signed(raw, acct) : null;

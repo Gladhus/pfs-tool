@@ -69,8 +69,8 @@ export function parseMonthLabel(raw) {
   // Full numeric date: DD/MM/YY(YY) — if first part > 12 it's the day; otherwise DD/MM assumed
   m = s.match(new RegExp(`^${DD}${SEP}${DD}${SEP}${YR2}$`));
   if (m) {
-    const [a, b, yr] = [+m[1], +m[2], expandYear(m[3])];
-    const mm = b; // DD/MM/YYYY assumed; a > 12 just confirms day is first
+    const [_a, b, yr] = [+m[1], +m[2], expandYear(m[3])];
+    const mm = b; // DD/MM/YYYY assumed; _a > 12 just confirms day is first
     if (mm >= 1 && mm <= 12) return `${yr}-${String(mm).padStart(2, '0')}`;
   }
   // Named month + 4-digit year: "Dec 2015"

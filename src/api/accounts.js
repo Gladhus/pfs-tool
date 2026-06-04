@@ -1,5 +1,5 @@
 import seedData from '../../seed/default-accounts.json';
-import { state, HEADERS } from '../core/state.js';
+import { state } from '../core/state.js';
 import { normalizeDate } from '../utils/dates.js';
 
 function parseTags(raw) {

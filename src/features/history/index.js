@@ -4,7 +4,7 @@ import { state } from '../../core/state.js';
 import { t, tFn, tr, lang } from '../../core/i18n/index.js';
 import { fmtMoney, hexToRgba } from '../../core/format.js';
 import { privMoney } from '../../core/privacy.js';
-import { chartTooltip, moneyTooltipLabel, moneyTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
+import { chartTooltip, moneyTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
 import { deltaEl } from '../../core/components/Delta.js';
 import { getDatesForPeriod } from '../../utils/dates.js';
 import { buildBalanceSweep, buildXAxisTicks } from '../../utils/stats.js';

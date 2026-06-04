@@ -1,4 +1,4 @@
-import { state, LS_KEY_IMPORT_MAP } from '../core/state.js';
+import { LS_KEY_IMPORT_MAP } from '../core/state.js';
 import { activeAccounts } from './balance.js';
 
 export function parseDelimited(text) {
@@ -44,7 +44,7 @@ export function similarity(a, b) {
 export function suggestAccount(sourceName) {
   const remembered = (() => {
     try { return JSON.parse(localStorage.getItem(LS_KEY_IMPORT_MAP) || '{}'); }
-    catch (_) { return {}; }
+    catch { return {}; }
   })();
   const key = normalizeName(sourceName);
   if (remembered[key]) return remembered[key];
@@ -61,7 +61,7 @@ export function rememberMapping(sourceName, accountId) {
     const m = JSON.parse(localStorage.getItem(LS_KEY_IMPORT_MAP) || '{}');
     m[normalizeName(sourceName)] = accountId;
     localStorage.setItem(LS_KEY_IMPORT_MAP, JSON.stringify(m));
-  } catch (_) { /* ignore */ }
+  } catch { /* ignore */ }
 }
 
 export function slugify(s) {

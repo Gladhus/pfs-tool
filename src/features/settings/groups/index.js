@@ -2,7 +2,7 @@ import "./en.js";
 import "./fr.js";
 import { state } from '../../../core/state.js';
 import { t } from '../../../core/i18n/index.js';
-import { els, escapeHtml } from '../../../core/dom.js';
+import { escapeHtml } from '../../../core/dom.js';
 import { writeGroupsCatalog } from '../../../api/groups.js';
 import { attachAutocomplete } from '../../../core/autocomplete.js';
 import { groupColor, TAG_PALETTE, renderOverview } from '../../overview/index.js';

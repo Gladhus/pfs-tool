@@ -40,6 +40,6 @@ export function updatePrivateButton(btn = null) {
 // triggering a tab re-render (we don't import feature modules here).
 export function togglePrivate() {
   state.privateMode = !state.privateMode;
-  try { localStorage.setItem(LS_KEY_PRIVATE, state.privateMode ? '1' : '0'); } catch (_) {}
+  try { localStorage.setItem(LS_KEY_PRIVATE, state.privateMode ? '1' : '0'); } catch {}
   updatePrivateButton();
 }

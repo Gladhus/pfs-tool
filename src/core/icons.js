@@ -2,7 +2,6 @@
 // Use icon(name) → returns a string of <svg>, or iconEl(name) → DOM element.
 
 const STROKE = 'currentColor';
-const ATTRS = `width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${STROKE}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"`;
 
 const PATHS = {
   // Category / kind icons
@@ -51,7 +50,7 @@ export function icon(name, opts = {}) {
   const size = opts.size || 16;
   const cls = opts.class ? ` class="${opts.class}"` : '';
   const stroke = opts.strokeWidth || 2;
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"${cls}>${path}</svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${STROKE}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"${cls}>${path}</svg>`;
 }
 
 export function iconEl(name, opts = {}) {

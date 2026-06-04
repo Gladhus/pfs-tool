@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.7.4](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.4) — 2026-06-04
+
+### Fixed
+- **Sign-in regression**: CSP `connect-src` was missing `https://apis.google.com`, causing `gapi.load('client')` to fail silently — `gapiReady` was never set and the sign-in button stayed permanently disabled; added `apis.google.com` and `content.googleapis.com` to `connect-src`
+- **Sheet discovery regression**: narrowing OAuth scope to `drive.file` only broke `findSheetByName()` and `onChooseSheet()` for existing users — `drive.files.list` under `drive.file` only returns files the app created in the current session, not pre-existing sheets; restored `spreadsheets` scope alongside `drive.file`
+
+---
+
 ## [1.7.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.3) — 2026-06-04
 
 ### Security

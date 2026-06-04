@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.7.5](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.5) — 2026-06-04
+
+### Fixed
+- **CSP**: widened `script-src` to include `https://*.gstatic.com` (gapi dynamically loads modules from Google's CDN at gstatic.com); consolidated `connect-src` to `https://*.googleapis.com` wildcard; added `*.gstatic.com` to `img-src` and `style-src` for Google Fonts/icons loaded by gapi
+
+---
+
 ## [1.7.4](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.4) — 2026-06-04
 
 ### Fixed

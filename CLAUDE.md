@@ -18,7 +18,7 @@ Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds with Vit
 
 ## Architecture
 
-The app is a **Vite-built SPA** with no framework. Entry point is `src/main.js`; all modules are under `src/`. The legacy `app.js` at the root is the old single-file version kept for reference only — it is not loaded.
+The app is a **Vite-built SPA** with no framework. Entry point is `src/main.js`; all modules are under `src/`.
 
 - `index.html` — app shell; all tabs exist in the DOM at load time, shown/hidden by JS
 - `src/main.js` — CSS imports (air-datepicker first, then style.css), event wiring and startup polling for Google APIs
@@ -39,7 +39,7 @@ The app is a **Vite-built SPA** with no framework. Entry point is `src/main.js`;
 
 ### Utility modules (`src/utils/`)
 
-- `src/utils/dates.js` — `MONTH_NAMES`, `parseMonthLabel()`, `normalizeDate()`, `normalizeMonth()`, `getDatesForPeriod()`, `rebuildDatesList()`, `prevDate()`, `logCoverageDiagnostic()`
+- `src/utils/dates.js` — `addMonths()`, `MONTH_NAMES`, `parseMonthLabel()`, `normalizeDate()`, `normalizeMonth()`, `getDatesForPeriod()`, `rebuildDatesList()`, `prevDate()`, `logCoverageDiagnostic()`
 - `src/utils/stats.js` — `snapshotForDate()`, `buildEffectiveBalances()`, `buildBalanceSweep()`, `computeNetWorthFromSnapshots()`, `computeDateStats()`, `buildXAxisTicks()`
 - `src/utils/balance.js` — `activeAccounts()`, `categoriesInOrder()`, `accountsForCategory()`
 - `src/utils/import.js` — `parseDelimited()`, `normalizeName()`, `similarity()`, `suggestAccount()`, `rememberMapping()`, `slugify()`
@@ -95,7 +95,6 @@ On load the app tries to restore an existing session silently (cached token in `
 | Key | Purpose |
 |---|---|
 | `pfs_sheet_id` | Cached Google Sheet ID |
-| `pfs_token` | Cached OAuth token `{access_token, expires_at}` |
 | `pfs_import_mappings` | Remembered CSV column → account_id mappings |
 | `pfs_active_tab` | Last active tab |
 

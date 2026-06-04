@@ -1,5 +1,16 @@
 import { state } from '../core/state.js';
 
+// Add months to a date without the setMonth day-overflow bug (e.g. Jan 31 + 1M → Feb 28).
+export function addMonths(date, months) {
+  const d = new Date(date);
+  const targetMonth = d.getMonth() + months;
+  const y = d.getFullYear() + Math.floor(targetMonth / 12);
+  const m = ((targetMonth % 12) + 12) % 12;
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  d.setFullYear(y, m, Math.min(d.getDate(), lastDay));
+  return d;
+}
+
 // "YYYY-MM-DD" for today, in the user's local timezone.
 export function todayISO() {
   const n = new Date();
@@ -146,8 +157,7 @@ export function getDatesForPeriod(period) {
   }
   const nMonths = { '3M': 3, '6M': 6, '1Y': 12, '2Y': 24, '5Y': 60 }[period];
   if (!nMonths) return all;
-  const fromDate = new Date(latest);
-  fromDate.setMonth(fromDate.getMonth() - nMonths);
+  const fromDate = addMonths(new Date(latest), -nMonths);
   const fromStr = fromDate.toISOString().slice(0, 10);
   return all.filter(d => d >= fromStr);
 }

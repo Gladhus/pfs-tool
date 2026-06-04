@@ -1,7 +1,7 @@
 import './en.js';
 import './fr.js';
 import { state } from '../../core/state.js';
-import { t, lang } from '../../core/i18n/index.js';
+import { t } from '../../core/i18n/index.js';
 import { fmtMoney, hexToRgba } from '../../core/format.js';
 import { privMoney, privShares, MASK } from '../../core/privacy.js';
 import { chartTooltip, moneyTooltipLabel, moneyTickFmt, sharesTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
@@ -10,7 +10,7 @@ import { attachAutocomplete } from '../../core/autocomplete.js';
 import {
   computeVestedShares, computeUnvestedShares,
   computeIntrinsicValue, computeUnvestedValue,
-  getEffectiveFmv, computeCompanyEquityValue, computeCompanyUnvestedValue,
+  getEffectiveFmv,
   computeTotalEquityValue, computeTotalUnvestedValue,
   grantFullyVestedDate, grantFirstVestDate, generateMonthlyDates,
   exercisableShares, exercisedSharesForGrant,
@@ -18,7 +18,7 @@ import {
 import { slugify } from '../../utils/import.js';
 import { todayISO, fmtMonth, yearStartIndices } from '../../utils/dates.js';
 import {
-  writeOptionCompanies, writeOptionGrants, addOptionFmvEntry, writeOptionFmv,
+  writeOptionCompanies, writeOptionGrants, writeOptionFmv,
   writeOptionExercises,
 } from '../../api/options.js';
 import { writeConfig } from '../../api/config.js';
@@ -989,8 +989,7 @@ export function openCompanyDialog(companyId) {
   deleteBtn.hidden  = !existing;
 
   // Remove old handlers
-  const saveBtn   = dlg.querySelector('#opt-company-save-btn');
-  const cancelBtn = dlg.querySelector('#opt-company-cancel-btn');
+  const saveBtn = dlg.querySelector('#opt-company-save-btn');
   if (_companySaveHandler)   saveBtn.removeEventListener('click', _companySaveHandler);
   if (_companyDeleteHandler) deleteBtn.removeEventListener('click', _companyDeleteHandler);
 
@@ -1082,8 +1081,7 @@ export function openGrantDialog(grantId, companyId) {
   const deleteBtn = dlg.querySelector('#opt-grant-delete-btn');
   deleteBtn.hidden = !existing;
 
-  const saveBtn   = dlg.querySelector('#opt-grant-save-btn');
-  const cancelBtn = dlg.querySelector('#opt-grant-cancel-btn');
+  const saveBtn = dlg.querySelector('#opt-grant-save-btn');
   if (_grantSaveHandler)   saveBtn.removeEventListener('click', _grantSaveHandler);
   if (_grantDeleteHandler) deleteBtn.removeEventListener('click', _grantDeleteHandler);
 
@@ -1144,7 +1142,7 @@ async function saveGrantDialog() {
   }
 }
 
-async function deleteGrant(grantId, companyId) {
+async function deleteGrant(grantId, _companyId) {
   const grants = state.optionGrants.filter(g => g.id !== grantId);
   const dlg = document.getElementById('opt-grant-dialog');
   try {

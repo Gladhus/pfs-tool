@@ -4,13 +4,13 @@ import "./en.js";
 import "./fr.js";
 import { state, HEADERS, OWNERS, KINDS } from '../../../core/state.js';
 import { t, tr, lang } from '../../../core/i18n/index.js';
-import { fmtMoney, parseMoney } from '../../../core/format.js';
+import { parseMoney } from '../../../core/format.js';
 import { privMoney } from '../../../core/privacy.js';
 import { categoriesInOrder, activeAccounts } from '../../../utils/balance.js';
 import { normalizeDate, rebuildDatesList, parseMonthLabel } from '../../../utils/dates.js';
 import { parseDelimited, suggestAccount, rememberMapping } from '../../../utils/import.js';
 import { els, setStatus, escapeHtml } from '../../../core/dom.js';
-import { icon, iconEl, categoryIcon, categoryKey } from '../../../core/icons.js';
+import { icon, categoryIcon, categoryKey } from '../../../core/icons.js';
 import { renderOverview } from '../../overview/index.js';
 import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../../history/index.js';
 import { renderForm } from '../../entry/index.js';
@@ -138,7 +138,6 @@ function buildAccountCard(a) {
 // --- Account edit dialog ---
 
 let _editingId = null;  // id of account being edited, or null when creating
-let _typesPopulated = false;
 
 function populateAcctTypeSelect() {
   const sel = els.acctTypeSelect;
@@ -475,9 +474,6 @@ const migrateNote     = () => document.getElementById('migrate-snapshots-note');
 
 let _migrateOldId = null;
 
-function onRenameAccountId(oldId) {
-  openMigrateDialog(oldId);
-}
 
 export function openMigrateDialog(oldId) {
   _migrateOldId = oldId;

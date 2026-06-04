@@ -6,7 +6,7 @@ async function ensureTagsTab() {
       spreadsheetId: state.sheetId,
       resource: { requests: [{ addSheet: { properties: { title: 'tags' } } }] },
     });
-  } catch (e) {
+  } catch {
     // Already exists — fine
   }
   await gapi.client.sheets.spreadsheets.values.update({
@@ -36,7 +36,7 @@ export async function loadTagsCatalog() {
       seen.add(name);
       state.tagsCatalog.push({ name });
     }
-  } catch (err) {
+  } catch {
     console.log('[pfs] tags tab missing — creating');
     await ensureTagsTab();
     state.tagsCatalog = [];

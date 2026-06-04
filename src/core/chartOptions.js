@@ -4,7 +4,6 @@
 
 import Chart from 'chart.js/auto';
 import { state } from './state.js';
-import { fmtMoney, fmtMoneyShort } from './format.js';
 import { privMoney, MASK } from './privacy.js';
 
 export const TOOLTIP_STYLE = {

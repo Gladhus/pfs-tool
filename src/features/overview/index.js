@@ -20,10 +20,6 @@ function getView() {
   const v = localStorage.getItem(LS_KEY_VIEW);
   return v === 'category' ? 'category' : 'group';
 }
-function setView(v) {
-  try { localStorage.setItem(LS_KEY_VIEW, v); } catch {}
-}
-
 // Palette for tag swatches (cycles)
 export const TAG_PALETTE = [
   '#3b82f6', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6',
@@ -309,7 +305,6 @@ export function renderOverviewChart() {
   const view = getView();
   const dates = getOvFilteredDates();
   if (!dates.length) return;
-  const dateIdx = new Map(dates.map((d, i) => [d, i]));
   const acctById = Object.fromEntries(state.accounts.map(a => [a.id, a]));
 
   // Net worth + (categories OR groups), depending on view
@@ -507,6 +502,7 @@ function categoriesWithData() {
 function renderSeriesToggles() {
   const wrap = els.ovSeriesToggles;
   if (!wrap) return;
+  const cs = getComputedStyle(document.documentElement);
   const view = getView();
   wrap.innerHTML = '';
 

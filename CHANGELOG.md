@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.7.2] — 2026-06-04
+
+### Fixed
+- **Lint**: resolved all ESLint warnings across `src/` — removed unused imports (`HEADERS`, `state`, `fmtMoney`/`fmtMoneyShort`, `moneyTooltipLabel`, `computeCompanyEquityValue`/`UnvestedValue`, `addOptionFmvEntry`, `lang`, `iconEl`, `els`, `t`, `onSignedIn`, `applyToken`, `openGrantDialog`), dead local variables (`totalCols`, `dateIdx`, `_typesPopulated`, `cancelBtn` ×2, `ATTRS`), dead functions (`setView`, `onRenameAccountId`), unused catch bindings converted to bare `catch {}`, unused callback args renamed with `_` prefix
+- **Icons**: restored `STROKE` constant usage in `icon()` after `ATTRS` removal to keep the constant meaningful
+
+---
+
+## [1.7.1] — 2026-06-04
+
+### Fixed
+- **i18n**: removed duplicate `net_worth` translation key in both `en.js` and `fr.js` (silent key collision — last definition was silently winning)
+- **parseMoney**: removed useless escape character in regex character class (`\-` → `-`)
+- **Overview category view**: fixed `ReferenceError: cs is not defined` crash when switching to category series-toggle view (`renderSeriesToggles` now calls `getComputedStyle` directly)
+
+### Added
+- **CI**: lint (`eslint src/`) and test (`vitest run`) steps now run before build — a failure in either blocks the deploy
+- **ESLint 9**: flat config scoped to `src/` with browser globals and `allowEmptyCatch` for intentional catches; `npm run lint` script added
+- **Test coverage**: `@vitest/coverage-v8` added; `npm run test:coverage` generates text + HTML reports for `src/utils/` and `src/core/`
+- **`.editorconfig`**: codifies 2-space indent, LF line endings, UTF-8, and trailing-whitespace trimming
+
+---
+
 ## [1.7.0](https://github.com/Gladhus/pfs-tool/releases/tag/v1.7.0) — 2026-06-03
 
 ### Added

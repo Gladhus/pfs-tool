@@ -43,7 +43,6 @@ registerTranslations('fr', {
   choose_sheet_hint: 'Sélectionnez une feuille existante',
   no_sheets_found: 'Aucune feuille trouvée',
   sheet_linked: 'Feuille liée.',
-  net_worth: 'Valeur nette',
   manage_label: 'Gérer',
   accounts_label: 'Comptes',
   goto_manage: 'Gérer →',

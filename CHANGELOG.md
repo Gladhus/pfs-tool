@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.7.2] — 2026-06-04
+
+### Fixed
+- **Lint**: resolved all ESLint warnings across `src/` — removed unused imports (`HEADERS`, `state`, `fmtMoney`/`fmtMoneyShort`, `moneyTooltipLabel`, `computeCompanyEquityValue`/`UnvestedValue`, `addOptionFmvEntry`, `lang`, `iconEl`, `els`, `t`, `onSignedIn`, `applyToken`, `openGrantDialog`), dead local variables (`totalCols`, `dateIdx`, `_typesPopulated`, `cancelBtn` ×2, `ATTRS`), dead functions (`setView`, `onRenameAccountId`), unused catch bindings converted to bare `catch {}`, unused callback args renamed with `_` prefix
+- **Icons**: restored `STROKE` constant usage in `icon()` after `ATTRS` removal to keep the constant meaningful
+
+---
+
 ## [1.7.1] — 2026-06-04
 
 ### Fixed

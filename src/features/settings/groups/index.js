@@ -3,9 +3,11 @@ import "./fr.js";
 import { state } from '../../../core/state.js';
 import { t } from '../../../core/i18n/index.js';
 import { escapeHtml } from '../../../core/dom.js';
+import { renderTagChips } from '../../../core/components/TagChips.js';
+import { attachTagInput } from '../../../core/components/TagInput.js';
+import { allKnownTags } from '../../../utils/tags.js';
 import { getUserMessage } from '../../../core/errors.js';
 import { writeGroupsCatalog } from '../../../api/groups.js';
-import { attachAutocomplete } from '../../../core/autocomplete.js';
 import { groupColor, TAG_PALETTE, renderOverview } from '../../overview/index.js';
 import { toast } from '../../../core/toast.js';
 
@@ -16,14 +18,6 @@ let _selectedColor = GROUP_COLORS[0];
 
 // Per-section chip state
 const _chips = { all: [], any: [], exclude: [] };
-
-function allKnownTags() {
-  const set = new Set((state.tagsCatalog || []).map(t => t.name));
-  for (const a of state.accounts) {
-    if (Array.isArray(a.tags)) a.tags.forEach(t => t && set.add(t));
-  }
-  return [...set].sort();
-}
 
 // --- Group list rendering ---
 
@@ -86,56 +80,21 @@ function renderColorSwatches() {
 function renderChips(section) {
   const el = document.getElementById(`group-${section}-chips`);
   if (!el) return;
-  el.innerHTML = '';
-  for (const tag of _chips[section]) {
-    const chip = document.createElement('span');
-    chip.className = 'tag-chip';
-    chip.innerHTML = `${escapeHtml(tag)}<button type="button" aria-label="Remove">&times;</button>`;
-    chip.querySelector('button').addEventListener('click', () => {
-      _chips[section] = _chips[section].filter(t => t !== tag);
-      renderChips(section);
-    });
-    el.appendChild(chip);
-  }
-}
-
-function setupSectionAutocomplete(section) {
-  const input = document.getElementById(`group-${section}-input`);
-  if (!input || input._acAttached) return;
-  input._acAttached = true;
-
-  // Commit on Enter or comma
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      commitChipInput(section);
-    } else if (e.key === 'Backspace' && !input.value && _chips[section].length) {
-      _chips[section].pop();
-      renderChips(section);
-    }
-  });
-  input.addEventListener('blur', () => commitChipInput(section));
-
-  attachAutocomplete(input, {
-    getOptions: () => allKnownTags().filter(t => !_chips[section].includes(t)),
-    onPick: (tag) => {
-      if (!_chips[section].includes(tag)) {
-        _chips[section].push(tag);
-        renderChips(section);
-      }
-    },
+  renderTagChips(el, _chips[section], (tag) => {
+    _chips[section] = _chips[section].filter(t => t !== tag);
+    renderChips(section);
   });
 }
 
-function commitChipInput(section) {
+function setupSectionInput(section) {
   const input = document.getElementById(`group-${section}-input`);
   if (!input) return;
-  const raw = input.value.trim();
-  if (!raw) return;
-  const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
-  for (const p of parts) if (!_chips[section].includes(p)) _chips[section].push(p);
-  input.value = '';
-  renderChips(section);
+  attachTagInput(input, {
+    getTags:          () => _chips[section],
+    onAdd:            (tag) => { _chips[section].push(tag); renderChips(section); },
+    onPop:            () => { _chips[section].pop(); renderChips(section); },
+    getAvailableTags: () => allKnownTags().filter(t => !_chips[section].includes(t)),
+  });
 }
 
 function fillGroupDialog(group) {
@@ -150,9 +109,9 @@ function fillGroupDialog(group) {
   renderChips('all');
   renderChips('any');
   renderChips('exclude');
-  setupSectionAutocomplete('all');
-  setupSectionAutocomplete('any');
-  setupSectionAutocomplete('exclude');
+  setupSectionInput('all');
+  setupSectionInput('any');
+  setupSectionInput('exclude');
 
   const titleEl = document.getElementById('group-dlg-title');
   if (titleEl) titleEl.textContent = group ? t('edit_group') : t('add_group');

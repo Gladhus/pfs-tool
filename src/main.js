@@ -11,6 +11,7 @@ import { setLang, applyI18n, lang, registerWriteConfig } from './core/i18n/index
 import { els, _setToastFn } from './core/dom.js';
 import { toast } from './core/toast.js';
 import { togglePrivate } from './core/privacy.js';
+import { attachPeriodPills } from './core/pills.js';
 import { todayISO } from './utils/dates.js';
 
 _setToastFn(toast);
@@ -21,7 +22,7 @@ import { renderForm, saveSnapshot, onCopyPrev, onResetEntry } from './features/e
 import {
   renderAccountsList, onAddAccount, onToggleArchived,
   saveAccountDialog, deleteAccountFromDialog, closeAccountDialog,
-  onAcctTypeChange, onAcctRenameClick, onAcctTagsKeydown, onAcctTagsBlur,
+  onAcctTypeChange, onAcctRenameClick,
   onParseImport, onClearImport, onConfirmImport, onCancelImport,
   executeMigrate, updateMigratePreview,
 } from './features/settings/accounts/index.js';
@@ -148,13 +149,7 @@ registerApplyStockOptions((enabled) => {
 });
 
 // Overview period pills
-document.querySelectorAll('#ov-period-pills .period-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#ov-period-pills .period-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderOverview();
-  });
-});
+attachPeriodPills('ov-period-pills', renderOverview);
 
 // Overview view toggle (Category | Group)
 els.ovViewToggle?.querySelectorAll('.ov-view-btn').forEach(btn => {
@@ -166,22 +161,10 @@ els.ovViewToggle?.querySelectorAll('.ov-view-btn').forEach(btn => {
 });
 
 // Detail period pills
-document.querySelectorAll('#detail-period-pills .period-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#detail-period-pills .period-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderDetailTable();
-  });
-});
+attachPeriodPills('detail-period-pills', renderDetailTable);
 
 // History chart period pills + account select
-document.querySelectorAll('#hist-period-pills .period-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#hist-period-pills .period-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderChart();
-  });
-});
+attachPeriodPills('hist-period-pills', renderChart);
 // Close custom account select when clicking outside
 document.addEventListener('click', (_ev) => {
   const wrap = els.histAccountSelect;
@@ -207,8 +190,6 @@ els.acctDlgClose?.addEventListener('click', closeAccountDialog);
 els.acctDeleteBtn?.addEventListener('click', deleteAccountFromDialog);
 els.acctTypeSelect?.addEventListener('change', onAcctTypeChange);
 els.acctRenameBtn?.addEventListener('click', onAcctRenameClick);
-els.acctTagsInput?.addEventListener('keydown', onAcctTagsKeydown);
-els.acctTagsInput?.addEventListener('blur', onAcctTagsBlur);
 els.acctDialog?.addEventListener('click', (e) => {
   if (e.target === els.acctDialog) closeAccountDialog();
 });

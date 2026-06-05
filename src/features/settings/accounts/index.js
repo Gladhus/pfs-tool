@@ -11,6 +11,9 @@ import { categoriesInOrder, activeAccounts } from '../../../utils/balance.js';
 import { normalizeDate, rebuildDatesList, parseMonthLabel } from '../../../utils/dates.js';
 import { parseDelimited, suggestAccount, rememberMapping } from '../../../utils/import.js';
 import { els, setStatus, escapeHtml } from '../../../core/dom.js';
+import { renderTagChips } from '../../../core/components/TagChips.js';
+import { buildCategoryOptgroups } from '../../../core/components/CategorySelect.js';
+import { attachTagInput } from '../../../core/components/TagInput.js';
 import { getUserMessage } from '../../../core/errors.js';
 import { icon, categoryIcon, categoryKey } from '../../../core/icons.js';
 import { renderOverview } from '../../overview/index.js';
@@ -18,7 +21,7 @@ import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../.
 import { renderForm } from '../../entry/index.js';
 import { loadAccounts as loadAccountsFromSheet } from '../../../api/accounts.js';
 import { writeTagsCatalog } from '../../../api/tags.js';
-import { attachAutocomplete } from '../../../core/autocomplete.js';
+import { allKnownTags } from '../../../utils/tags.js';
 
 // --- Helpers ---
 
@@ -144,21 +147,12 @@ let _editingId = null;  // id of account being edited, or null when creating
 function populateAcctTypeSelect() {
   const sel = els.acctTypeSelect;
   sel.innerHTML = '';
-  const byCat = {};
-  for (const type of state.accountTypes) (byCat[type.category] ||= []).push(type);
-  for (const cat of state.categoryMeta) {
-    const types = byCat[cat.id];
-    if (!types?.length) continue;
-    const og = document.createElement('optgroup');
-    og.label = tr(cat);
-    for (const type of types) {
-      const opt = document.createElement('option');
-      opt.value = type.id_prefix;
-      opt.textContent = lang() === 'fr' ? type.name_fr : type.name_en;
-      og.appendChild(opt);
-    }
-    sel.appendChild(og);
-  }
+  for (const og of buildCategoryOptgroups(
+    state.accountTypes,
+    type => type.category,
+    type => lang() === 'fr' ? type.name_fr : type.name_en,
+    state.categoryMeta,
+  )) sel.appendChild(og);
 }
 
 function populateSelect(sel, options, value) {
@@ -173,18 +167,13 @@ function populateSelect(sel, options, value) {
 }
 
 let _dialogTags = [];
-let _tagsAC = null;
 
-function setupTagsAutocomplete() {
-  if (_tagsAC) return;
-  _tagsAC = attachAutocomplete(els.acctTagsInput, {
-    getOptions: () => allKnownTags().filter(t => !_dialogTags.includes(t)),
-    onPick: (tag) => {
-      if (!_dialogTags.includes(tag)) {
-        _dialogTags.push(tag);
-        renderDialogTagChips();
-      }
-    },
+function setupTagsInput() {
+  attachTagInput(els.acctTagsInput, {
+    getTags:          () => _dialogTags,
+    onAdd:            (tag) => { _dialogTags.push(tag); renderDialogTagChips(); },
+    onPop:            () => { _dialogTags.pop(); renderDialogTagChips(); },
+    getAvailableTags: () => allKnownTags().filter(t => !_dialogTags.includes(t)),
   });
 }
 
@@ -214,55 +203,14 @@ function fillDialogFromAccount(a, { isNew }) {
   _dialogTags = Array.isArray(a.tags) ? [...a.tags] : [];
   els.acctTagsInput.value = '';
   renderDialogTagChips();
-  setupTagsAutocomplete();
+  setupTagsInput();
 }
 
 function renderDialogTagChips() {
-  const wrap = els.acctTagsChips;
-  wrap.innerHTML = '';
-  for (const tag of _dialogTags) {
-    const chip = document.createElement('span');
-    chip.className = 'tag-chip';
-    chip.innerHTML = `${escapeHtml(tag)}<button type="button" aria-label="Remove">&times;</button>`;
-    chip.querySelector('button').addEventListener('click', () => {
-      _dialogTags = _dialogTags.filter(t => t !== tag);
-      renderDialogTagChips();
-    });
-    wrap.appendChild(chip);
-  }
-}
-
-function allKnownTags() {
-  // Pulled from the catalog (canonical source), supplemented with anything
-  // currently assigned to an account that might not yet be in the catalog.
-  const set = new Set((state.tagsCatalog || []).map(t => t.name));
-  for (const a of state.accounts) {
-    if (Array.isArray(a.tags)) a.tags.forEach(t => t && set.add(t));
-  }
-  return [...set].sort();
-}
-
-function commitTagInput() {
-  const raw = els.acctTagsInput.value.trim();
-  if (!raw) return;
-  const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
-  for (const p of parts) if (!_dialogTags.includes(p)) _dialogTags.push(p);
-  els.acctTagsInput.value = '';
-  renderDialogTagChips();
-}
-
-export function onAcctTagsKeydown(e) {
-  if (e.key === 'Enter' || e.key === ',') {
-    e.preventDefault();
-    commitTagInput();
-  } else if (e.key === 'Backspace' && !els.acctTagsInput.value && _dialogTags.length) {
-    _dialogTags.pop();
+  renderTagChips(els.acctTagsChips, _dialogTags, (tag) => {
+    _dialogTags = _dialogTags.filter(t => t !== tag);
     renderDialogTagChips();
-  }
-}
-
-export function onAcctTagsBlur() {
-  commitTagInput();
+  });
 }
 
 function hasHistory(id) {
@@ -481,21 +429,12 @@ export function openMigrateDialog(oldId) {
 
   migrateCurrentId().textContent = oldId;
   selEl.innerHTML = '';
-  const byCat = {};
-  for (const type of state.accountTypes) (byCat[type.category] ||= []).push(type);
-  for (const cat of state.categoryMeta) {
-    const types = byCat[cat.id];
-    if (!types?.length) continue;
-    const og = document.createElement('optgroup');
-    og.label = tr(cat);
-    for (const type of types) {
-      const opt = document.createElement('option');
-      opt.value = type.id_prefix;
-      opt.textContent = `${type.name_fr} / ${type.name_en}`;
-      og.appendChild(opt);
-    }
-    selEl.appendChild(og);
-  }
+  for (const og of buildCategoryOptgroups(
+    state.accountTypes,
+    type => type.category,
+    type => `${type.name_fr} / ${type.name_en}`,
+    state.categoryMeta,
+  )) selEl.appendChild(og);
   const acct = state.accounts.find(a => a.id === oldId);
   if (acct?.type) selEl.value = acct.type;
   updateMigratePreview();
@@ -622,19 +561,12 @@ export function renderImportPreview() {
       <option value="__skip__">— Skip —</option>
       <option value="__month__">[Month-level comment]</option>
     `;
-    const grouped = {};
-    for (const a of activeAccounts()) (grouped[a.category] ||= []).push(a);
-    for (const cat of categoriesInOrder()) {
-      const og = document.createElement('optgroup');
-      og.label = tr(cat);
-      for (const a of grouped[cat.id] || []) {
-        const opt = document.createElement('option');
-        opt.value = a.id;
-        opt.textContent = tr(a);
-        og.appendChild(opt);
-      }
-      sel.appendChild(og);
-    }
+    for (const og of buildCategoryOptgroups(
+      activeAccounts(),
+      a => a.category,
+      a => tr(a),
+      categoriesInOrder(),
+    )) sel.appendChild(og);
     sel.value = row.mapping;
     sel.addEventListener('change', () => {
       row.mapping = sel.value;

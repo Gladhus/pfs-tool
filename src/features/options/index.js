@@ -6,8 +6,10 @@ import { t } from '../../core/i18n/index.js';
 import { fmtMoney, hexToRgba } from '../../core/format.js';
 import { privMoney, privShares, MASK } from '../../core/privacy.js';
 import { chartTooltip, moneyTooltipLabel, moneyTickFmt, sharesTickFmt, swapChart, chartColors } from '../../core/chartOptions.js';
-import { setStatus, escapeHtml } from '../../core/dom.js';
-import { attachAutocomplete } from '../../core/autocomplete.js';
+import { setStatus, escapeHtml, attachDialogHandler } from '../../core/dom.js';
+import { renderTagChips } from '../../core/components/TagChips.js';
+import { attachTagInput } from '../../core/components/TagInput.js';
+import { allKnownTags } from '../../utils/tags.js';
 import {
   computeVestedShares, computeUnvestedShares,
   computeIntrinsicValue, computeUnvestedValue,
@@ -699,50 +701,17 @@ export function renderOptionsManage() {
   }
 
   function renderEquityTagChips() {
-    chipsEl.innerHTML = '';
-    for (const tag of _equityTags) {
-      const chip = document.createElement('span');
-      chip.className = 'tag-chip';
-      chip.innerHTML = `${escapeHtml(tag)}<button type="button" aria-label="Remove">&times;</button>`;
-      chip.querySelector('button').addEventListener('click', () => {
-        _equityTags = _equityTags.filter(t => t !== tag);
-        renderEquityTagChips();
-        saveEquityTags();
-      });
-      chipsEl.appendChild(chip);
-    }
+    renderTagChips(chipsEl, _equityTags, (tag) => {
+      _equityTags = _equityTags.filter(t => t !== tag);
+      renderEquityTagChips();
+      saveEquityTags();
+    });
   }
 
-  function allKnownTags() {
-    const set = new Set((state.tagsCatalog || []).map(t => t.name));
-    for (const a of state.accounts) {
-      if (Array.isArray(a.tags)) a.tags.forEach(tag => tag && set.add(tag));
-    }
-    return [...set].sort();
-  }
-
-  attachAutocomplete(tagInput, {
-    getOptions: () => allKnownTags().filter(tag => !_equityTags.includes(tag)),
-    onPick: (tag) => {
-      if (!_equityTags.includes(tag)) {
-        _equityTags.push(tag);
-        renderEquityTagChips();
-        saveEquityTags();
-      }
-    },
-  });
-
-  tagInput.addEventListener('keydown', (e) => {
-    if ((e.key === 'Enter' || e.key === ',') && tagInput.value.trim()) {
-      e.preventDefault();
-      const tag = tagInput.value.trim().replace(/,$/, '');
-      if (tag && !_equityTags.includes(tag)) {
-        _equityTags.push(tag);
-        renderEquityTagChips();
-        saveEquityTags();
-      }
-      tagInput.value = '';
-    }
+  attachTagInput(tagInput, {
+    getTags:          () => _equityTags,
+    onAdd:            (tag) => { _equityTags.push(tag); renderEquityTagChips(); saveEquityTags(); },
+    getAvailableTags: () => allKnownTags().filter(tag => !_equityTags.includes(tag)),
   });
 
   renderEquityTagChips();
@@ -968,9 +937,6 @@ async function saveFmvEntryFromManage(companyId, dateInput, amtInput, noteInput,
 
 // --- Company dialog ---
 
-let _companySaveHandler   = null;
-let _companyDeleteHandler = null;
-
 export function openCompanyDialog(companyId) {
   _editingCompanyId = companyId || null;
   const dlg = document.getElementById('opt-company-dialog');
@@ -989,15 +955,9 @@ export function openCompanyDialog(companyId) {
   activeInput.checked = existing ? existing.active !== false : true;
   deleteBtn.hidden  = !existing;
 
-  // Remove old handlers
   const saveBtn = dlg.querySelector('#opt-company-save-btn');
-  if (_companySaveHandler)   saveBtn.removeEventListener('click', _companySaveHandler);
-  if (_companyDeleteHandler) deleteBtn.removeEventListener('click', _companyDeleteHandler);
-
-  _companySaveHandler = () => saveCompanyDialog();
-  _companyDeleteHandler = () => deleteCompany(companyId);
-  saveBtn.addEventListener('click', _companySaveHandler);
-  deleteBtn.addEventListener('click', _companyDeleteHandler);
+  attachDialogHandler(saveBtn,   () => saveCompanyDialog());
+  attachDialogHandler(deleteBtn, () => deleteCompany(companyId));
 
   dlg.showModal();
   nameInput.focus();
@@ -1056,9 +1016,6 @@ export function closeCompanyDialog() {
 
 // --- Grant dialog ---
 
-let _grantSaveHandler   = null;
-let _grantDeleteHandler = null;
-
 export function openGrantDialog(grantId, companyId) {
   _editingGrantId   = grantId || null;
   _editingGrantCoId = companyId;
@@ -1083,13 +1040,8 @@ export function openGrantDialog(grantId, companyId) {
   deleteBtn.hidden = !existing;
 
   const saveBtn = dlg.querySelector('#opt-grant-save-btn');
-  if (_grantSaveHandler)   saveBtn.removeEventListener('click', _grantSaveHandler);
-  if (_grantDeleteHandler) deleteBtn.removeEventListener('click', _grantDeleteHandler);
-
-  _grantSaveHandler   = () => saveGrantDialog();
-  _grantDeleteHandler = () => deleteGrant(grantId, companyId);
-  saveBtn.addEventListener('click', _grantSaveHandler);
-  deleteBtn.addEventListener('click', _grantDeleteHandler);
+  attachDialogHandler(saveBtn,   () => saveGrantDialog());
+  attachDialogHandler(deleteBtn, () => deleteGrant(grantId, companyId));
 
   // Auto-fill vesting_start from grant_date
   const grantDateInput   = dlg.querySelector('#opt-grant-date');
@@ -1163,9 +1115,6 @@ export function closeGrantDialog() {
 
 // --- Exercise dialog ---
 
-let _exerciseSaveHandler   = null;
-let _exerciseDeleteHandler = null;
-
 export function openExerciseDialog(exerciseId, grantId) {
   _editingExerciseId      = exerciseId || null;
   _editingExerciseGrantId = grantId;
@@ -1191,12 +1140,8 @@ export function openExerciseDialog(exerciseId, grantId) {
   deleteBtn.hidden = !existing;
 
   const saveBtn = dlg.querySelector('#opt-exercise-save-btn');
-  if (_exerciseSaveHandler)   saveBtn.removeEventListener('click', _exerciseSaveHandler);
-  if (_exerciseDeleteHandler) deleteBtn.removeEventListener('click', _exerciseDeleteHandler);
-  _exerciseSaveHandler   = () => saveExerciseDialog();
-  _exerciseDeleteHandler = () => deleteExercise(exerciseId);
-  saveBtn.addEventListener('click', _exerciseSaveHandler);
-  deleteBtn.addEventListener('click', _exerciseDeleteHandler);
+  attachDialogHandler(saveBtn,   () => saveExerciseDialog());
+  attachDialogHandler(deleteBtn, () => deleteExercise(exerciseId));
 
   dlg.showModal();
   dlg.querySelector('#opt-exercise-shares').focus();

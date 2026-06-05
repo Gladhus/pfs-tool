@@ -1,6 +1,7 @@
 import "./en.js";
 import "./fr.js";
 import { state } from '../../core/state.js';
+import { getActivePeriod } from '../../core/pills.js';
 import { t, tr } from '../../core/i18n/index.js';
 import { privMoney, privDelta, privPct } from '../../core/privacy.js';
 import { escapeHtml } from '../../core/dom.js';
@@ -50,8 +51,7 @@ export function renderDetailTable() {
   const container = document.getElementById('detail-table-wrap');
   if (!container) return;
 
-  const periodBtn = document.querySelector('#detail-period-pills .period-btn.active');
-  const period = periodBtn?.dataset.period || 'all';
+  const period = getActivePeriod('detail-period-pills');
   const years = getDetailYears(period);
 
   if (!years.length || !state.accounts.length) {

@@ -170,7 +170,11 @@ document.addEventListener('click', (_ev) => {
   const wrap = els.histAccountSelect;
   if (wrap) {
     const menu = wrap.querySelector('.custom-select-menu');
-    if (menu && !menu.hidden) { menu.hidden = true; wrap.classList.remove('open'); }
+    if (menu && !menu.hidden) {
+      menu.hidden = true;
+      wrap.classList.remove('open');
+      wrap.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
+    }
   }
 });
 

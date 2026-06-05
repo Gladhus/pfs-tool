@@ -403,6 +403,7 @@ svg { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
 }
 .tab-btn:hover::after { background: rgba(255,255,255,.2); }
 .tab-btn.active::after { background: var(--accent); }
+.tab-btn:focus-visible::after { background: var(--accent); }
 
 .tab-icon-btn {
   width: 34px;
@@ -421,6 +422,7 @@ svg { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
 }
 .tab-icon-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
 .tab-icon-btn.active { background: rgba(255,255,255,.15); color: #fff; }
+.tab-icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #private-mode-btn.is-private { color: var(--accent); }
 
 /* ── Focus ring for all inputs ───────────────────────────── */
@@ -1797,6 +1799,7 @@ footer {
   transition: background 100ms, color 100ms, box-shadow 100ms;
 }
 .period-btn:hover { color: var(--fg); }
+.period-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .period-btn.active {
   background: var(--surface);
   color: var(--fg);

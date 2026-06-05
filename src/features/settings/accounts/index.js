@@ -142,7 +142,8 @@ function buildAccountCard(a) {
 
 // --- Account edit dialog ---
 
-let _editingId = null;  // id of account being edited, or null when creating
+let _editingId = null;
+let _dialogTrigger = null;  // id of account being edited, or null when creating
 
 function populateAcctTypeSelect() {
   const sel = els.acctTypeSelect;
@@ -221,9 +222,9 @@ export function openAccountDialog(id) {
   const a = state.accounts.find(x => x.id === id);
   if (!a) return;
   _editingId = id;
+  _dialogTrigger = document.activeElement;
   fillDialogFromAccount(a, { isNew: false });
   els.acctDialog.showModal();
-  setTimeout(() => els.acctNameFr.focus(), 0);
 }
 
 export function openNewAccountDialog() {
@@ -241,10 +242,10 @@ export function openNewAccountDialog() {
     ownership_share: firstType.default_ownership_share ?? 1,
     active: true, sort_order: 0,
   };
+  _dialogTrigger = document.activeElement;
   fillDialogFromAccount(blank, { isNew: true });
   applyTypeDefaultsToDialog(); // sync category/kind/share/order from selected type
   els.acctDialog.showModal();
-  setTimeout(() => els.acctNameFr.focus(), 0);
 }
 
 // When user picks a different type while creating, pre-fill category/kind/share/order
@@ -270,6 +271,8 @@ function applyTypeDefaultsToDialog() {
 export function closeAccountDialog() {
   els.acctDialog.close();
   _editingId = null;
+  _dialogTrigger?.focus();
+  _dialogTrigger = null;
 }
 
 export async function saveAccountDialog() {

@@ -85,24 +85,33 @@ export function populateHistAccountSelect() {
   const trigger = document.createElement('button');
   trigger.type = 'button';
   trigger.className = 'custom-select-trigger';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
   trigger.innerHTML = `<span class="custom-select-label">${selectedItem.label}</span>${icon('chevronDown', { size: 14 })}`;
   wrap.appendChild(trigger);
 
   // Dropdown menu
   const menu = document.createElement('div');
   menu.className = 'custom-select-menu';
+  menu.setAttribute('role', 'listbox');
+  menu.setAttribute('aria-label', 'Select account');
   menu.hidden = true;
+
+  const optionBtns = [];
 
   for (const item of items) {
     if (item.isGroup) {
       const g = document.createElement('div');
       g.className = 'custom-select-group';
+      g.setAttribute('role', 'presentation');
       g.textContent = item.label;
       menu.appendChild(g);
     } else {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'custom-select-item' + (item.value === currentVal ? ' selected' : '');
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('aria-selected', String(item.value === currentVal));
       btn.textContent = item.label;
       if (item.value === currentVal) {
         btn.innerHTML = `${escapeHtml(item.label)}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`;
@@ -115,25 +124,54 @@ export function populateHistAccountSelect() {
         menu.querySelectorAll('.custom-select-item').forEach(b => {
           const isSel = b === btn;
           b.classList.toggle('selected', isSel);
+          b.setAttribute('aria-selected', String(isSel));
           const esc = escapeHtml(b.dataset.label || '');
           b.innerHTML = isSel
             ? `${esc}<span class="custom-select-check">${icon('check', { size: 12 })}</span>`
             : esc;
         });
-        menu.hidden = true;
-        wrap.classList.remove('open');
+        closeMenu();
         renderChart();
       });
       menu.appendChild(btn);
+      optionBtns.push(btn);
     }
   }
   wrap.appendChild(menu);
 
+  function openMenu() {
+    menu.hidden = false;
+    wrap.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    const sel = menu.querySelector('.custom-select-item.selected') || optionBtns[0];
+    sel?.focus();
+  }
+
+  function closeMenu() {
+    menu.hidden = true;
+    wrap.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.focus();
+  }
+
   trigger.addEventListener('click', e => {
     e.stopPropagation();
-    const opening = menu.hidden;
-    menu.hidden = !opening;
-    wrap.classList.toggle('open', opening);
+    if (menu.hidden) openMenu(); else closeMenu();
+  });
+
+  menu.addEventListener('keydown', e => {
+    const focused = document.activeElement;
+    const idx = optionBtns.indexOf(focused);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      optionBtns[Math.min(idx + 1, optionBtns.length - 1)]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (idx <= 0) closeMenu(); else optionBtns[idx - 1]?.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeMenu();
+    }
   });
 }
 
@@ -301,10 +339,13 @@ export function renderHistoryTable() {
       expandBtn.className = 'hist-expand-btn';
       expandBtn.type = 'button';
       expandBtn.textContent = `▾ ${olderDates.length} earlier`;
+      expandBtn.setAttribute('aria-expanded', 'false');
 
       const olderList = document.createElement('div');
+      olderList.id = `hist-older-${mo}`;
       olderList.className = 'hist-older-list';
       olderList.hidden = true;
+      expandBtn.setAttribute('aria-controls', olderList.id);
 
       for (const date of olderDates) {
         const d = byDate.get(date);
@@ -352,6 +393,7 @@ export function renderHistoryTable() {
       expandBtn.addEventListener('click', () => {
         const open = olderList.hidden = !olderList.hidden;
         expandBtn.textContent = (open ? '▾' : '▸') + ` ${olderDates.length} earlier`;
+        expandBtn.setAttribute('aria-expanded', String(!open));
       });
 
       card.appendChild(expandBtn);

@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.7](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.7) — 2026-06-05
+
+### Changed
+- **#31 Custom account-select ARIA + keyboard nav**: added `role="listbox"`, `role="option"`, `role="presentation"`, `aria-haspopup`, `aria-expanded`, and `aria-selected` to the History tab's custom select dropdown; focus moves to the selected item on open; ArrowDown/ArrowUp navigate between options, Esc closes and returns focus to the trigger; outside-click handler also resets `aria-expanded`.
+- **#32 focus-visible styles**: added `:focus-visible` outlines to `.period-btn`, `.tab-btn::after`, and `.tab-icon-btn` so keyboard focus is clearly visible against dark backgrounds.
+- **#33 Autocomplete ARIA roles**: `attachAutocomplete` now sets `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded` on the input, and `role="listbox"`, `aria-live="polite"` on the dropdown; each option gets `role="option"`, `aria-selected`, and a unique `id`; `aria-activedescendant` tracks the keyboard-focused option.
+- **#34 Expand-button aria-expanded**: History "N earlier" button now carries `aria-expanded="false"` on creation and toggles it on each click; `aria-controls` points to the `olderList` element.
+- **#35 Dialog focus management**: `#acct-name-fr` gains `autofocus` so `showModal()` focuses it natively — removed two `setTimeout` focus hacks; `openAccountDialog`/`openNewAccountDialog` capture `document.activeElement` before opening; `closeAccountDialog` restores focus to that element.
+
+---
+
 ## [1.9.6](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.6) — 2026-06-05
 
 ### Refactored

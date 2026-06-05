@@ -1,13 +1,12 @@
 import { state, LS_KEY_LANG } from '../state.js';
 import { updatePrivateButton } from '../privacy.js';
+import { writeConfig } from '../../api/config.js';
 
 const _registry = { fr: {}, en: {} };
-let _writeConfigFn = null;
 
 export function registerTranslations(locale, strings) {
   Object.assign(_registry[locale], strings);
 }
-export function registerWriteConfig(fn) { _writeConfigFn = fn; }
 
 export const lang = () => state.lang || 'fr';
 export const tr = (obj) => obj[`name_${lang()}`] || obj.name_en || obj.name_fr || obj.id;
@@ -41,7 +40,7 @@ export function setLang(l, { persist = true } = {}) {
   state.lang = l;
   if (persist) {
     try { localStorage.setItem(LS_KEY_LANG, l); } catch {}
-    _writeConfigFn?.('language', l);
+    writeConfig('language', l);
   }
   applyI18n();
 }

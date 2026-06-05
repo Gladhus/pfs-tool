@@ -1,6 +1,6 @@
 import "./en.js";
 import "./fr.js";
-import { state, HEADERS } from '../../core/state.js';
+import { state, setCurrentDate, HEADERS } from '../../core/state.js';
 import { safeWriteTab } from '../../api/sheets.js';
 import { t, tr } from '../../core/i18n/index.js';
 import { fmtMoney, fmtDelta, fmtPct, parseMoney } from '../../core/format.js';
@@ -16,7 +16,7 @@ import { renderHistoryTable, renderChart } from '../history/index.js';
 
 export function renderForm() {
   const date = els.dateInput.value || state.currentDate;
-  state.currentDate = date;
+  setCurrentDate(date);
 
   const existing = snapshotForDate(date);
   const isEditing = state.datesSorted.includes(date);

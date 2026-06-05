@@ -1,17 +1,11 @@
 import "./en.js";
 import "./fr.js";
-import { state, LS_KEY_SHEET_ID, LS_KEY_ACTIVE_TAB, LS_KEY_USER_HINT, SHEET_TITLE } from '../../core/state.js';
+import { state, setCurrentDate, REFRESH_MODE, LS_KEY_SHEET_ID, LS_KEY_USER_HINT, SHEET_TITLE } from '../../core/state.js';
 import { applyI18n, setLang, t } from '../../core/i18n/index.js';
 import { els, setStatus, showSheetLink } from '../../core/dom.js';
 import { getUserMessage } from '../../core/errors.js';
 import { loadAll, verifySheet, findSheetByName, createSheet, seedNewSheet } from '../../api/index.js';
-import { renderOverview } from '../overview/index.js';
-import { renderHistoryTable, renderChart, populateHistAccountSelect } from '../history/index.js';
-import { renderForm } from '../entry/index.js';
-import { renderAccountsList } from '../settings/accounts/index.js';
-import { renderGroupsList } from '../settings/groups/index.js';
-import { renderDetailTable } from '../detail/index.js';
-import { renderOptions } from '../options/index.js';
+import { showTabBar } from '../../core/router.js';
 import { todayISO } from '../../utils/dates.js';
 
 const cfg = window.PFS_CONFIG || {};
@@ -56,26 +50,24 @@ export function initTokenClient() {
     client_id: cfg.CLIENT_ID,
     scope: cfg.SCOPES,
     callback: (resp) => {
+      const mode = state.tokenRefreshMode;
+      state.tokenRefreshMode = REFRESH_MODE.IDLE;
       if (resp.error) {
-        if (state.proactiveRefreshInFlight) {
-          state.proactiveRefreshInFlight = false;
+        if (mode === REFRESH_MODE.PROACTIVE) {
           console.warn('Proactive token refresh failed:', resp.error);
           return;
         }
-        if (state.silentInFlight) {
-          state.silentInFlight = false;
+        if (mode === REFRESH_MODE.SILENT) {
           setStatus("Ready. Click 'Sign in with Google' to continue.");
           return;
         }
         setStatus('Sign-in failed: ' + resp.error, 'warn');
         return;
       }
-      if (state.proactiveRefreshInFlight) {
-        state.proactiveRefreshInFlight = false;
+      if (mode === REFRESH_MODE.PROACTIVE) {
         applyToken(resp.access_token, resp.expires_in);
         return;
       }
-      state.silentInFlight = false;
       applyToken(resp.access_token, resp.expires_in);
       onSignedIn();
     },
@@ -100,7 +92,7 @@ function scheduleTokenRefresh(expiresAt) {
   _refreshTimer = setTimeout(() => {
     _refreshTimer = null;
     if (!state.tokenClient || !state.accessToken) return;
-    state.proactiveRefreshInFlight = true;
+    state.tokenRefreshMode = REFRESH_MODE.PROACTIVE;
     const opts = { prompt: '' };
     const hint = getLoginHint();
     if (hint) opts.login_hint = hint;
@@ -124,7 +116,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden || !state.tokenClient || !state.accessToken) return;
   const tokenNearExpiry = !state.tokenExpiresAt || state.tokenExpiresAt - Date.now() < TOKEN_SKEW_MS;
   if (tokenNearExpiry) {
-    state.proactiveRefreshInFlight = true;
+    state.tokenRefreshMode = REFRESH_MODE.PROACTIVE;
     const opts = { prompt: '' };
     const hint = getLoginHint();
     if (hint) opts.login_hint = hint;
@@ -141,7 +133,7 @@ document.addEventListener('visibilitychange', () => {
 
 export async function tryRestoreSession() {
   if (state.tokenClient) {
-    state.silentInFlight = true;
+    state.tokenRefreshMode = REFRESH_MODE.SILENT;
     setStatus('Refreshing Google session…');
     const opts = { prompt: '' };
     const hint = getLoginHint();
@@ -319,80 +311,12 @@ export async function loadAndRenderForm() {
   if (state.configTheme) applyThemeFromSheet(state.configTheme);
   if (state.configStockOptions !== null) applyStockOptionsFromSheet(state.configStockOptions);
 
-  state.currentDate = todayISO();
-  const [y, m, d] = state.currentDate.split('-');
-  state.datePicker ? state.datePicker.selectDate(new Date(+y, +m - 1, +d), { silent: true }) : (els.dateInput.value = state.currentDate);
+  setCurrentDate(todayISO());
+  if (!state.datePicker) els.dateInput.value = state.currentDate;
 
-  renderForm();
   els.entryForm.hidden = false;
-  populateHistAccountSelect();
-  renderHistoryTable();
-  renderChart();
-  renderOverview();
   showTabBar();
   applyI18n();
   setStatus('Loaded.', 'ok');
 }
 
-let _accountsSubTab = 'detail';
-
-export function setAccountsSubTab(panel) {
-  _accountsSubTab = panel;
-  const panels = ['detail', 'history', 'manage'];
-  for (const p of panels) {
-    const el = document.getElementById(`acct-sub-${p}`);
-    if (el) el.hidden = (p !== panel);
-  }
-  document.querySelectorAll('#accounts-sidebar .section-sidebar-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.panel === panel);
-  });
-  const manageSubNav = document.getElementById('manage-sub-nav');
-  if (manageSubNav) manageSubNav.hidden = (panel !== 'manage');
-  if (panel === 'detail')  renderDetailTable();
-  if (panel === 'history') { populateHistAccountSelect(); renderHistoryTable(); renderChart(); }
-  if (panel === 'manage')  { renderAccountsList(); renderGroupsList(); }
-}
-
-export function refreshCurrentTab() {
-  const active = localStorage.getItem(LS_KEY_ACTIVE_TAB) || 'overview';
-  if (active === 'overview') renderOverview();
-  else if (active === 'accounts') setAccountsSubTab(_accountsSubTab);
-  else if (active === 'options') renderOptions();
-}
-
-export function setActiveTab(name) {
-  if (name === 'detail' || name === 'history') name = 'accounts';
-  const tabs = ['overview', 'accounts', 'options', 'entry', 'settings'];
-  if (!tabs.includes(name)) name = 'overview';
-  for (const tab of tabs) {
-    const btn = els.tabBar.querySelector(`[data-tab="${tab}"]`);
-    const panel = document.getElementById(`tab-${tab}`);
-    btn?.classList.toggle('active', tab === name);
-    if (panel) panel.hidden = (tab !== name);
-  }
-  els.headerEntryBtn?.classList.toggle('active', name === 'entry');
-  els.headerSettingsBtn?.classList.toggle('active', name === 'settings');
-  document.querySelectorAll('#bottom-tab-bar .bottom-tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === name);
-  });
-  localStorage.setItem(LS_KEY_ACTIVE_TAB, name);
-  document.body.classList.toggle('has-subnav', name === 'accounts' || name === 'options');
-  if (name === 'overview') renderOverview();
-  if (name === 'accounts') setAccountsSubTab(_accountsSubTab);
-  if (name === 'options')  renderOptions();
-}
-
-export function showTabBar() {
-  els.tabBar.hidden = false;
-  if (els.headerEntryBtn)    els.headerEntryBtn.hidden = false;
-  if (els.headerSettingsBtn) els.headerSettingsBtn.hidden = false;
-  if (els.privateModeBtn)    els.privateModeBtn.hidden = false;
-  const bottomBar = document.getElementById('bottom-tab-bar');
-  if (bottomBar) bottomBar.hidden = false;
-  document.body.classList.add('is-signed-in');
-  let saved = localStorage.getItem(LS_KEY_ACTIVE_TAB) || 'overview';
-  if (saved === 'detail')  { _accountsSubTab = 'detail';  saved = 'accounts'; }
-  if (saved === 'history') { _accountsSubTab = 'history'; saved = 'accounts'; }
-  if (saved === 'options' && localStorage.getItem('pfs_stock_options') !== '1') saved = 'overview';
-  setActiveTab(saved);
-}

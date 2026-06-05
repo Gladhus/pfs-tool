@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.8](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.8) — 2026-06-05
+
+### Refactored
+- **#36 Extract `core/router.js`**: tab routing (`setActiveTab`, `setAccountsSubTab`, `refreshCurrentTab`, `showTabBar`) moved out of `features/auth/index.js` into `src/core/router.js`; auth no longer imports any feature render functions.
+- **#37 Deferred** (options split — tracked separately).
+- **#38 Extract CSV serializer + shortcut dispatcher**: snapshot-to-CSV logic moved to `src/utils/csv.js` (`snapshotsToCsv`); keyboard key→action mapping extracted to `src/core/shortcuts.js` (`dispatchShortcut`) — both are independently testable.
+- **#39 `setCurrentDate` setter**: added to `src/core/state.js`; replaces 4 duplicated `state.currentDate = …; datePicker.selectDate(…)` blocks across `main.js` and `entry/index.js`.
+- **#40 Remove `registerWriteConfig` indirection**: `i18n/index.js` now imports `writeConfig` directly from `api/config.js`; the registration callback and its call site in `main.js` are removed.
+- **#41 `tokenRefreshMode` enum**: `REFRESH_MODE` constant added to `state.js`; `silentInFlight`/`proactiveRefreshInFlight` booleans replaced with a single `tokenRefreshMode` string — eliminates the stuck-flag ambiguity.
+- **#42 CDN onload callbacks**: `setInterval` polling loop replaced with `window.onGapiLoad`/`window.onGisReady` globals; CDN `<script>` tags now use `onload` attributes per Google's recommended pattern.
+
+---
+
 ## [1.9.7](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.7) — 2026-06-05
 
 ### Changed

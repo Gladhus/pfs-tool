@@ -6,13 +6,14 @@ import './core/i18n/common/fr.js';
 import AirDatepicker from 'air-datepicker';
 import localeEn from 'air-datepicker/locale/en';
 import localeFr from 'air-datepicker/locale/fr';
-import { state, LS_KEY_THEME, LS_KEY_ACTIVE_TAB, HEADERS } from './core/state.js';
-import { setLang, applyI18n, lang, registerWriteConfig } from './core/i18n/index.js';
+import { state, setCurrentDate, LS_KEY_THEME, LS_KEY_ACTIVE_TAB, HEADERS } from './core/state.js';
+import { setLang, applyI18n, lang } from './core/i18n/index.js';
 import { els, _setToastFn } from './core/dom.js';
 import { toast } from './core/toast.js';
 import { togglePrivate } from './core/privacy.js';
 import { attachPeriodPills } from './core/pills.js';
 import { todayISO } from './utils/dates.js';
+import { snapshotsToCsv } from './utils/csv.js';
 
 _setToastFn(toast);
 import { renderOverview } from './features/overview/index.js';
@@ -28,9 +29,10 @@ import {
 } from './features/settings/accounts/index.js';
 import {
   configError, onSignOut, onChooseSheet, onGapiLoad, initTokenClient,
-  loadAndRenderForm, setActiveTab, setAccountsSubTab, registerApplyTheme,
-  registerApplyStockOptions, refreshCurrentTab,
+  loadAndRenderForm, registerApplyTheme, registerApplyStockOptions,
 } from './features/auth/index.js';
+import { setActiveTab, setAccountsSubTab, refreshCurrentTab } from './core/router.js';
+import { dispatchShortcut } from './core/shortcuts.js';
 import { writeConfig } from './api/index.js';
 import {
   renderGroupsList, openNewGroupDialog, saveGroupDialog,
@@ -55,7 +57,6 @@ els.chooseSheetBtn?.addEventListener('click', onChooseSheet);
 document.getElementById('sheet-picker-close')?.addEventListener('click', () => document.getElementById('sheet-picker-dialog')?.close());
 document.getElementById('sheet-picker-cancel')?.addEventListener('click', () => document.getElementById('sheet-picker-dialog')?.close());
 
-const parseLocalDate = (s) => { const [y, m, d] = s.split('-'); return new Date(+y, +m - 1, +d); };
 state.datePicker = new AirDatepicker(els.dateInput, {
   dateFormat: 'yyyy-MM-dd',
   locale: lang() === 'fr' ? localeFr : localeEn,
@@ -76,8 +77,8 @@ els.saveSnapshotBtn.addEventListener('click', saveSnapshot);
 els.historyCards.addEventListener('click', (e) => {
   const row = e.target.closest('[data-date]');
   if (!row || e.target.closest('.hist-expand-btn')) return;
-  state.currentDate = row.dataset.date;
-  state.datePicker ? state.datePicker.selectDate(parseLocalDate(row.dataset.date), { silent: true }) : (els.dateInput.value = row.dataset.date);
+  setCurrentDate(row.dataset.date);
+  if (!state.datePicker) els.dateInput.value = row.dataset.date;
   renderForm();
   setActiveTab('entry');
 });
@@ -93,8 +94,8 @@ els.tabBar.querySelectorAll('.tab-btn').forEach(btn => {
 function onHeaderTabClick(btn) {
   if (btn.dataset.tab === 'entry' && els.dateInput) {
     const today = todayISO();
-    state.currentDate = today;
-    state.datePicker ? state.datePicker.selectDate(parseLocalDate(today), { silent: true }) : (els.dateInput.value = today);
+    setCurrentDate(today);
+    if (!state.datePicker) els.dateInput.value = today;
   }
   setActiveTab(btn.dataset.tab);
 }
@@ -106,8 +107,8 @@ document.querySelectorAll('#bottom-tab-bar .bottom-tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.dataset.tab === 'entry' && els.dateInput) {
       const today = todayISO();
-      state.currentDate = today;
-      state.datePicker ? state.datePicker.selectDate(parseLocalDate(today), { silent: true }) : (els.dateInput.value = today);
+      setCurrentDate(today);
+      if (!state.datePicker) els.dateInput.value = today;
     }
     setActiveTab(btn.dataset.tab);
   });
@@ -288,7 +289,6 @@ function applyTheme(mode, { persist = true } = {}) {
   if (persist) writeConfig('theme', mode);
 }
 registerApplyTheme((mode) => applyTheme(mode, { persist: false }));
-registerWriteConfig(writeConfig);
 document.querySelectorAll('.theme-btn').forEach(btn => {
   btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
 });
@@ -296,13 +296,7 @@ applyTheme(state.theme);
 
 // CSV export
 els.exportCsvBtn?.addEventListener('click', () => {
-  const rows = [HEADERS.snapshots, ...state.snapshots.map(s =>
-    [s.date, s.account_id, s.balance_raw, s.comment || '', s.entered_at || '']
-  )];
-  const csv = rows.map(r => r.map(cell => {
-    const s = String(cell ?? '');
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  }).join(',')).join('\n');
+  const csv = snapshotsToCsv(state.snapshots, HEADERS.snapshots);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -331,39 +325,33 @@ document.addEventListener('click', (e) => {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-  // Skip if user is typing in an input/textarea/select/contenteditable
   const tgt = e.target;
-  const inEditable = tgt && (tgt.matches('input, textarea, select') || tgt.isContentEditable);
-  if (inEditable) return;
+  if (tgt && (tgt.matches('input, textarea, select') || tgt.isContentEditable)) return;
   if (e.altKey || e.ctrlKey || e.metaKey) return;
 
-  const key = e.key.toLowerCase();
-  if (key === '1') { document.querySelector('.tab-btn[data-tab="overview"]')?.click(); e.preventDefault(); }
-  else if (key === '2') { setActiveTab('accounts'); setAccountsSubTab('detail'); e.preventDefault(); }
-  else if (key === '3') { setActiveTab('accounts'); setAccountsSubTab('history'); e.preventDefault(); }
-  else if (key === 'm') { setActiveTab('accounts'); setAccountsSubTab('manage'); e.preventDefault(); }
-  else if (key === '4' && _stockOptTabBtn && !_stockOptTabBtn.hidden) { setActiveTab('options'); e.preventDefault(); }
-  else if (key === 'n') { (els.headerEntryBtn || document.querySelector('[data-tab="entry"]'))?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
-  else if (key === 's' && !els.saveSnapshotBtn.disabled && !document.getElementById('tab-entry').hidden) { els.saveSnapshotBtn?.click(); e.preventDefault(); }
-  else if (key === 'p') { els.privateModeBtn?.click(); e.preventDefault(); }
-  else if (key === ',') { els.headerSettingsBtn?.click(); e.preventDefault(); }
-  else if (key === '?') { toast('Shortcuts: 1 overview · 2 detail · 3 history · m manage · 4 options · n entry · s save · p private · , settings', { timeout: 5000 }); e.preventDefault(); }
+  const action = dispatchShortcut(e.key.toLowerCase(), {
+    stockOptEnabled: _stockOptTabBtn && !_stockOptTabBtn.hidden,
+    saveEnabled:     !els.saveSnapshotBtn.disabled,
+    onEntryTab:      !document.getElementById('tab-entry').hidden,
+  });
+  if (!action) return;
+  e.preventDefault();
+
+  if (action === 'tab:overview')         setActiveTab('overview');
+  else if (action === 'tab:accounts/detail')  { setActiveTab('accounts'); setAccountsSubTab('detail'); }
+  else if (action === 'tab:accounts/history') { setActiveTab('accounts'); setAccountsSubTab('history'); }
+  else if (action === 'tab:accounts/manage')  { setActiveTab('accounts'); setAccountsSubTab('manage'); }
+  else if (action === 'tab:options')     setActiveTab('options');
+  else if (action === 'tab:entry')       { (els.headerEntryBtn || document.querySelector('[data-tab="entry"]'))?.click(); setTimeout(() => els.dateInput?.focus(), 50); }
+  else if (action === 'save')            els.saveSnapshotBtn?.click();
+  else if (action === 'private')         els.privateModeBtn?.click();
+  else if (action === 'tab:settings')    els.headerSettingsBtn?.click();
+  else if (action === 'help')            toast('Shortcuts: 1 overview · 2 detail · 3 history · m manage · 4 options · n entry · s save · p private · , settings', { timeout: 5000 });
 });
 
-// --- Bootstrap: poll for Google APIs (both load async via CDN) ---
-let gapiStarted = false;
-let gisStarted  = false;
-const poll = setInterval(() => {
-  if (!gapiStarted && typeof gapi !== 'undefined') {
-    gapiStarted = true;
-    onGapiLoad();
-  }
-  if (!gisStarted && typeof google !== 'undefined' && google.accounts) {
-    gisStarted = true;
-    initTokenClient();
-  }
-  if (state.gapiReady && state.gisReady) clearInterval(poll);
-}, 50);
+// --- Bootstrap: CDN onload callbacks (set before scripts execute) ---
+window.onGapiLoad = () => onGapiLoad();
+window.onGisReady  = () => initTokenClient();
 
 configError();
 applyI18n();

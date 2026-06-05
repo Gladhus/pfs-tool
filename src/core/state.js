@@ -23,7 +23,13 @@ export const HEADERS = {
 };
 
 export const OWNERS = ['self', 'partner', 'joint'];
+export const REFRESH_MODE = { IDLE: 'idle', SILENT: 'silent', PROACTIVE: 'proactive' };
 export const KINDS  = ['asset', 'debt'];
+
+export function setCurrentDate(d) {
+  state.currentDate = d;
+  state.datePicker?.selectDate(d, { silent: true });
+}
 
 export const state = {
   tokenClient:            null,
@@ -31,8 +37,7 @@ export const state = {
   gisReady:               false,
   accessToken:            null,
   tokenExpiresAt:         null,
-  silentInFlight:         false,
-  proactiveRefreshInFlight: false,
+  tokenRefreshMode:       'idle',
   sheetId:      null,
   accounts:     [],
   categoryMeta: [],

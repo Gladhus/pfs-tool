@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.9](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.9) — 2026-06-05
+
+### Fixed
+- **#12 `parseMoney` accounting-format negatives**: `(1,234.56)`, `($6,500)` etc. now correctly parse as negative values. The sign is detected before stripping non-numeric characters, then applied to the result. Four new test cases added.
+
+### Refactored
+- **#37 Split `options/index.js`**: the 1220-line file is split into `charts.js`, `components/CompanyCard.js`, `ManagePanel.js`, `dialogs.js`; `index.js` reduced to ~90 lines. Circular dependency between dialogs and render functions resolved via `setRenderCallbacks` in `dialogs.js`.
+- **#42 Deferred (won't fix)**: `onload=` attribute on `<script>` tags is blocked by the app's Content Security Policy; `setInterval` polling is intentionally retained.
+
+---
+
 ## [1.9.8](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.8) — 2026-06-05
 
 ### Refactored

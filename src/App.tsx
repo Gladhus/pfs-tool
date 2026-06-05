@@ -1,49 +1,40 @@
-import { useEffect } from 'react';
 import { AuthProvider } from './auth/AuthProvider';
 import { useAuthStore, selectIsSignedIn } from './stores/auth.store';
-import SiteHeader from './components/SiteHeader';
-import BottomTabBar from './components/BottomTabBar';
+import Header from './components/Header';
+import TabBar from './components/TabBar';
+import StatusBar from './components/StatusBar';
 import SignedOutScreen from './components/SignedOutScreen';
 import SignedInShell from './components/SignedInShell';
 
 function AppShell() {
-  const isSignedIn    = useAuthStore(selectIsSignedIn);
-  const isDataLoaded  = useAuthStore((s) => s.isDataLoaded);
+  const isSignedIn = useAuthStore(selectIsSignedIn);
+  const isDataLoaded = useAuthStore((s) => s.isDataLoaded);
   const isBootstrapping = useAuthStore((s) => s.isBootstrapping);
 
-  // Mirror signed-in state to body for CSS selectors (.is-signed-in #tab-bar etc.)
-  useEffect(() => {
-    document.body.classList.toggle('is-signed-in', isSignedIn);
-  }, [isSignedIn]);
-
   return (
-    <>
-      <SiteHeader />
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+      <Header />
+      <StatusBar />
 
       {isSignedIn ? (
-        isBootstrapping ? (
-          <main>
-            <p className="hint" style={{ textAlign: 'center', paddingTop: '2rem' }}>
+        <>
+          <TabBar />
+          {isBootstrapping ? (
+            <div className="flex items-center justify-center h-64 text-slate-500 text-sm">
               Setting up your sheet…
-            </p>
-          </main>
-        ) : isDataLoaded ? (
-          <SignedInShell />
-        ) : (
-          <main>
-            <p className="hint" style={{ textAlign: 'center', paddingTop: '2rem' }}>
+            </div>
+          ) : isDataLoaded ? (
+            <SignedInShell />
+          ) : (
+            <div className="flex items-center justify-center h-64 text-slate-500 text-sm">
               Loading…
-            </p>
-          </main>
-        )
+            </div>
+          )}
+        </>
       ) : (
-        <main>
-          <SignedOutScreen />
-        </main>
+        <SignedOutScreen />
       )}
-
-      {isSignedIn && <BottomTabBar />}
-    </>
+    </div>
   );
 }
 

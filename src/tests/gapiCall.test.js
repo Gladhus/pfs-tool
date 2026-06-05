@@ -13,14 +13,12 @@ const { gapiCall } = await import('../api/sheets.js');
 function gapiThenable(resolveValue, rejectValue) {
   return {
     then(onFulfilled, onRejected) {
-      return new Promise((resolve, reject) => {
-        queueMicrotask(() => {
-          if (rejectValue !== undefined) {
-            onRejected ? resolve(onRejected(rejectValue)) : reject(rejectValue);
-          } else {
-            resolve(onFulfilled ? onFulfilled(resolveValue) : resolveValue);
-          }
-        });
+      return Promise.resolve().then(() => {
+        if (rejectValue !== undefined) {
+          if (onRejected) return onRejected(rejectValue);
+          throw rejectValue;
+        }
+        return onFulfilled ? onFulfilled(resolveValue) : resolveValue;
       });
     },
     // deliberately NO `.catch` — matches the real gapi request object

@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.5] — 2026-06-05
+
+### Fixed
+- **Sheet never loads — "No internet connection." on every load** (#29): the real root cause of the v1.9.1 regression. `gapiCall()` called `.catch()` directly on the gapi request object, but gapi requests are *thenables* that implement `.then` but **not** `.catch`. This threw `TypeError: ...catch is not a function` on the very first read (`loadAccounts`), which `classifyApiError` then misclassified as an offline/network error. `gapiCall` now uses `await` + `try/catch` (which only needs `.then`), so reads succeed and the 401-refresh-retry path still works. Added `gapiCall.test.js` with a thenable-without-`.catch` shim to lock this in.
+- **Misleading offline classification**: `classifyApiError` no longer treats a bare `TypeError` as "offline" — gapi network errors reject with a result object, not a `TypeError`, so a `TypeError` signals a code bug. Offline is now detected solely via `navigator.onLine`, so real errors surface honestly instead of hiding behind "No internet connection."
+
+---
+
 ## [1.9.4](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.4) — 2026-06-05
 
 ### Fixed

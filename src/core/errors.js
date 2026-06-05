@@ -7,7 +7,10 @@ export function classifyApiError(err) {
   if (status === 404) return 'notFound';
   if (status === 429) return 'quotaExceeded';
   if (status >= 500)  return 'serverError';
-  if (!navigator.onLine || err instanceof TypeError) return 'offline';
+  // Only trust the browser's own offline signal. A bare TypeError from a gapi
+  // call almost always means a code bug, not a dropped connection — classifying
+  // it as "offline" hides real errors behind a misleading message.
+  if (!navigator.onLine) return 'offline';
   return 'unknown';
 }
 

@@ -2,21 +2,28 @@ import { state } from '../core/state.js';
 
 // Wraps a gapi call: on HTTP 401, silently refreshes the token once and retries.
 // Usage: await gapiCall(() => gapi.client.sheets.spreadsheets.values.get(...))
-export function gapiCall(fn) {
-  return fn().catch(err => {
+//
+// NB: gapi.client request objects are thenables (they implement `.then` but
+// NOT `.catch`). We must use try/await rather than `.catch()` on the result —
+// calling `.catch` on the thenable throws "catch is not a function", which the
+// error classifier then mistakes for a network/offline error.
+export async function gapiCall(fn) {
+  try {
+    return await fn();
+  } catch (err) {
     if ((err?.status ?? err?.result?.error?.code) !== 401) throw err;
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       if (!state.tokenClient) { reject(err); return; }
       const prev = state.tokenClient.callback;
       state.tokenClient.callback = (resp) => {
         state.tokenClient.callback = prev;
         if (resp.error) { reject(new Error('Token refresh failed: ' + resp.error)); return; }
         gapi.client.setToken({ access_token: resp.access_token });
-        fn().then(resolve, reject);
+        Promise.resolve(fn()).then(resolve, reject);
       };
       state.tokenClient.requestAccessToken({ prompt: '' });
     });
-  });
+  }
 }
 
 // Atomically replace a sheet tab's data without a clear-then-write window.

@@ -1,44 +1,60 @@
 import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
 
-export default [
-  js.configs.recommended,
+export default tseslint.config(
+  // Global ignores
   {
-    files: ['src/**/*.js'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'app.js',
+      // Legacy vanilla JS — linted separately below, will be removed phase by phase
+      'src/api/**',
+      'src/core/**',
+      'src/features/**',
+      'src/utils/**',
+      'src/tests/**',
+      'src/main.js',
+    ],
+  },
+
+  // TypeScript + React: new source files
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+    ],
+    plugins: {
+      react: reactPlugin,
+      'react-hooks': reactHooks,
+    },
     languageOptions: {
-      ecmaVersion: 2024,
-      sourceType: 'module',
-      globals: {
-        window: 'readonly',
-        document: 'readonly',
-        navigator: 'readonly',
-        localStorage: 'readonly',
-        console: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        requestAnimationFrame: 'readonly',
-        getComputedStyle: 'readonly',
-        confirm: 'readonly',
-        fetch: 'readonly',
-        URL: 'readonly',
-        Blob: 'readonly',
-        MutationObserver: 'readonly',
-        Event: 'readonly',
-        CustomEvent: 'readonly',
-        HTMLElement: 'readonly',
-        gapi: 'readonly',
-        google: 'readonly',
-        __APP_VERSION__: 'readonly',
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
       },
     },
+    settings: {
+      react: { version: 'detect' },
+    },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'no-undef': 'error',
-      'no-empty': ['error', { allowEmptyCatch: true }],
+      // React 17+ JSX transform — no need to import React
+      'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-react': 'off',
+
+      // Hooks
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+
+      // TypeScript
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      }],
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
-  {
-    ignores: ['dist/**', 'node_modules/**', 'app.js'],
-  },
-];
+);

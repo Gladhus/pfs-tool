@@ -7,8 +7,13 @@ export async function verifySheet(id) {
   try {
     await gapi.client.sheets.spreadsheets.get({ spreadsheetId: id, fields: 'spreadsheetId' });
     return true;
-  } catch {
-    return false;
+  } catch (err) {
+    const status = err?.status ?? err?.result?.error?.code;
+    // Only treat as "sheet gone" for definitive permission/not-found errors.
+    // Network failures (TypeError, status 0) rethrow so the caller can keep
+    // the cached sheet ID rather than wiping it and calling findSheetByName.
+    if (status === 403 || status === 404) return false;
+    throw err;
   }
 }
 

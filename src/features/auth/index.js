@@ -276,9 +276,18 @@ export async function onChooseSheet() {
 export async function bootstrapSheet() {
   let sheetId = localStorage.getItem(LS_KEY_SHEET_ID);
 
-  if (sheetId && !(await verifySheet(sheetId))) {
-    sheetId = null;
-    localStorage.removeItem(LS_KEY_SHEET_ID);
+  if (sheetId) {
+    try {
+      if (!(await verifySheet(sheetId))) {
+        // Sheet confirmed gone (403/404) — clear and search for another.
+        sheetId = null;
+        localStorage.removeItem(LS_KEY_SHEET_ID);
+      }
+    } catch {
+      // verifySheet threw a network/unknown error — keep the cached sheetId
+      // and attempt to load. If the sheet is truly gone, loadAll will surface
+      // a more specific error. This avoids wiping a valid cached ID on a blip.
+    }
   }
 
   if (!sheetId) sheetId = await findSheetByName(SHEET_TITLE);

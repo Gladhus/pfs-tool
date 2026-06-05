@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.4] — 2026-06-05
+
+### Fixed
+- **verifySheet wipes cached sheet ID on network error** (#28): `verifySheet` was catching all errors (including TypeErrors and network failures) and returning `false`, causing `bootstrapSheet` to clear the cached `pfs_sheet_id` from localStorage and call `findSheetByName` — which has no error handling and threw, producing "Failed to load sheet: No internet connection." on every subsequent load. `verifySheet` now only returns `false` for definitive 403/404 responses; network/unknown errors rethrow so `bootstrapSheet` keeps the cached ID and skips `findSheetByName`, attempting to load directly instead.
+
+---
+
 ## [1.9.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.3) — 2026-06-05
 
 ### Fixed

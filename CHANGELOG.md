@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.2) — 2026-06-05
+
+### Fixed
+- **Option loader cascade** (#26): `ensureTab()` calls inside the catch blocks of all four option loaders (`loadOptionCompanies`, `loadOptionGrants`, `loadOptionFmv`, `loadOptionExercises`) were unguarded — a network failure during `values.update` escaped the catch block and crashed the entire `loadAll()`, showing "Failed to load sheet: No internet connection." on mobile even with a working connection. Each `ensureTab` call is now wrapped in its own try/catch and degrades to empty data instead of aborting the load.
+- **Auto-retry on tab re-focus** (#26): when `bootstrapSheet` failed (e.g. brief LTE dropout), there was no recovery path without a full page reload. A `_bootstrapFailed` flag now triggers an automatic retry via the existing `visibilitychange` handler when the user returns to the tab and the token is still valid.
+
+---
+
 ## [1.9.1](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.1) — 2026-06-04
 
 ### Fixed

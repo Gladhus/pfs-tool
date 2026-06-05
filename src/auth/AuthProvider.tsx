@@ -38,7 +38,6 @@ function useGoogleAuth(): AuthContextValue {
     setUserEmail,
     setSessionRestoreAttempted,
     setBootstrapError,
-    accessToken,
   } = useAuthStore();
 
   const apisReady = useAuthStore(selectApisReady);
@@ -169,17 +168,14 @@ function useGoogleAuth(): AuthContextValue {
   // ---- Polling for CDN scripts --------------------------------------------
 
   useEffect(() => {
-    let gapiTimer: ReturnType<typeof setInterval>;
-    let gisTimer: ReturnType<typeof setInterval>;
-
-    gapiTimer = setInterval(() => {
+    const gapiTimer = setInterval(() => {
       if (typeof gapi !== 'undefined') {
         clearInterval(gapiTimer);
         initGapi();
       }
     }, 50);
 
-    gisTimer = setInterval(() => {
+    const gisTimer = setInterval(() => {
       if (typeof google !== 'undefined') {
         clearInterval(gisTimer);
         initGis();

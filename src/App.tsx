@@ -1,24 +1,47 @@
-import { useTranslation } from 'react-i18next';
+import { AuthProvider } from './auth/AuthProvider';
+import { useAuthStore, selectIsSignedIn } from './stores/auth.store';
+import Header from './components/Header';
+import TabBar from './components/TabBar';
+import StatusBar from './components/StatusBar';
+import SignedOutScreen from './components/SignedOutScreen';
+import SignedInShell from './components/SignedInShell';
 
-export default function App() {
-  const { t } = useTranslation();
+function AppShell() {
+  const isSignedIn = useAuthStore(selectIsSignedIn);
+  const isDataLoaded = useAuthStore((s) => s.isDataLoaded);
+  const isBootstrapping = useAuthStore((s) => s.isBootstrapping);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <svg width="28" height="24" viewBox="0 0 15 12" fill="none" aria-hidden="true">
-            <rect x="0"    y="7"   width="3.5" height="5"   rx="0.75" fill="white" opacity="0.55"/>
-            <rect x="5.75" y="3.5" width="3.5" height="8.5" rx="0.75" fill="white" opacity="0.8"/>
-            <rect x="11.5" y="0"   width="3.5" height="12"  rx="0.75" fill="white"/>
-          </svg>
-          <h1 className="text-2xl font-semibold tracking-tight">PFS Tool</h1>
-        </div>
-        <p className="text-gray-400 text-sm">
-          React migration — {t('loading')}
-        </p>
-        <p className="text-gray-600 text-xs">Phase 0 complete ✓</p>
-      </div>
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+      <Header />
+      <StatusBar />
+
+      {isSignedIn ? (
+        <>
+          <TabBar />
+          {isBootstrapping ? (
+            <div className="flex items-center justify-center h-64 text-slate-500 text-sm">
+              Setting up your sheet…
+            </div>
+          ) : isDataLoaded ? (
+            <SignedInShell />
+          ) : (
+            <div className="flex items-center justify-center h-64 text-slate-500 text-sm">
+              Loading…
+            </div>
+          )}
+        </>
+      ) : (
+        <SignedOutScreen />
+      )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }

@@ -6,16 +6,22 @@ interface AuthState {
   accessToken: string | null;
   expiresAt: number | null;
   sheetId: string | null;
-  silentInFlight: boolean;
-  proactiveRefreshInFlight: boolean;
+  userEmail: string | null;
+  isBootstrapping: boolean;
+  isDataLoaded: boolean;
+  sessionRestoreAttempted: boolean;
+  bootstrapError: string | null;
 
   setGapiReady: (ready: boolean) => void;
   setGisReady: (ready: boolean) => void;
   setToken: (token: string, expiresAt: number) => void;
   clearToken: () => void;
   setSheetId: (id: string | null) => void;
-  setSilentInFlight: (v: boolean) => void;
-  setProactiveRefreshInFlight: (v: boolean) => void;
+  setUserEmail: (email: string | null) => void;
+  setIsBootstrapping: (v: boolean) => void;
+  setIsDataLoaded: (v: boolean) => void;
+  setSessionRestoreAttempted: (v: boolean) => void;
+  setBootstrapError: (err: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -24,11 +30,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   expiresAt: null,
   sheetId: localStorage.getItem('pfs_sheet_id'),
-  silentInFlight: false,
-  proactiveRefreshInFlight: false,
+  userEmail: null,
+  isBootstrapping: false,
+  isDataLoaded: false,
+  sessionRestoreAttempted: false,
+  bootstrapError: null,
 
-  setGapiReady: (ready) => set({ gapiReady: ready }),
-  setGisReady: (ready) => set({ gisReady: ready }),
+  setGapiReady: (gapiReady) => set({ gapiReady }),
+  setGisReady: (gisReady) => set({ gisReady }),
   setToken: (accessToken, expiresAt) => set({ accessToken, expiresAt }),
   clearToken: () => set({ accessToken: null, expiresAt: null }),
   setSheetId: (sheetId) => {
@@ -36,8 +45,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     else localStorage.removeItem('pfs_sheet_id');
     set({ sheetId });
   },
-  setSilentInFlight: (v) => set({ silentInFlight: v }),
-  setProactiveRefreshInFlight: (v) => set({ proactiveRefreshInFlight: v }),
+  setUserEmail: (userEmail) => set({ userEmail }),
+  setIsBootstrapping: (isBootstrapping) => set({ isBootstrapping }),
+  setIsDataLoaded: (isDataLoaded) => set({ isDataLoaded }),
+  setSessionRestoreAttempted: (sessionRestoreAttempted) => set({ sessionRestoreAttempted }),
+  setBootstrapError: (bootstrapError) => set({ bootstrapError }),
 }));
 
 export const selectIsSignedIn = (s: AuthState) => s.accessToken !== null;

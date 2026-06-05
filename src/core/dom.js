@@ -177,6 +177,14 @@ export function escapeHtml(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+const _handlerMap = new WeakMap();
+export function attachDialogHandler(btn, handler) {
+  const prior = _handlerMap.get(btn);
+  if (prior) btn.removeEventListener('click', prior);
+  btn.addEventListener('click', handler);
+  _handlerMap.set(btn, handler);
+}
+
 export function showSheetLink(id) {
   els.sheetInfo.hidden = false;
   const url = `https://docs.google.com/spreadsheets/d/${id}/edit`;

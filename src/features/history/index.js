@@ -1,6 +1,7 @@
 import "./en.js";
 import "./fr.js";
 import { state } from '../../core/state.js';
+import { getActivePeriod } from '../../core/pills.js';
 import { t, tFn, tr, lang } from '../../core/i18n/index.js';
 import { fmtMoney, hexToRgba } from '../../core/format.js';
 import { privMoney } from '../../core/privacy.js';
@@ -14,8 +15,7 @@ import { els, escapeHtml } from '../../core/dom.js';
 import { icon } from '../../core/icons.js';
 
 export function getHistFilteredDates() {
-  const btn = document.querySelector('#hist-period-pills .period-btn.active');
-  return getDatesForPeriod(btn?.dataset.period || 'all');
+  return getDatesForPeriod(getActivePeriod('hist-period-pills'));
 }
 
 export function computeSeries(filteredDates) {

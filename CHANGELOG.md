@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.6](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.6) — 2026-06-05
+
+### Refactored
+- **#26 Extract `renderTagChips`**: tag-chip rendering was triplicated across accounts, groups, and options. Moved to `src/core/components/TagChips.js`; all three call sites now delegate to the shared helper.
+- **#27 Extract `attachTagInput` + `allKnownTags`**: tag-input keyboard/autocomplete wiring (Enter/comma commit, Backspace pop, blur commit) was independently reimplemented in accounts, groups, and options. Extracted to `src/core/components/TagInput.js`; `allKnownTags()` moved to `src/utils/tags.js`. Removed exported `onAcctTagsKeydown`/`onAcctTagsBlur` from accounts — wiring now handled inside `attachTagInput`.
+- **#28 Extract `attachPeriodPills` / `getActivePeriod`**: three structurally identical click-handler blocks in `main.js` replaced with `attachPeriodPills(id, fn)` calls from new `src/core/pills.js`; overview, detail, and history now use `getActivePeriod(id)` instead of raw `querySelector`.
+- **#29 Extract `buildCategoryOptgroups`**: the same ~15-line category-grouped `<optgroup>` loop was built three times in `accounts/index.js`. Moved to `src/core/components/CategorySelect.js` and all three call sites replaced with a single function call.
+- **#30 Extract `attachDialogHandler`**: six module-level `_xSaveHandler`/`_xDeleteHandler` variables and manual `removeEventListener`/`addEventListener` blocks in `options/index.js` replaced with `attachDialogHandler(btn, handler)` WeakMap helper added to `src/core/dom.js`.
+
+---
+
 ## [1.9.5](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.5) — 2026-06-05
 
 ### Fixed

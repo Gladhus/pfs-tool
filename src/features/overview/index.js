@@ -1,6 +1,7 @@
 import "./en.js";
 import "./fr.js";
 import { state } from '../../core/state.js';
+import { getActivePeriod } from '../../core/pills.js';
 import { lang, t, tFn, tr } from '../../core/i18n/index.js';
 import { privMoney, updatePrivateButton } from '../../core/privacy.js';
 import { hexToRgba } from '../../core/format.js';
@@ -64,8 +65,7 @@ function fmtDateLong(yyyymmdd) {
 }
 
 export function getOvFilteredDates() {
-  const btn = document.querySelector('#ov-period-pills .period-btn.active');
-  return getDatesForPeriod(btn?.dataset.period || 'all');
+  return getDatesForPeriod(getActivePeriod('ov-period-pills'));
 }
 
 // Folded category totals for a single date (real_estate_debt folded in)
@@ -149,7 +149,7 @@ export function renderOverview() {
   }
 
   const filteredDates = getOvFilteredDates();
-  const periodBtn = document.querySelector('#ov-period-pills .period-btn.active');
+  const activePeriod = getActivePeriod('ov-period-pills');
 
   const latestDate = filteredDates.length
     ? filteredDates[filteredDates.length - 1]
@@ -157,7 +157,6 @@ export function renderOverview() {
 
   const periodRefDate = filteredDates.length > 1 ? filteredDates[0] : null;
 
-  const activePeriod = periodBtn?.dataset.period || 'all';
   const periodLabel = t(`period_${activePeriod.toLowerCase()}`) || activePeriod;
 
   const current   = foldedStatsFor(latestDate);

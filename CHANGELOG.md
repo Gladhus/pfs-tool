@@ -14,7 +14,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 - **#39 `setCurrentDate` setter**: added to `src/core/state.js`; replaces 4 duplicated `state.currentDate = …; datePicker.selectDate(…)` blocks across `main.js` and `entry/index.js`.
 - **#40 Remove `registerWriteConfig` indirection**: `i18n/index.js` now imports `writeConfig` directly from `api/config.js`; the registration callback and its call site in `main.js` are removed.
 - **#41 `tokenRefreshMode` enum**: `REFRESH_MODE` constant added to `state.js`; `silentInFlight`/`proactiveRefreshInFlight` booleans replaced with a single `tokenRefreshMode` string — eliminates the stuck-flag ambiguity.
-- **#42 CDN onload callbacks**: `setInterval` polling loop replaced with `window.onGapiLoad`/`window.onGisReady` globals; CDN `<script>` tags now use `onload` attributes per Google's recommended pattern.
+- **#42 Deferred**: the `onload=` attribute approach is blocked by the app's Content Security Policy (`script-src` disallows `unsafe-inline`); the `setInterval` polling loop is retained.
 
 ---
 

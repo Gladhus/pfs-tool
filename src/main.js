@@ -349,9 +349,14 @@ document.addEventListener('keydown', (e) => {
   else if (action === 'help')            toast('Shortcuts: 1 overview · 2 detail · 3 history · m manage · 4 options · n entry · s save · p private · , settings', { timeout: 5000 });
 });
 
-// --- Bootstrap: CDN onload callbacks (set before scripts execute) ---
-window.onGapiLoad = () => onGapiLoad();
-window.onGisReady  = () => initTokenClient();
+// --- Bootstrap: poll for Google APIs (both load async via CDN) ---
+let _gapiStarted = false;
+let _gisStarted  = false;
+const _poll = setInterval(() => {
+  if (!_gapiStarted && typeof gapi !== 'undefined') { _gapiStarted = true; onGapiLoad(); }
+  if (!_gisStarted && typeof google !== 'undefined' && google.accounts) { _gisStarted = true; initTokenClient(); }
+  if (state.gapiReady && state.gisReady) clearInterval(_poll);
+}, 50);
 
 configError();
 applyI18n();

@@ -91,6 +91,7 @@ function getLoginHint() {
 const TOKEN_SKEW_MS = 5 * 60 * 1000; // refresh when within 5 min of expiry
 
 let _refreshTimer = null;
+let _bootstrapFailed = false;
 
 function scheduleTokenRefresh(expiresAt) {
   if (_refreshTimer) clearTimeout(_refreshTimer);
@@ -117,14 +118,24 @@ export function applyToken(accessToken, expiresInSec) {
 
 // Browsers throttle setTimeout in backgrounded tabs; refresh the token
 // proactively when the user returns to a tab with a stale/near-expiry token.
+// Also retries sheet bootstrap if the previous attempt failed (e.g. brief
+// network dropout on mobile).
 document.addEventListener('visibilitychange', () => {
   if (document.hidden || !state.tokenClient || !state.accessToken) return;
-  if (!state.tokenExpiresAt || state.tokenExpiresAt - Date.now() < TOKEN_SKEW_MS) {
+  const tokenNearExpiry = !state.tokenExpiresAt || state.tokenExpiresAt - Date.now() < TOKEN_SKEW_MS;
+  if (tokenNearExpiry) {
     state.proactiveRefreshInFlight = true;
     const opts = { prompt: '' };
     const hint = getLoginHint();
     if (hint) opts.login_hint = hint;
     state.tokenClient.requestAccessToken(opts);
+  } else if (_bootstrapFailed) {
+    _bootstrapFailed = false;
+    bootstrapSheet().catch(err => {
+      _bootstrapFailed = true;
+      console.error(err);
+      setStatus(`${t('bootstrap_failed')}: ${getUserMessage(err)}`, 'warn');
+    });
   }
 });
 
@@ -168,9 +179,11 @@ export async function onSignedIn() {
     if (settingsUserRow) settingsUserRow.hidden = false;
   }
   setStatus('Signed in. Locating your PFS sheet…');
+  _bootstrapFailed = false;
   try {
     await bootstrapSheet();
   } catch (err) {
+    _bootstrapFailed = true;
     console.error(err);
     setStatus(`${t('bootstrap_failed')}: ${getUserMessage(err)}`, 'warn');
   }

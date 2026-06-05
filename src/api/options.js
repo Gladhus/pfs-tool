@@ -39,7 +39,7 @@ export async function loadOptionCompanies() {
     }).filter(c => c.id);
   } catch (err) {
     console.warn('[pfs] failed to load option_companies', err);
-    await ensureTab('option_companies', HEADERS.option_companies);
+    try { await ensureTab('option_companies', HEADERS.option_companies); } catch (e) { console.warn('[pfs] ensureTab option_companies failed', e); }
     state.optionCompanies = [];
   }
 }
@@ -64,7 +64,7 @@ export async function loadOptionGrants() {
     }).filter(g => g.id && g.company_id);
   } catch (err) {
     console.warn('[pfs] failed to load option_grants', err);
-    await ensureTab('option_grants', HEADERS.option_grants);
+    try { await ensureTab('option_grants', HEADERS.option_grants); } catch (e) { console.warn('[pfs] ensureTab option_grants failed', e); }
     state.optionGrants = [];
   }
 }
@@ -86,7 +86,7 @@ export async function loadOptionFmv() {
     }).filter(f => f.date && f.company_id);
   } catch (err) {
     console.warn('[pfs] failed to load option_fmv', err);
-    await ensureTab('option_fmv', HEADERS.option_fmv);
+    try { await ensureTab('option_fmv', HEADERS.option_fmv); } catch (e) { console.warn('[pfs] ensureTab option_fmv failed', e); }
     state.optionFmv = [];
   }
 }
@@ -109,7 +109,7 @@ export async function loadOptionExercises() {
     }).filter(e => e.id && e.grant_id);
   } catch (err) {
     console.warn('[pfs] failed to load option_exercises', err);
-    await ensureTab('option_exercises', HEADERS.option_exercises);
+    try { await ensureTab('option_exercises', HEADERS.option_exercises); } catch (e) { console.warn('[pfs] ensureTab option_exercises failed', e); }
     state.optionExercises = [];
   }
 }

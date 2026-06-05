@@ -341,11 +341,13 @@ document.addEventListener('keydown', (e) => {
   if (key === '1') { document.querySelector('.tab-btn[data-tab="overview"]')?.click(); e.preventDefault(); }
   else if (key === '2') { setActiveTab('accounts'); setAccountsSubTab('detail'); e.preventDefault(); }
   else if (key === '3') { setActiveTab('accounts'); setAccountsSubTab('history'); e.preventDefault(); }
-  else if (key === '4' && localStorage.getItem('pfs_stock_options') === '1') { document.querySelector('.tab-btn[data-tab="options"]')?.click(); e.preventDefault(); }
+  else if (key === 'm') { setActiveTab('accounts'); setAccountsSubTab('manage'); e.preventDefault(); }
+  else if (key === '4' && _stockOptTabBtn && !_stockOptTabBtn.hidden) { setActiveTab('options'); e.preventDefault(); }
   else if (key === 'n') { (els.headerEntryBtn || document.querySelector('[data-tab="entry"]'))?.click(); setTimeout(() => els.dateInput?.focus(), 50); e.preventDefault(); }
   else if (key === 's' && !els.saveSnapshotBtn.disabled && !document.getElementById('tab-entry').hidden) { els.saveSnapshotBtn?.click(); e.preventDefault(); }
   else if (key === 'p') { els.privateModeBtn?.click(); e.preventDefault(); }
-  else if (key === '?') { toast('Shortcuts: 1 overview · 2 accounts · 3 history · 4 stock options · n entry · s save · p private', { timeout: 5000 }); e.preventDefault(); }
+  else if (key === ',') { els.headerSettingsBtn?.click(); e.preventDefault(); }
+  else if (key === '?') { toast('Shortcuts: 1 overview · 2 detail · 3 history · m manage · 4 options · n entry · s save · p private · , settings', { timeout: 5000 }); e.preventDefault(); }
 });
 
 // --- Bootstrap: poll for Google APIs (both load async via CDN) ---

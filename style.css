@@ -2110,7 +2110,9 @@ dialog::backdrop {
   text-align: left;
   white-space: nowrap;
 }
-.custom-select-item:hover { background: var(--surface-2, var(--surface-3, var(--surface))); }
+.custom-select-item:hover,
+.custom-select-item:focus { background: var(--surface-2, var(--surface-3, var(--surface))); outline: none; }
+.custom-select-item:focus { box-shadow: inset 2px 0 0 var(--accent); }
 .custom-select-item.selected { font-weight: 600; color: var(--accent); }
 .custom-select-check { color: var(--accent); display: inline-flex; }
 

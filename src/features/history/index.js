@@ -137,6 +137,23 @@ export function populateHistAccountSelect() {
       optionBtns.push(btn);
     }
   }
+
+  // Attach arrow-key nav after all buttons are collected so each btn knows its index
+  optionBtns.forEach((btn, idx) => {
+    btn.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        optionBtns[Math.min(idx + 1, optionBtns.length - 1)]?.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (idx <= 0) closeMenu(); else optionBtns[idx - 1]?.focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeMenu();
+      }
+    });
+  });
+
   wrap.appendChild(menu);
 
   function openMenu() {
@@ -159,16 +176,11 @@ export function populateHistAccountSelect() {
     if (menu.hidden) openMenu(); else closeMenu();
   });
 
-  menu.addEventListener('keydown', e => {
-    const focused = document.activeElement;
-    const idx = optionBtns.indexOf(focused);
-    if (e.key === 'ArrowDown') {
+  trigger.addEventListener('keydown', e => {
+    if ((e.key === 'ArrowDown' || e.key === 'Enter') && menu.hidden) {
       e.preventDefault();
-      optionBtns[Math.min(idx + 1, optionBtns.length - 1)]?.focus();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (idx <= 0) closeMenu(); else optionBtns[idx - 1]?.focus();
-    } else if (e.key === 'Escape') {
+      openMenu();
+    } else if (e.key === 'Escape' && !menu.hidden) {
       e.preventDefault();
       closeMenu();
     }

@@ -41,8 +41,9 @@ export function parseMoney(str) {
   if (str == null) return null;
   let s = String(str).trim();
   if (s === '') return null;
-  s = s.replace(/[^\d.,-]/g, '');
-  if (s === '' || s === '-') return null;
+  const isNegative = /[()]/.test(s) || /^-/.test(s);
+  s = s.replace(/[^\d.,]/g, '');
+  if (s === '') return null;
   const lastComma = s.lastIndexOf(',');
   const lastDot   = s.lastIndexOf('.');
   if (lastComma !== -1 || lastDot !== -1) {
@@ -58,5 +59,5 @@ export function parseMoney(str) {
     }
   }
   const n = Number(s);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) ? (isNegative ? -n : n) : null;
 }

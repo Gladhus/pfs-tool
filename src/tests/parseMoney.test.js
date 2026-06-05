@@ -72,6 +72,13 @@ describe('parseMoney — negative values', () => {
   it('handles negative with decimal', () => expect(parseMoney('-1,234.56')).toBeCloseTo(-1234.56));
 });
 
+describe('parseMoney — accounting parentheses format (bug #12)', () => {
+  it('(1234.56) → -1234.56', () => expect(parseMoney('(1234.56)')).toBeCloseTo(-1234.56));
+  it('(1,234.56) → -1234.56', () => expect(parseMoney('(1,234.56)')).toBeCloseTo(-1234.56));
+  it('($6,500) → -6500', () => expect(parseMoney('($6,500)')).toBe(-6500));
+  it('(10 000) → -10000', () => expect(parseMoney('(10 000)')).toBe(-10000));
+});
+
 describe('parseMoney — real values from his spreadsheet', () => {
   it('$6,500', () => expect(parseMoney('$6,500')).toBe(6500));
   it('$41,300', () => expect(parseMoney('$41,300')).toBe(41300));

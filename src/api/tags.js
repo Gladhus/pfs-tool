@@ -39,7 +39,7 @@ export async function loadTagsCatalog() {
     }
   } catch {
     console.log('[pfs] tags tab missing — creating');
-    await ensureTagsTab();
+    try { await ensureTagsTab(); } catch (e) { console.warn('[pfs] ensureTagsTab failed', e); }
     state.tagsCatalog = [];
   }
 }

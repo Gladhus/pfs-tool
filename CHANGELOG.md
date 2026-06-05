@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [1.9.3](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.3) — 2026-06-05
+
+### Fixed
+- **Tags/groups loader cascade** (#27): `ensureTagsTab()` and `ensureGroupsTab()` inside the catch blocks of `loadTagsCatalog` / `loadGroupsCatalog` were also unguarded — the same `values.update` cascade bug as fixed in v1.9.2 for option loaders. A brief network error during `loadTagsCatalog` or `loadGroupsCatalog` now degrades to empty data instead of crashing `loadAll`.
+
+---
+
 ## [1.9.2](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.2) — 2026-06-05
 
 ### Fixed

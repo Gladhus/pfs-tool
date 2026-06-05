@@ -46,7 +46,7 @@ export async function loadGroupsCatalog() {
     }
   } catch {
     console.log('[pfs] groups tab missing — creating');
-    await ensureGroupsTab();
+    try { await ensureGroupsTab(); } catch (e) { console.warn('[pfs] ensureGroupsTab failed', e); }
     state.groupsCatalog = [];
   }
 }

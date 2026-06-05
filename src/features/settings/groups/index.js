@@ -142,9 +142,6 @@ export async function saveGroupDialog() {
   const name = nameEl?.value.trim();
   if (!name) { nameEl?.focus(); return; }
 
-  // Flush any uncommitted chip inputs
-  ['all', 'any', 'exclude'].forEach(commitChipInput);
-
   const group = {
     name,
     color: _selectedColor,

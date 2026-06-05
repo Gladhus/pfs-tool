@@ -295,9 +295,6 @@ export async function saveAccountDialog() {
     type = state.accounts.find(a => a.id === id)?.type || '';
   }
 
-  // Flush any text still in the tag input
-  commitTagInput();
-
   const next = {
     id, type,
     name_fr: nameFr || nameEn,

@@ -63,7 +63,7 @@ export function EntryAccountRow({
   return (
     // Mobile: 2-col grid [name | amount] with comment spanning full width on row 2.
     // Desktop (sm+): 3-col grid [name | amount | comment] all on row 1, top-aligned.
-    <div className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-1.5 py-2 sm:grid-cols-[1fr_auto_1fr] sm:items-start">
+    <div className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-1.5 py-2 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
       {/* Col 1: account name + owner */}
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-sm text-fg">{tr(account)}</span>
@@ -112,7 +112,7 @@ export function EntryAccountRow({
         tabIndex={-1}
         placeholder={t('comment_placeholder')}
         value={comment}
-        className="col-span-2 h-8 rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:col-span-1"
+        className="col-span-2 h-8 rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:col-span-1"
         onChange={e => onCommentChange(e.target.value)}
       />
     </div>

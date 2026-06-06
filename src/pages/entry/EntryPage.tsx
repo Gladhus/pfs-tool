@@ -350,7 +350,7 @@ export default function EntryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_18rem]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_16rem]">
         {/* Categories + accounts */}
         <div className="space-y-4">
           {categories.map(cat => {
@@ -409,7 +409,7 @@ export default function EntryPage() {
             On desktop: sticky below the global header + the measured sticky bar height.
             On mobile: static, appears after the account list. */}
         <aside
-          className="space-y-3 self-start rounded-xl bg-surface-1 p-4 shadow-sm md:sticky"
+          className="space-y-3 self-start rounded-xl bg-surface-1 p-4 shadow-sm sm:sticky"
           style={{ top: `calc(3.5rem + ${stickyBarH}px + 0.5rem)` }}
         >
           <h3 className="text-sm font-medium text-fg-2">{t('net_worth')}</h3>

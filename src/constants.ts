@@ -18,7 +18,6 @@ export const HEADERS = {
 } as const;
 
 export const LS_KEY_IMPORT_MAP = 'pfs_import_mappings';
-export const LS_KEY_ACTIVE_TAB = 'pfs_active_tab';
 export const LS_KEY_LANG       = 'pfs_lang';
 export const LS_KEY_PRIVATE    = 'pfs_private';
 export const LS_KEY_THEME      = 'pfs_theme';

@@ -7,6 +7,10 @@ import { LS_KEY_USER_HINT } from '@/constants';
 import { classifyApiError } from '@/core/errors';
 import i18n from '@/i18n/index';
 
+// Module-level guard: prevents initTokenClient from being called a second time
+// under React StrictMode's double-effect invocation.
+let _tokenClientInitialized = false;
+
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
@@ -157,6 +161,9 @@ function useGoogleAuth(): AuthContextValue {
   // ---- GIS init -----------------------------------------------------------
 
   const initGis = useCallback(() => {
+    // Module-level flag prevents double-init under StrictMode's double-effect invocation
+    if (_tokenClientInitialized) return;
+    _tokenClientInitialized = true;
     tokenClientRef.current = google.accounts.oauth2.initTokenClient({
       client_id: cfg.CLIENT_ID,
       scope: cfg.SCOPES,
@@ -165,26 +172,36 @@ function useGoogleAuth(): AuthContextValue {
     setGisReady(true);
   }, [handleTokenResponse, setGisReady]);
 
-  // ---- Polling for CDN scripts --------------------------------------------
+  // ---- Onload-based API readiness (replaces setInterval polling) ----------
 
   useEffect(() => {
-    const gapiTimer = setInterval(() => {
-      if (typeof gapi !== 'undefined') {
-        clearInterval(gapiTimer);
-        initGapi();
-      }
-    }, 50);
+    // Remove legacy token cache left by the vanilla app
+    try { localStorage.removeItem('pfs_token'); } catch { /* noop */ }
 
-    const gisTimer = setInterval(() => {
-      if (typeof google !== 'undefined') {
-        clearInterval(gisTimer);
-        initGis();
-      }
-    }, 50);
+    // Gapi: check if already loaded, or register callback for ?onload=__onGapiLoad in index.html
+    if (typeof gapi !== 'undefined') {
+      initGapi();
+    } else {
+      (window as Window & { __onGapiLoad?: () => void }).__onGapiLoad = initGapi;
+    }
+
+    // GIS: check if already loaded, or attach a load listener to the script element
+    if (typeof google !== 'undefined') {
+      initGis();
+    } else {
+      const gisEl = document.querySelector<HTMLScriptElement>('script[src*="accounts.google.com/gsi"]');
+      const handleGisLoad = () => initGis();
+      gisEl?.addEventListener('load', handleGisLoad, { once: true });
+      return () => {
+        const w = window as Window & { __onGapiLoad?: () => void };
+        delete w.__onGapiLoad;
+        gisEl?.removeEventListener('load', handleGisLoad);
+      };
+    }
 
     return () => {
-      clearInterval(gapiTimer);
-      clearInterval(gisTimer);
+      const w = window as Window & { __onGapiLoad?: () => void };
+      delete w.__onGapiLoad;
     };
   }, [initGapi, initGis]);
 
@@ -213,15 +230,33 @@ function useGoogleAuth(): AuthContextValue {
     const TOKEN_SKEW_MS = 5 * 60 * 1000;
     const onVisibilityChange = () => {
       if (document.hidden) return;
-      const { accessToken, expiresAt } = useAuthStore.getState();
-      if (!tokenClientRef.current || !accessToken) return;
-      const nearExpiry = !expiresAt || expiresAt - Date.now() < TOKEN_SKEW_MS;
-      if (nearExpiry) {
-        refreshModeRef.current = 'proactive';
-        const opts: { prompt: string; login_hint?: string } = { prompt: '' };
-        const hint = getLoginHint();
-        if (hint) opts.login_hint = hint;
-        tokenClientRef.current.requestAccessToken(opts);
+      const { accessToken, expiresAt, bootstrapError, isDataLoaded, isBootstrapping } = useAuthStore.getState();
+
+      // Proactive token refresh when near expiry
+      if (tokenClientRef.current && accessToken) {
+        const nearExpiry = !expiresAt || expiresAt - Date.now() < TOKEN_SKEW_MS;
+        if (nearExpiry) {
+          refreshModeRef.current = 'proactive';
+          const opts: { prompt: string; login_hint?: string } = { prompt: '' };
+          const hint = getLoginHint();
+          if (hint) opts.login_hint = hint;
+          tokenClientRef.current.requestAccessToken(opts);
+        }
+      }
+
+      // Retry bootstrap if it failed while the tab was hidden
+      if (bootstrapError !== null && !isDataLoaded && !isBootstrapping && accessToken) {
+        useAuthStore.getState().setBootstrapError(null);
+        void (async () => {
+          try {
+            await bootstrapSheet();
+          } catch (err) {
+            const key = classifyApiError(err);
+            const msg = i18n.t('err_' + key);
+            useAuthStore.getState().setBootstrapError(msg);
+            setStatus(msg, 'warn');
+          }
+        })();
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);

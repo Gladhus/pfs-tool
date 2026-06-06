@@ -41,6 +41,7 @@ export default function SheetPickerDialog({ open, onClose }: Props) {
   }, [open]);
 
   const handlePick = async (file: SheetFile) => {
+    if (useAuthStore.getState().isBootstrapping) return;
     onClose();
     useAuthStore.getState().setSheetId(file.id);
     setStatus(t('sheet_linked'), 'ok');

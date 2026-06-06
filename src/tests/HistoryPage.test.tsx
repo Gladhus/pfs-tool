@@ -112,14 +112,14 @@ describe('HistoryPage', () => {
 
   it('shows series toggle bar in overview mode (no account selected)', () => {
     render(<HistoryPage />, { wrapper: Wrapper });
-    // SeriesToggleBar has checkboxes for investments, realEstate, other
+    // SeriesToggleBar always shows investments + realEstate; "other" only when there is non-zero other data
     const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes.length).toBeGreaterThanOrEqual(3);
+    expect(checkboxes.length).toBeGreaterThanOrEqual(2);
   });
 
   it('shows account select dropdown trigger', () => {
     render(<HistoryPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('combobox')).toBeTruthy();  // More reliable
+    expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
   it('history_summary shows date range', () => {

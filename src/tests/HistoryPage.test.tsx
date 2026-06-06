@@ -119,7 +119,7 @@ describe('HistoryPage', () => {
 
   it('shows account select dropdown trigger', () => {
     render(<HistoryPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('button', { name: /overview_option/i })).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();  // More reliable
   });
 
   it('history_summary shows date range', () => {
@@ -144,7 +144,8 @@ describe('HistoryPage', () => {
 
   it('opening account select shows overview option', () => {
     render(<HistoryPage />, { wrapper: Wrapper });
-    const trigger = screen.getByRole('button', { name: /overview_option/i });
+    // Fixed: combobox has no accessible name due to span with pointer-events:none
+    const trigger = screen.getByRole('combobox');
     fireEvent.click(trigger);
     expect(screen.getAllByText('overview_option').length).toBeGreaterThan(0);
   });

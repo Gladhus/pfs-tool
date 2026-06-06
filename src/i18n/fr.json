@@ -69,5 +69,22 @@
   "view_by_group": "Par groupe",
   "no_groups_title": "Aucun groupe",
   "no_groups_body": "Créez des groupes dans Paramètres pour filtrer vos comptes par combinaison d'étiquettes.",
-  "manage_groups": "Gérer les groupes"
+  "manage_groups": "Gérer les groupes",
+  "progression": "Progression",
+  "show_net_worth": "Valeur nette",
+  "show_investments": "Investissements",
+  "show_real_estate": "Immobilier (net)",
+  "show_other": "Autre",
+  "history": "Historique",
+  "investments": "Investissements",
+  "real_estate_net": "Immobilier (net)",
+  "debts": "Dettes",
+  "delta": "Δ",
+  "history_summary": "{{count}} entrée(s) · {{from}} → {{to}}",
+  "empty_history_title": "Aucun historique",
+  "empty_history_body": "Vos bilans apparaîtront ici une fois enregistrés.",
+  "incomplete_data": "Données incomplètes — certains comptes utilisent la dernière valeur connue.",
+  "overview_option": "Aperçu",
+  "hist_newer": "Récents",
+  "hist_older": "Anciens"
 }

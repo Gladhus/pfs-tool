@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { chartColors } from '@/utils/chartOptions';
+import { ChipToggle } from '@/ui/ChipToggle';
 
 export interface SeriesState {
   investments: boolean;
@@ -10,39 +10,26 @@ export interface SeriesState {
 interface Props {
   value: SeriesState;
   onChange: (next: SeriesState) => void;
+  hasOther?: boolean;
 }
 
-export function SeriesToggleBar({ value, onChange }: Props) {
+const SERIES_COLORS: Record<keyof SeriesState, string> = {
+  investments: 'var(--cat-investments)',
+  realEstate: 'var(--cat-real-estate)',
+  other: 'var(--cat-cash)',
+};
+
+export function SeriesToggleBar({ value, onChange, hasOther = true }: Props) {
   const { t } = useTranslation();
-  const colors = chartColors();
 
   const toggle = (key: keyof SeriesState) =>
     onChange({ ...value, [key]: !value[key] });
 
-  const chip = (key: keyof SeriesState, label: string, color: string) => (
-    <label key={key} className="flex items-center gap-1.5 cursor-pointer select-none">
-      <input
-        type="checkbox"
-        className="sr-only"
-        checked={value[key]}
-        onChange={() => toggle(key)}
-      />
-      <span
-        className="w-3 h-3 rounded-full shrink-0"
-        style={{ backgroundColor: color }}
-        aria-hidden="true"
-      />
-      <span className={`text-xs transition-opacity ${value[key] ? 'text-foreground' : 'text-muted opacity-50'}`}>
-        {label}
-      </span>
-    </label>
-  );
-
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-      {chip('investments', t('show_investments'), colors.invest)}
-      {chip('realEstate', t('show_real_estate'), colors.realEstate)}
-      {chip('other', t('show_other'), colors.cash)}
+    <div className="no-scrollbar flex gap-2 overflow-x-auto -mx-1 px-1">
+      <ChipToggle label={t('show_investments')} color={SERIES_COLORS.investments} active={value.investments} onToggle={() => toggle('investments')} />
+      <ChipToggle label={t('show_real_estate')} color={SERIES_COLORS.realEstate} active={value.realEstate} onToggle={() => toggle('realEstate')} />
+      {hasOther && <ChipToggle label={t('show_other')} color={SERIES_COLORS.other} active={value.other} onToggle={() => toggle('other')} />}
     </div>
   );
 }

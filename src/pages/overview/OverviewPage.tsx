@@ -25,11 +25,10 @@ import { StatCardGrid } from './components/StatCardGrid';
 import { SeriesToggle } from './components/SeriesToggle';
 import { ViewToggle } from './components/ViewToggle';
 import { EmptyOverviewState } from './components/EmptyOverviewState';
-import { chartColors } from '@/utils/chartOptions';
 import { categoryKey } from '@/utils/icons';
 import { useMemo } from 'react';
 
-const DEFAULT_PERIOD: Period = '1y';
+const DEFAULT_PERIOD: Period = 'all';
 
 export default function OverviewPage() {
   const { t } = useTranslation();
@@ -102,12 +101,8 @@ export default function OverviewPage() {
     fxMap: fxRateMap,
   });
 
-  const colors = chartColors();
-  const cs = getComputedStyle(document.documentElement);
-  const catColor = (id?: string): string => {
-    if (!id || id === 'equity') return cs.getPropertyValue('--cat-equity').trim() || '#06b6d4';
-    return cs.getPropertyValue('--cat-' + categoryKey(id)).trim() || colors.accent;
-  };
+  const catColor = (id?: string): string =>
+    !id || id === 'equity' ? 'var(--cat-equity)' : `var(--cat-${categoryKey(id)})`;
 
   const onPeriodChange = (p: Period) => setSearchParams({ period: p }, { replace: false });
 
@@ -148,7 +143,7 @@ export default function OverviewPage() {
         {stats.chartDates.length > 0 && (
           <>
             <SeriesToggle
-              netColor={colors.accent}
+              netColor="var(--accent)"
               buckets={stats.bucketData}
               catsWithData={stats.catsWithData}
               view={ovView}
@@ -170,7 +165,7 @@ export default function OverviewPage() {
 
         {/* Mobile: period pills pinned to the bottom of the card */}
         <div className="md:hidden">
-          <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} block />
+          <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} responsive />
         </div>
       </div>
 

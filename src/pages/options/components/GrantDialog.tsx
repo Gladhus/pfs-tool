@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/ui/Dialog';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
+import { Select, SelectItem } from '@/ui/Select';
+import { Label } from '@/ui/Label';
 import { todayISO } from '@/utils/dates';
 import type { OptionGrant } from '@/types/sheets';
 
@@ -38,6 +41,10 @@ function toDraft(g: OptionGrant | null, companyId: string): Draft {
   };
 }
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><Label>{label}</Label>{children}</div>;
+}
+
 export function GrantDialog({ open, onClose, grant, companyId, onSave, onDelete }: Props) {
   const { t } = useTranslation();
   const isNew = grant === null;
@@ -64,48 +71,42 @@ export function GrantDialog({ open, onClose, grant, companyId, onSave, onDelete 
     });
   };
 
-  const inputCls = 'h-8 w-full rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
-  const labelCls = 'block text-xs font-medium text-fg-2 mb-1';
-  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div><label className={labelCls}>{label}</label>{children}</div>
-  );
-
   return (
     <Dialog open={open} onClose={onClose} title={isNew ? t('opt_new_grant') : t('opt_edit_grant')} className="max-w-lg">
       <div className="grid grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-1">
         <Field label={t('opt_grant_label')}>
-          <input className={inputCls} value={d.label} onChange={e => set('label', e.target.value)} />
+          <Input value={d.label} onChange={e => set('label', e.target.value)} />
         </Field>
         <Field label={t('opt_grant_type')}>
-          <input className={inputCls} value={d.grant_type} onChange={e => set('grant_type', e.target.value)} placeholder="ISO / NSO / RSU" />
+          <Input value={d.grant_type} onChange={e => set('grant_type', e.target.value)} placeholder="ISO / NSO / RSU" />
         </Field>
         <Field label={t('opt_grant_date')}>
-          <input type="date" className={inputCls} value={d.grant_date} onChange={e => set('grant_date', e.target.value)} />
+          <Input type="date" value={d.grant_date} onChange={e => set('grant_date', e.target.value)} />
         </Field>
         <Field label={t('opt_total_shares')}>
-          <input type="number" className={inputCls} value={d.total_shares} onChange={e => set('total_shares', e.target.value)} />
+          <Input type="number" value={d.total_shares} onChange={e => set('total_shares', e.target.value)} />
         </Field>
         <Field label={t('opt_strike_price')}>
-          <input type="number" step="0.0001" className={inputCls} value={d.strike_price} onChange={e => set('strike_price', e.target.value)} placeholder={t('opt_strike_hint')} />
+          <Input type="number" step="0.0001" value={d.strike_price} onChange={e => set('strike_price', e.target.value)} placeholder={t('opt_strike_hint')} />
         </Field>
         <Field label={t('opt_vesting_start')}>
-          <input type="date" className={inputCls} value={d.vesting_start} onChange={e => set('vesting_start', e.target.value)} />
+          <Input type="date" value={d.vesting_start} onChange={e => set('vesting_start', e.target.value)} />
         </Field>
         <Field label={t('opt_cliff_months')}>
-          <input type="number" className={inputCls} value={d.cliff_months} onChange={e => set('cliff_months', e.target.value)} />
+          <Input type="number" value={d.cliff_months} onChange={e => set('cliff_months', e.target.value)} />
         </Field>
         <Field label={t('opt_vesting_months')}>
-          <input type="number" className={inputCls} value={d.vesting_months} onChange={e => set('vesting_months', e.target.value)} />
+          <Input type="number" value={d.vesting_months} onChange={e => set('vesting_months', e.target.value)} />
         </Field>
         <Field label={t('opt_vesting_interval')}>
-          <select className={inputCls} value={d.vesting_interval} onChange={e => set('vesting_interval', e.target.value)}>
-            <option value="monthly">{t('opt_interval_monthly')}</option>
-            <option value="quarterly">{t('opt_interval_quarterly')}</option>
-            <option value="annual">{t('opt_interval_annual')}</option>
-          </select>
+          <Select value={d.vesting_interval} onValueChange={v => set('vesting_interval', v)}>
+            <SelectItem value="monthly">{t('opt_interval_monthly')}</SelectItem>
+            <SelectItem value="quarterly">{t('opt_interval_quarterly')}</SelectItem>
+            <SelectItem value="annual">{t('opt_interval_annual')}</SelectItem>
+          </Select>
         </Field>
         <Field label={t('opt_expiry_date')}>
-          <input type="date" className={inputCls} value={d.expiry_date} onChange={e => set('expiry_date', e.target.value)} />
+          <Input type="date" value={d.expiry_date} onChange={e => set('expiry_date', e.target.value)} />
         </Field>
       </div>
       <div className="mt-5 flex items-center justify-between">

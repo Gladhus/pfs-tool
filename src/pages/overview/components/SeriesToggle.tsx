@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/ui.store';
+import { ChipToggle } from '@/ui/ChipToggle';
 import type { BucketData } from '../hooks/useOverviewStats';
 
 interface SeriesToggleProps {
@@ -39,30 +40,15 @@ export function SeriesToggle({ netColor, buckets, catsWithData, view, catColor }
 
   return (
     <div className="no-scrollbar flex gap-2 overflow-x-auto -mx-1 px-1" role="group" aria-label={t('allocation_title')}>
-      {chips.map(({ key, label, color }) => {
-        const active = isVis(key);
-        return (
-          <button
-            key={key}
-            type="button"
-            role="checkbox"
-            aria-checked={active}
-            onClick={() => toggle(key)}
-            className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-              active ? 'bg-surface-2 text-fg' : 'text-muted hover:text-fg'
-            }`}
-            style={{ borderColor: active ? color : 'var(--color-border)' }}
-          >
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={active
-                ? { backgroundColor: color }
-                : { backgroundColor: 'transparent', boxShadow: `inset 0 0 0 2px ${color}` }}
-            />
-            {label}
-          </button>
-        );
-      })}
+      {chips.map(({ key, label, color }) => (
+        <ChipToggle
+          key={key}
+          label={label}
+          color={color}
+          active={isVis(key)}
+          onToggle={() => toggle(key)}
+        />
+      ))}
     </div>
   );
 }

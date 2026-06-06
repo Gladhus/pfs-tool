@@ -1,10 +1,13 @@
-import { useEffect, useRef } from 'react';
-import Chart from 'chart.js/auto';
-import { chartColors, moneyTickFmt, TOOLTIP_STYLE } from '@/utils/chartOptions';
-import { hexToRgba } from '@/utils/format';
+import { useMemo } from 'react';
+import {
+  ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  type TooltipProps,
+} from 'recharts';
+import { moneyTickFmt } from '@/utils/chartOptions';
 import { privMoney } from '@/utils/privacy';
 import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
 import { generateMonthlyDates, getEffectiveFmv, computeIntrinsicValue, computeUnvestedValue } from '@/utils/options';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 
 interface Props {
@@ -19,19 +22,19 @@ interface Props {
   isPrivate: boolean;
 }
 
-export function CompanyValueChart({ company, grants, fmv, exercises, color, now, locale, currency, isPrivate }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<Chart | null>(null);
+const TT = { background: '#0f172a', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+export function CompanyValueChart({
+  company, grants, fmv, exercises, color, now, locale, currency, isPrivate,
+}: Props) {
+  const [containerRef, width] = useContainerWidth();
+
+  const { dates, data } = useMemo(() => {
     const history = fmv.filter(f => f.company_id === company.id).sort((a, b) => a.date.localeCompare(b.date));
-    if (!history.length) return;
+    if (!history.length) return { dates: [] as string[], data: [] };
     const allDates = generateMonthlyDates(history[0].date, now);
-    if (allDates.length < 2) return;
+    if (allDates.length < 2) return { dates: [] as string[], data: [] };
 
-    // Null before the first grant exists so the chart starts at actual data, not first FMV.
     const grantedAt = (d: string) => grants.filter(g => g.grant_date.slice(0, 7) <= d.slice(0, 7));
     const vestedAll = allDates.map(d => {
       const e = getEffectiveFmv(fmv, company.id, d);
@@ -43,8 +46,7 @@ export function CompanyValueChart({ company, grants, fmv, exercises, color, now,
       const e = getEffectiveFmv(fmv, company.id, d);
       const granted = grantedAt(d);
       if (!e || !granted.length) return null;
-      const unv = granted.reduce((s, g) => s + computeUnvestedValue(g, e.fmv, d), 0);
-      return (vestedAll[i] ?? 0) + unv;
+      return (vestedAll[i] ?? 0) + granted.reduce((s, g) => s + computeUnvestedValue(g, e.fmv, d), 0);
     });
 
     let trim = 0;
@@ -52,74 +54,104 @@ export function CompanyValueChart({ company, grants, fmv, exercises, color, now,
     const dates = allDates.slice(trim);
     const vested = vestedAll.slice(trim);
     const total = totalAll.slice(trim);
-    if (dates.length < 2) return;
+    if (dates.length < 2) return { dates: [] as string[], data: [] };
 
-    const colors = chartColors();
-    const { tickSet: xTickSet, xFmt } = buildXAxisTicks(dates, canvas.parentElement?.offsetWidth ?? 600, locale);
-    const tickFmt = moneyTickFmt({ prefix: '$', isPrivate });
+    const data = dates.map((date, di) => ({ date, vested: vested[di], total: total[di] }));
+    return { dates, data };
+  }, [company, grants, fmv, exercises, now]);
 
-    chartRef.current?.destroy();
-    const existing = Chart.getChart(canvas);
-    if (existing) existing.destroy();
+  const { tickSet, xFmt } = useMemo(
+    () => buildXAxisTicks(dates, width, locale),
+    [dates, width, locale],
+  );
+  const xTicks = useMemo(() => dates.filter((_, i) => tickSet.has(i)), [dates, tickSet]);
+  const tickFmt = useMemo(() => moneyTickFmt({ prefix: '$', isPrivate }), [isPrivate]);
 
-    chartRef.current = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: dates,
-        datasets: [
-          {
-            label: 'vested', data: vested,
-            borderColor: color, backgroundColor: hexToRgba(color, 0.18),
-            borderWidth: 2, fill: 'origin', tension: 0.2, pointRadius: 0, pointHoverRadius: 4, spanGaps: true,
-          },
-          {
-            label: 'total', data: total,
-            borderColor: colors.muted, backgroundColor: hexToRgba(colors.muted, 0.10),
-            borderWidth: 1.5, borderDash: [4, 3], fill: '-1', tension: 0.2, pointRadius: 0, pointHoverRadius: 4, spanGaps: true,
-          },
-        ],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            ...TOOLTIP_STYLE,
-            callbacks: {
-              title: items => fmtMonth(dates[items[0].dataIndex].slice(0, 7), { locale, style: 'short' }),
-              label: ctx => {
-                const di = ctx.dataIndex;
-                if (ctx.datasetIndex === 0) return `  vested: ${privMoney(vested[di] ?? 0, isPrivate, locale, currency)}`;
-                const unv = (total[di] ?? 0) - (vested[di] ?? 0);
-                return `  unvested: ${privMoney(unv, isPrivate, locale, currency)}`;
-              },
-            },
-          },
-        },
-        scales: {
-          y: {
-            grid: { color: colors.grid, drawTicks: false },
-            border: { display: false },
-            ticks: { color: colors.muted, font: { size: 11 }, padding: 8, maxTicksLimit: 4, callback: tickFmt },
-          },
-          x: {
-            grid: { display: false }, border: { display: false },
-            ticks: {
-              color: colors.muted, font: { size: 11 }, maxRotation: 0, autoSkip: false,
-              callback: (_, idx) => (xTickSet.has(idx) ? xFmt(new Date(dates[idx] + 'T12:00:00')) : null),
-            },
-          },
-        },
-      },
-    });
-  }, [company, grants, fmv, exercises, color, now, locale, currency, isPrivate]);
+  const renderTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+    if (!active || !payload?.length || !label) return null;
+    const dateStr = String(label);
+    const vestedPt = payload.find(p => p.dataKey === 'vested');
+    const totalPt = payload.find(p => p.dataKey === 'total');
+    const vestedVal = vestedPt?.value ?? 0;
+    const unvestedVal = (totalPt?.value ?? 0) - vestedVal;
+    return (
+      <div style={TT}>
+        <p style={{ color: '#94a3b8', fontSize: 11, margin: '0 0 4px' }}>
+          {fmtMonth(dateStr.slice(0, 7), { locale, style: 'short' })}
+        </p>
+        {vestedPt?.value != null && (
+          <p style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
+            vested: {privMoney(vestedVal, isPrivate, locale, currency)}
+          </p>
+        )}
+        {totalPt?.value != null && unvestedVal > 0 && (
+          <p style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
+            unvested: {privMoney(unvestedVal, isPrivate, locale, currency)}
+          </p>
+        )}
+      </div>
+    );
+  };
 
-  useEffect(() => () => { chartRef.current?.destroy(); chartRef.current = null; }, []);
+  if (!dates.length) return null;
 
   return (
-    <div className="h-[200px] relative">
-      <canvas ref={canvasRef} />
+    <div ref={containerRef} className="h-[200px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="cv-vested-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.18} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
+          <XAxis
+            dataKey="date"
+            ticks={xTicks}
+            tickFormatter={(d: string) => xFmt(new Date(d + 'T12:00:00'))}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={tickFmt}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickCount={4}
+            width={55}
+          />
+          <Tooltip
+            content={renderTooltip}
+            cursor={{ stroke: 'var(--subtle)', strokeWidth: 1, strokeOpacity: 0.4 }}
+          />
+          <Area
+            dataKey="vested"
+            name="vested"
+            type="monotone"
+            stroke={color}
+            strokeWidth={2}
+            fill="url(#cv-vested-grad)"
+            dot={false}
+            activeDot={{ r: 4, fill: color, stroke: '#fff', strokeWidth: 2 }}
+            connectNulls
+            isAnimationActive={false}
+          />
+          <Line
+            dataKey="total"
+            name="total"
+            type="monotone"
+            stroke="var(--subtle)"
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            dot={false}
+            activeDot={{ r: 4 }}
+            connectNulls
+            isAnimationActive={false}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
     </div>
   );
 }

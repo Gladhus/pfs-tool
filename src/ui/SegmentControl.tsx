@@ -1,20 +1,4 @@
-import { useRef } from 'react';
-import { cva } from 'class-variance-authority';
-
-const track = cva('inline-flex rounded bg-surface-2 p-0.5 gap-0.5');
-
-const seg = cva(
-  'px-3 py-1 text-sm rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
-  {
-    variants: {
-      active: {
-        true:  'bg-surface-1 text-fg font-medium shadow-xs',
-        false: 'text-muted hover:text-fg',
-      },
-    },
-    defaultVariants: { active: false },
-  },
-);
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
 
 interface SegmentOption<T extends string> {
   value: T;
@@ -26,50 +10,53 @@ interface SegmentControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
-  /** Stretch to fill the container with equal-width segments. */
   block?: boolean;
+  /** Full-width flex on mobile, natural inline-flex on md+ */
+  responsive?: boolean;
   'aria-label'?: string;
 }
+
+const baseTrackCls = 'rounded bg-surface-2 p-0.5 gap-0.5';
+
+const itemCls = [
+  'px-3 py-1 text-sm rounded transition-colors whitespace-nowrap',
+  'text-muted hover:text-fg',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+  'data-[state=on]:bg-surface-1 data-[state=on]:text-fg data-[state=on]:font-medium data-[state=on]:shadow-xs',
+].join(' ');
 
 export function SegmentControl<T extends string>({
   options,
   value,
   onChange,
-  className,
+  className = '',
   block = false,
+  responsive = false,
   'aria-label': label,
 }: SegmentControlProps<T>) {
-  const refs = useRef<(HTMLButtonElement | null)[]>([]);
-
-  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
-    if (e.key === 'ArrowRight') {
-      const next = (index + 1) % options.length;
-      refs.current[next]?.focus();
-      onChange(options[next].value);
-    } else if (e.key === 'ArrowLeft') {
-      const prev = (index - 1 + options.length) % options.length;
-      refs.current[prev]?.focus();
-      onChange(options[prev].value);
-    }
-  };
+  const trackFlex = block
+    ? 'flex w-full'
+    : responsive
+      ? 'flex w-full md:inline-flex md:w-auto'
+      : 'inline-flex';
 
   return (
-    <div role="group" aria-label={label} className={track({ className: `${block ? 'flex w-full' : ''} ${className ?? ''}` })}>
-      {options.map((opt, i) => (
-        <button
+    <ToggleGroup.Root
+      type="single"
+      value={value}
+      onValueChange={v => { if (v) onChange(v as T); }}
+      aria-label={label}
+      className={`${baseTrackCls} ${trackFlex} ${className}`}
+    >
+      {options.map(opt => (
+        <ToggleGroup.Item
           key={opt.value}
-          ref={(el) => { refs.current[i] = el; }}
-          type="button"
-          role="radio"
-          aria-checked={opt.value === value}
-          className={seg({ active: opt.value === value, className: block ? 'flex-1 text-center' : '' })}
-          onClick={() => onChange(opt.value)}
-          onKeyDown={(e) => handleKeyDown(e, i)}
-          tabIndex={opt.value === value ? 0 : -1}
+          value={opt.value}
+          className={`${itemCls} ${block || responsive ? 'flex-1 text-center md:flex-none' : ''}`}
         >
           {opt.label}
-        </button>
+        </ToggleGroup.Item>
       ))}
-    </div>
+    </ToggleGroup.Root>
   );
 }

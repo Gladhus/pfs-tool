@@ -1,13 +1,16 @@
-import { useRef, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import Chart from 'chart.js/auto';
-import type { ChartDataset } from 'chart.js';
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  type TooltipProps,
+} from 'recharts';
 import type { Account, Snapshot } from '@/types/sheets';
 import { buildBalanceSweep } from '@/utils/stats';
-import { chartColors, chartTooltip, moneyTickFmt } from '@/utils/chartOptions';
+import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
-import { hexToRgba, fmtMoney } from '@/utils/format';
+import { fmtMoney } from '@/utils/format';
 import { tr } from '@/i18n';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import type { SeriesState } from './SeriesToggleBar';
 
 export interface OverviewSeries {
@@ -17,14 +20,12 @@ export interface OverviewSeries {
   other: (number | null)[];
 }
 
-/** Line dataset that also carries the per-point un-stacked value for tooltips. */
-type AreaDataset = ChartDataset<'line', (number | null)[]> & { _rawData?: (number | null)[] };
-
 interface Props {
   filteredDates: string[];
   snapshots: Snapshot[];
   series: OverviewSeries;
   seriesVisible: SeriesState;
+  hasOtherData: boolean;
   /** '' = stacked overview; account ID = single-account line */
   selectedAccount: string;
   accounts: Account[];
@@ -33,162 +34,136 @@ interface Props {
   isPrivate: boolean;
 }
 
+const TT = { background: '#0f172a', border: 'none', borderRadius: 10, padding: '10px 12px' };
+
 export function HistoryChart({
-  filteredDates, snapshots, series, seriesVisible, selectedAccount, accounts, locale, currency, isPrivate,
+  filteredDates, snapshots, series, seriesVisible, hasOtherData, selectedAccount, accounts, locale, currency, isPrivate,
 }: Props) {
   const { t } = useTranslation();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<Chart | null>(null);
-  const prevModeRef = useRef(`${selectedAccount === '' ? 'overview' : selectedAccount}|false`);
+  const [containerRef, width] = useContainerWidth();
+  const isOverview = selectedAccount === '';
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const isOverview = selectedAccount === '';
-    // Include isPrivate AND the period's date range so toggling privacy or changing
-    // the period rebuilds the tick/tooltip callbacks (the data-only update path keeps
-    // stale closures → stale/bunched x-axis labels).
-    const datesSig = `${filteredDates.length}|${filteredDates[0] ?? ''}|${filteredDates[filteredDates.length - 1] ?? ''}`;
-    const modeKey = `${isOverview ? 'overview' : selectedAccount}|${isPrivate}|${datesSig}`;
-    const modeChanged = prevModeRef.current !== modeKey;
-    prevModeRef.current = modeKey;
-
-    const colors = chartColors();
-    const ctx = canvas.getContext('2d')!;
-    const h = canvas.parentElement?.offsetHeight || 300;
-    const makeGrad = (hex: string) => {
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, hexToRgba(hex, 0.18));
-      g.addColorStop(1, hexToRgba(hex, 0));
-      return g;
-    };
-
-    const datasets: AreaDataset[] = [];
-    let chartDates: string[] = [];
-
+  const { data, chartDates } = useMemo(() => {
     if (isOverview) {
-      if (!series.dates.length) return;
-      chartDates = series.dates;
-      const runningTotal = new Array(chartDates.length).fill(0);
-      let stackIdx = 0;
-
-      const pushArea = (rawData: (number | null)[], hex: string, labelKey: string) => {
-        const cumulative = rawData.map((v, i) => {
-          runningTotal[i] += v ?? 0;
-          return runningTotal[i];
-        });
-        datasets.push({
-          label: labelKey,
-          data: cumulative,
-          _rawData: rawData,
-          borderColor: hex,
-          backgroundColor: hexToRgba(hex, 0.4),
-          borderWidth: 2,
-          fill: stackIdx === 0 ? 'origin' : '-1',
-          tension: 0.35,
-          pointRadius: 0,
-          pointHoverRadius: 5,
-          spanGaps: true,
-        });
-        stackIdx++;
+      const dates = series.dates;
+      return {
+        chartDates: dates,
+        data: dates.map((date, i) => ({
+          date,
+          investments: series.investments[i],
+          realEstate: series.realEstateNet[i],
+          other: series.other[i],
+        })),
       };
-
-      if (seriesVisible.investments) pushArea(series.investments, colors.invest,     t('show_investments'));
-      if (seriesVisible.realEstate)  pushArea(series.realEstateNet, colors.realEstate, t('show_real_estate'));
-      if (seriesVisible.other)       pushArea(series.other, colors.cash,              t('show_other'));
-
-      if (!datasets.length) return;
-    } else {
-      const acct = accounts.find(a => a.id === selectedAccount);
-      if (!acct) return;
-      const sweep = buildBalanceSweep(snapshots, filteredDates);
-      const tempDates: string[] = [];
-      const values: number[] = [];
-      for (let i = 0; i < filteredDates.length; i++) {
-        const bal = sweep[i]?.[selectedAccount];
-        if (bal === undefined) continue;
-        tempDates.push(filteredDates[i]);
-        values.push(bal);
-      }
-      if (!tempDates.length) return;
-      chartDates = tempDates;
-      const hex = acct.kind === 'debt' ? colors.debt : colors.accent;
-      datasets.push({
-        label: tr(acct),
-        data: values,
-        borderColor: hex,
-        backgroundColor: makeGrad(hex),
-        borderWidth: 2,
-        fill: true,
-        tension: 0.35,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-      });
     }
-
-    const containerWidth = containerRef.current?.offsetWidth ?? 600;
-    const { tickSet: xTickSet, xFmt } = buildXAxisTicks(chartDates, containerWidth, locale);
-    const tickFmt = moneyTickFmt({ isPrivate });
-    const newData = { labels: chartDates, datasets };
-
-    if (chartRef.current && !modeChanged) {
-      chartRef.current.data = newData;
-      chartRef.current.update('none');
-      return;
+    const sweep = buildBalanceSweep(snapshots, filteredDates);
+    const pts: { date: string; value: number }[] = [];
+    for (let i = 0; i < filteredDates.length; i++) {
+      const bal = sweep[i]?.[selectedAccount];
+      if (bal !== undefined) pts.push({ date: filteredDates[i], value: bal });
     }
+    return { data: pts, chartDates: pts.map(p => p.date) };
+  }, [isOverview, series, filteredDates, snapshots, selectedAccount]);
 
-    const existing = Chart.getChart(canvas);
-    if (existing) existing.destroy();
+  const { tickSet, xFmt } = useMemo(
+    () => buildXAxisTicks(chartDates, width, locale),
+    [chartDates, width, locale],
+  );
+  const xTicks = useMemo(() => chartDates.filter((_, i) => tickSet.has(i)), [chartDates, tickSet]);
+  const tickFmt = useMemo(() => moneyTickFmt({ isPrivate }), [isPrivate]);
 
-    chartRef.current = new Chart(canvas, {
-      type: 'line',
-      data: newData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: chartTooltip({
-            labelFn: (ctx) => {
-              const raw = ctx.dataset._rawData;
-              const v = raw ? (raw[ctx.dataIndex] ?? ctx.parsed.y) : ctx.parsed.y;
-              const valStr = isPrivate ? '••••••' : fmtMoney(v, locale, currency);
-              return `${ctx.dataset.label}: ${valStr}`;
-            },
-          }),
-        },
-        scales: {
-          y: {
-            grid: { color: colors.grid, drawTicks: false },
-            border: { display: false },
-            ticks: { color: colors.muted, font: { size: 11 }, padding: 10, maxTicksLimit: 6, callback: tickFmt },
-          },
-          x: {
-            grid: { display: false },
-            border: { display: false },
-            ticks: {
-              color: colors.muted, font: { size: 11 }, maxRotation: 0, autoSkip: false,
-              callback: (_, idx) => {
-                if (!xTickSet.has(idx)) return null;
-                return xFmt(new Date(chartDates[idx] + 'T12:00:00'));
-              },
-            },
-          },
-        },
-      },
-    });
-  });
+  const acct = !isOverview ? accounts.find(a => a.id === selectedAccount) : undefined;
+  const acctColor = acct?.kind === 'debt' ? 'var(--cat-debts)' : 'var(--accent)';
 
-  useEffect(() => {
-    return () => { chartRef.current?.destroy(); chartRef.current = null; };
-  }, []);
+  const renderTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+    if (!active || !payload?.length) return null;
+    const items = payload.filter(p => p.value != null && p.value !== 0);
+    if (!items.length) return null;
+    return (
+      <div style={TT}>
+        {items.map(p => (
+          <p key={p.dataKey as string} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
+            {p.name}: {isPrivate ? '••••••' : fmtMoney(p.value!, locale, currency)}
+          </p>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div ref={containerRef} className="h-[280px] relative">
-      <canvas ref={canvasRef} />
+    <div ref={containerRef} className="h-[280px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <defs>
+            {isOverview ? (
+              <>
+                <linearGradient id="hc-invest-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cat-investments)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--cat-investments)" stopOpacity={0.05} />
+                </linearGradient>
+                <linearGradient id="hc-re-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cat-real-estate)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--cat-real-estate)" stopOpacity={0.05} />
+                </linearGradient>
+                <linearGradient id="hc-other-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cat-cash)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--cat-cash)" stopOpacity={0.05} />
+                </linearGradient>
+              </>
+            ) : (
+              <linearGradient id="hc-acct-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={acctColor} stopOpacity={0.18} />
+                <stop offset="100%" stopColor={acctColor} stopOpacity={0} />
+              </linearGradient>
+            )}
+          </defs>
+          <CartesianGrid stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
+          <XAxis
+            dataKey="date"
+            ticks={xTicks}
+            tickFormatter={(d: string) => xFmt(new Date(d + 'T12:00:00'))}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={tickFmt}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickCount={6}
+            width={55}
+          />
+          <Tooltip
+            content={renderTooltip}
+            cursor={{ stroke: 'var(--subtle)', strokeWidth: 1, strokeOpacity: 0.4 }}
+          />
+          {isOverview ? (
+            <>
+              {seriesVisible.investments && (
+                <Area dataKey="investments" name={t('show_investments')} type="monotone" stackId="s"
+                  stroke="var(--cat-investments)" strokeWidth={2} fill="url(#hc-invest-grad)"
+                  dot={false} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+              )}
+              {seriesVisible.realEstate && (
+                <Area dataKey="realEstate" name={t('show_real_estate')} type="monotone" stackId="s"
+                  stroke="var(--cat-real-estate)" strokeWidth={2} fill="url(#hc-re-grad)"
+                  dot={false} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+              )}
+              {hasOtherData && seriesVisible.other && (
+                <Area dataKey="other" name={t('show_other')} type="monotone" stackId="s"
+                  stroke="var(--cat-cash)" strokeWidth={2} fill="url(#hc-other-grad)"
+                  dot={false} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+              )}
+            </>
+          ) : (
+            <Area dataKey="value" name={acct ? tr(acct) : selectedAccount} type="monotone"
+              stroke={acctColor} strokeWidth={2} fill="url(#hc-acct-grad)"
+              dot={false} activeDot={{ r: 5, fill: acctColor, stroke: '#fff', strokeWidth: 2 }}
+              isAnimationActive={false} />
+          )}
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }

@@ -80,7 +80,7 @@ export default function HistoryPage() {
   const fxRateMap = useMemo(() => buildFxMap(fxRatesQ.data ?? []), [fxRatesQ.data]);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const period = (searchParams.get('period') as Period) ?? '1y';
+  const period = (searchParams.get('period') as Period) ?? 'all';
   const selectedAccount = searchParams.get('account') ?? '';
 
   const [seriesVisible, setSeriesVisible] = useState<SeriesState>({
@@ -105,6 +105,11 @@ export default function HistoryPage() {
   const overviewSeries = useMemo(
     () => computeSeries(filteredDates, activeAccounts(accounts), snapshots, mainCurrency, fxRateMap),
     [filteredDates, accounts, snapshots, mainCurrency, fxRateMap],
+  );
+
+  const hasOtherData = useMemo(
+    () => overviewSeries.other.some(v => v !== null && v !== 0),
+    [overviewSeries.other],
   );
 
   const cardData = useMemo((): CardData[] => {
@@ -237,20 +242,17 @@ export default function HistoryPage() {
     <div className="space-y-4">
       {/* Chart section */}
       <div className="rounded-xl bg-surface-1 shadow-sm p-4 space-y-3">
-        <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-          <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} />
-          <div className="flex items-center gap-2">
-            <AccountSelect
-              accounts={accounts}
-              categoryMeta={categoryMeta}
-              value={selectedAccount}
-              onChange={onAccountChange}
-            />
-          </div>
+        <div className="flex justify-end">
+          <AccountSelect
+            accounts={accounts}
+            categoryMeta={categoryMeta}
+            value={selectedAccount}
+            onChange={onAccountChange}
+          />
         </div>
 
         {isOverview && (
-          <SeriesToggleBar value={seriesVisible} onChange={setSeriesVisible} />
+          <SeriesToggleBar value={seriesVisible} onChange={setSeriesVisible} hasOther={hasOtherData} />
         )}
 
         <HistoryChart
@@ -258,12 +260,15 @@ export default function HistoryPage() {
           snapshots={snapshots}
           series={overviewSeries}
           seriesVisible={seriesVisible}
+          hasOtherData={hasOtherData}
           selectedAccount={selectedAccount}
           accounts={accounts}
           locale={locale}
           currency={currency}
           isPrivate={privateMode}
         />
+
+        <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} responsive />
       </div>
 
       {/* Card list */}

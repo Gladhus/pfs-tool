@@ -1,10 +1,15 @@
 export { Button } from './Button';
+export { Input } from './Input';
+export { Select, SelectItem, SelectGroup } from './Select';
+export { Checkbox } from './Checkbox';
+export { Label } from './Label';
 export { Badge } from './Badge';
 export { Icon } from './Icon';
 export type { IconName, IconProps } from './Icon';
 export { Delta } from './Delta';
 export { StatCard } from './StatCard';
 export { SegmentControl } from './SegmentControl';
+export { ChipToggle } from './ChipToggle';
 export { PeriodPills } from './PeriodPills';
 export type { Period } from './PeriodPills';
 export { Dialog } from './Dialog';

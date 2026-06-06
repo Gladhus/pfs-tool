@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/ui/Dialog';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
+import { Label } from '@/ui/Label';
 import { todayISO } from '@/utils/dates';
 import type { OptionExercise } from '@/types/sheets';
 
@@ -12,6 +14,10 @@ interface Props {
   exercise: OptionExercise | null;
   onSave: (exercise: OptionExercise) => void;
   onDelete: () => void;
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><Label>{label}</Label>{children}</div>;
 }
 
 export function ExerciseDialog({ open, onClose, grantId, exercise, onSave, onDelete }: Props) {
@@ -43,28 +49,21 @@ export function ExerciseDialog({ open, onClose, grantId, exercise, onSave, onDel
     });
   };
 
-  const inputCls = 'h-8 w-full rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
-  const labelCls = 'block text-xs font-medium text-fg-2 mb-1';
-
   return (
     <Dialog open={open} onClose={onClose} title={isNew ? t('opt_new_exercise') : t('opt_edit_exercise')}>
       <div className="space-y-3">
-        <div>
-          <label className={labelCls} htmlFor="ex-date">{t('opt_exercise_date')}</label>
-          <input id="ex-date" type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
-        </div>
-        <div>
-          <label className={labelCls} htmlFor="ex-shares">{t('opt_exercise_shares')}</label>
-          <input id="ex-shares" type="number" className={inputCls} value={shares} onChange={e => setShares(e.target.value)} autoFocus />
-        </div>
-        <div>
-          <label className={labelCls} htmlFor="ex-price">{t('opt_exercise_price')}</label>
-          <input id="ex-price" type="number" step="0.0001" className={inputCls} value={price} onChange={e => setPrice(e.target.value)} />
-        </div>
-        <div>
-          <label className={labelCls} htmlFor="ex-note">{t('opt_exercise_note')}</label>
-          <input id="ex-note" className={inputCls} value={note} onChange={e => setNote(e.target.value)} />
-        </div>
+        <Field label={t('opt_exercise_date')}>
+          <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </Field>
+        <Field label={t('opt_exercise_shares')}>
+          <Input type="number" value={shares} onChange={e => setShares(e.target.value)} autoFocus />
+        </Field>
+        <Field label={t('opt_exercise_price')}>
+          <Input type="number" step="0.0001" value={price} onChange={e => setPrice(e.target.value)} />
+        </Field>
+        <Field label={t('opt_exercise_note')}>
+          <Input value={note} onChange={e => setNote(e.target.value)} />
+        </Field>
       </div>
       <div className="mt-5 flex items-center justify-between">
         {!isNew ? <Button variant="danger" size="sm" onClick={onDelete}>{t('opt_delete_exercise')}</Button> : <span />}

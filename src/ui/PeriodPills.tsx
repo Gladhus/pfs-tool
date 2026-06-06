@@ -12,9 +12,10 @@ interface PeriodPillsProps {
   options?: Period[];
   className?: string;
   block?: boolean;
+  responsive?: boolean;
 }
 
-export function PeriodPills({ value, onChange, options = APP_PERIODS, className, block }: PeriodPillsProps) {
+export function PeriodPills({ value, onChange, options = APP_PERIODS, className, block, responsive }: PeriodPillsProps) {
   const { t } = useTranslation();
 
   const segOptions = options.map((p) => ({
@@ -29,6 +30,7 @@ export function PeriodPills({ value, onChange, options = APP_PERIODS, className,
       onChange={onChange}
       className={className}
       block={block}
+      responsive={responsive}
       aria-label="Time period"
     />
   );

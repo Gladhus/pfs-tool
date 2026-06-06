@@ -1,10 +1,14 @@
-import { useEffect, useRef } from 'react';
-import Chart from 'chart.js/auto';
-import { chartColors, chartTooltip, moneyTickFmt } from '@/utils/chartOptions';
-import { hexToRgba, fmtMoney } from '@/utils/format';
+import { useMemo } from 'react';
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  type TooltipProps,
+} from 'recharts';
+import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
+import { fmtMoney } from '@/utils/format';
 import { generateMonthlyDates, getEffectiveFmv, computeIntrinsicValue } from '@/utils/options';
 import { toMain, rateFor } from '@/utils/currency';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { COMPANY_COLORS } from './charts';
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise, Currency } from '@/types/sheets';
 
@@ -17,37 +21,34 @@ interface Props {
   locale: string;
   currency: Currency;
   isPrivate: boolean;
-  /** Clamp the chart's start to this date (period filter). */
   fromDate?: string;
-  /** Company ids to hide (legend toggle); colors stay keyed to the full active list. */
   hiddenIds?: Set<string>;
   main: Currency;
   fxMap: Map<string, number>;
 }
 
-export function SummaryChart({ companies, grants, fmv, now, locale, currency, isPrivate, fromDate, hiddenIds, main, fxMap }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<Chart | null>(null);
+const TT = { background: '#0f172a', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+export function SummaryChart({
+  companies, grants, fmv, now, locale, currency, isPrivate, fromDate, hiddenIds, main, fxMap,
+}: Props) {
+  const [containerRef, width] = useContainerWidth();
 
+  const { dates, data, shown, active } = useMemo(() => {
     const active = companies.filter(c => c.active !== false);
     const shown = active.filter(c => !hiddenIds?.has(c.id));
     const fmvDates = fmv.map(f => f.date).sort();
-    if (!shown.length || !fmvDates.length) return;
+    if (!shown.length || !fmvDates.length) return { dates: [] as string[], data: [], shown, active };
 
     const start = fromDate && fromDate > fmvDates[0] ? fromDate : fmvDates[0];
     const allDates = generateMonthlyDates(start, now);
-    if (allDates.length < 2) return;
+    if (allDates.length < 2) return { dates: [] as string[], data: [], shown, active };
 
     const shownValues = shown.map(c => {
       const cGrants = grants.filter(g => g.company_id === c.id);
       return allDates.map(d => {
         const entry = getEffectiveFmv(fmv, c.id, d);
         if (!entry) return null;
-        // Only count grants that exist by this date — no equity data before the first grant.
         const granted = cGrants.filter(g => g.grant_date.slice(0, 7) <= d.slice(0, 7));
         if (!granted.length) return null;
         const native = granted.reduce((s, g) => s + computeIntrinsicValue(g, [], entry.fmv, d), 0);
@@ -59,74 +60,87 @@ export function SummaryChart({ companies, grants, fmv, now, locale, currency, is
     while (trim < allDates.length && shownValues.every(v => v[trim] === null)) trim++;
     const dates = allDates.slice(trim);
     const values = shownValues.map(v => v.slice(trim));
-    if (dates.length < 2) return;
+    if (dates.length < 2) return { dates: [] as string[], data: [], shown, active };
 
-    const colors = chartColors();
-    const datasets = shown.map((company, ci) => {
-      const color = COMPANY_COLORS[active.findIndex(a => a.id === company.id) % COMPANY_COLORS.length];
-      const cum = dates.map((_, di) => {
-        const vals = values.slice(0, ci + 1).map(arr => arr[di]);
-        if (vals.every(v => v === null)) return null;
-        return vals.reduce<number>((s, v) => s + (v ?? 0), 0);
-      });
-      return {
-        label: company.ticker ? `${company.name} (${company.ticker})` : company.name,
-        data: cum,
-        borderColor: color,
-        backgroundColor: hexToRgba(color, ci === 0 ? 0.18 : 0.14),
-        borderWidth: 2,
-        fill: ci === 0 ? 'origin' : '-1',
-        tension: 0.3,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        spanGaps: false,
-      };
+    const data = dates.map((date, di) => {
+      const pt: Record<string, number | null | string> = { date };
+      shown.forEach((company, ci) => { pt[company.id] = values[ci][di]; });
+      return pt;
     });
 
-    const { tickSet: xTickSet, xFmt } = buildXAxisTicks(dates, canvas.parentElement?.offsetWidth ?? 600, locale);
-    const tickFmt = moneyTickFmt({ isPrivate });
+    return { dates, data, shown, active };
+  }, [companies, grants, fmv, now, fromDate, hiddenIds, main, fxMap]);
 
-    chartRef.current?.destroy();
-    const existing = Chart.getChart(canvas);
-    if (existing) existing.destroy();
+  const { tickSet, xFmt } = useMemo(
+    () => buildXAxisTicks(dates, width, locale),
+    [dates, width, locale],
+  );
+  const xTicks = useMemo(() => dates.filter((_, i) => tickSet.has(i)), [dates, tickSet]);
+  const tickFmt = useMemo(() => moneyTickFmt({ isPrivate }), [isPrivate]);
 
-    chartRef.current = new Chart(canvas, {
-      type: 'line',
-      data: { labels: dates, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: chartTooltip({
-            labelFn: (ctx) => `${ctx.dataset.label}: ${isPrivate ? '••••••' : fmtMoney(ctx.parsed.y, locale, currency)}`,
-          }),
-        },
-        scales: {
-          y: {
-            grid: { color: colors.grid, drawTicks: false },
-            border: { display: false },
-            ticks: { color: colors.muted, font: { size: 11 }, padding: 10, maxTicksLimit: 5, callback: tickFmt },
-          },
-          x: {
-            grid: { display: false },
-            border: { display: false },
-            ticks: {
-              color: colors.muted, font: { size: 11 }, maxRotation: 0, autoSkip: false,
-              callback: (_, idx) => (xTickSet.has(idx) ? xFmt(new Date(dates[idx] + 'T12:00:00')) : null),
-            },
-          },
-        },
-      },
-    });
-  }, [companies, grants, fmv, now, locale, currency, isPrivate, fromDate, hiddenIds, main, fxMap]);
+  const renderTooltip = ({ active: isActive, payload }: TooltipProps<number, string>) => {
+    if (!isActive || !payload?.length) return null;
+    const items = payload.filter(p => p.value != null);
+    if (!items.length) return null;
+    return (
+      <div style={TT}>
+        {items.map(p => (
+          <p key={p.dataKey as string} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
+            {p.name}: {isPrivate ? '••••••' : fmtMoney(p.value!, locale, currency)}
+          </p>
+        ))}
+      </div>
+    );
+  };
 
-  useEffect(() => () => { chartRef.current?.destroy(); chartRef.current = null; }, []);
+  if (!dates.length) return null;
 
   return (
-    <div className="h-[280px] relative">
-      <canvas ref={canvasRef} />
+    <div ref={containerRef} className="h-[280px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <CartesianGrid stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
+          <XAxis
+            dataKey="date"
+            ticks={xTicks}
+            tickFormatter={(d: string) => xFmt(new Date(d + 'T12:00:00'))}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={tickFmt}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickCount={5}
+            width={55}
+          />
+          <Tooltip
+            content={renderTooltip}
+            cursor={{ stroke: 'var(--subtle)', strokeWidth: 1, strokeOpacity: 0.4 }}
+          />
+          {shown.map((company, ci) => {
+            const color = COMPANY_COLORS[active.findIndex(a => a.id === company.id) % COMPANY_COLORS.length];
+            return (
+              <Area
+                key={company.id}
+                dataKey={company.id}
+                name={company.ticker ? `${company.name} (${company.ticker})` : company.name}
+                type="monotone"
+                stackId="s"
+                stroke={color}
+                strokeWidth={2}
+                fill={color}
+                fillOpacity={ci === 0 ? 0.18 : 0.14}
+                dot={false}
+                activeDot={{ r: 4 }}
+                isAnimationActive={false}
+              />
+            );
+          })}
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }

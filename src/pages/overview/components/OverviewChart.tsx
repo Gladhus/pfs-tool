@@ -1,9 +1,13 @@
-import { useRef, useEffect } from 'react';
-import Chart from 'chart.js/auto';
-import { chartColors, chartTooltip, moneyTickFmt } from '@/utils/chartOptions';
+import { useMemo } from 'react';
+import {
+  ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  type TooltipProps,
+} from 'recharts';
+import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
-import { hexToRgba, fmtMoney } from '@/utils/format';
+import { fmtMoney } from '@/utils/format';
 import { categoryKey } from '@/utils/icons';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import type { BucketData } from '../hooks/useOverviewStats';
 
 interface Props {
@@ -18,159 +22,117 @@ interface Props {
   view: string;
 }
 
+const TT = { background: '#0f172a', border: 'none', borderRadius: 10, padding: '10px 12px' };
+
 export function OverviewChart({
-  dates, netData, buckets, seriesVisible, locale, currency, isPrivate, netLabel, view,
+  dates, netData, buckets, seriesVisible, locale, currency, isPrivate, netLabel,
 }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<Chart | null>(null);
-  const prevViewRef = useRef(`${view}|false`);
+  const [containerRef, width] = useContainerWidth();
 
-  const isVis = (key: string) => seriesVisible[key] !== false;
+  const visibleBuckets = useMemo(
+    () => buckets.filter(b => seriesVisible[b.key] !== false && b.data.some(v => v !== null && v !== 0)),
+    [buckets, seriesVisible],
+  );
 
-  // Data + view effect — updates chart in place; no cleanup returned (chart lives until unmount effect)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !dates.length) return;
+  const data = useMemo(() =>
+    dates.map((date, i) => {
+      const pt: Record<string, number | null | string> = { date };
+      if (seriesVisible['net'] !== false) pt.net = netData[i] ?? null;
+      for (const b of visibleBuckets) pt[b.key] = b.data[i] ?? null;
+      return pt;
+    }),
+    [dates, netData, visibleBuckets, seriesVisible],
+  );
 
-    // Include isPrivate AND the date range so toggling privacy or changing the
-    // period rebuilds the tick/tooltip callbacks rather than only swapping data
-    // (the fast path keeps stale closures → stale/bunched x-axis labels).
-    const viewKey = `${view}|${isPrivate}|${dates.length}|${dates[0] ?? ''}|${dates[dates.length - 1] ?? ''}`;
-    const viewChanged = prevViewRef.current !== viewKey;
-    prevViewRef.current = viewKey;
+  const { tickSet, xFmt } = useMemo(
+    () => buildXAxisTicks(dates, width, locale),
+    [dates, width, locale],
+  );
+  const xTicks = useMemo(() => dates.filter((_, i) => tickSet.has(i)), [dates, tickSet]);
+  const tickFmt = useMemo(() => moneyTickFmt({ isPrivate }), [isPrivate]);
 
-    const colors = chartColors();
-    const cs = getComputedStyle(document.documentElement);
-    const catColor = (id?: string): string => {
-      if (!id || id === 'equity') {
-        return cs.getPropertyValue('--cat-equity').trim() || '#06b6d4';
-      }
-      return cs.getPropertyValue('--cat-' + categoryKey(id)).trim() || colors.accent;
-    };
+  const catColor = (b: BucketData) =>
+    b.color ?? (!b.catId || b.catId === 'equity' ? 'var(--cat-equity)' : `var(--cat-${categoryKey(b.catId)})`);
 
-    const ctx = canvas.getContext('2d')!;
-    const h = canvas.parentElement?.offsetHeight || 280;
-    const netGrad = ctx.createLinearGradient(0, 0, 0, h);
-    netGrad.addColorStop(0, hexToRgba(colors.accent, 0.22));
-    netGrad.addColorStop(1, hexToRgba(colors.accent, 0));
-
-    const datasets: Chart['data']['datasets'] = [];
-
-    if (isVis('net')) {
-      datasets.push({
-        label: netLabel,
-        data: netData,
-        borderColor: colors.accent,
-        backgroundColor: netGrad,
-        borderWidth: 2.5,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: colors.accent,
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
-        spanGaps: true,
-        order: 0,
-      });
-    }
-
-    for (const b of buckets) {
-      if (!b.data.some(v => v !== null && v !== 0)) continue;
-      if (!isVis(b.key)) continue;
-      const col = b.color ?? catColor(b.catId);
-      datasets.push({
-        label: b.label,
-        data: b.data,
-        borderColor: col,
-        backgroundColor: col,
-        borderWidth: 1.5,
-        fill: false,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        pointHoverBackgroundColor: col,
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
-        spanGaps: true,
-        order: 1,
-      });
-    }
-
-    const containerWidth = containerRef.current?.offsetWidth ?? 600;
-    const { tickSet: xTickSet, xFmt } = buildXAxisTicks(dates, containerWidth, locale);
-    const tickFmt = moneyTickFmt({ isPrivate });
-
-    const newData = { labels: dates, datasets };
-
-    if (chartRef.current && !viewChanged) {
-      chartRef.current.data = newData;
-      chartRef.current.update('none');
-      return;
-    }
-
-    const existing = Chart.getChart(canvas);
-    if (existing) existing.destroy();
-
-    chartRef.current = new Chart(canvas, {
-      type: 'line',
-      data: newData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: chartTooltip({
-            labelFn: (ctx) => {
-              const valStr = isPrivate ? '••••••' : fmtMoney(ctx.parsed.y, locale, currency);
-              return `${ctx.dataset.label}: ${valStr}`;
-            },
-          }),
-        },
-        scales: {
-          y: {
-            grid: { color: colors.grid, drawTicks: false },
-            border: { display: false },
-            ticks: {
-              color: colors.muted,
-              font: { size: 11 },
-              padding: 10,
-              maxTicksLimit: 5,
-              callback: tickFmt,
-            },
-          },
-          x: {
-            grid: { display: false },
-            border: { display: false },
-            ticks: {
-              color: colors.muted,
-              font: { size: 11 },
-              maxRotation: 0,
-              autoSkip: false,
-              callback: (_, idx) => {
-                if (!xTickSet.has(idx)) return null;
-                return xFmt(new Date(dates[idx] + 'T12:00:00'));
-              },
-            },
-          },
-        },
-      },
-    });
-  });
-
-  // Unmount-only cleanup — prevents chart leak on route navigation
-  useEffect(() => {
-    return () => {
-      chartRef.current?.destroy();
-      chartRef.current = null;
-    };
-  }, []);
+  const renderTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+    if (!active || !payload?.length) return null;
+    const items = payload.filter(p => p.value != null);
+    if (!items.length) return null;
+    return (
+      <div style={TT}>
+        {items.map(p => (
+          <p key={p.dataKey as string} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
+            {p.name}: {isPrivate ? '••••••' : fmtMoney(p.value!, locale, currency)}
+          </p>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div ref={containerRef} className="h-[320px] relative">
-      <canvas ref={canvasRef} />
+    <div ref={containerRef} className="h-[320px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="ov-net-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
+          <XAxis
+            dataKey="date"
+            ticks={xTicks}
+            tickFormatter={(d: string) => xFmt(new Date(d + 'T12:00:00'))}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={tickFmt}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickCount={5}
+            width={55}
+          />
+          <Tooltip
+            content={renderTooltip}
+            cursor={{ stroke: 'var(--subtle)', strokeWidth: 1, strokeOpacity: 0.4 }}
+          />
+          {seriesVisible['net'] !== false && (
+            <Area
+              dataKey="net"
+              name={netLabel}
+              type="monotone"
+              stroke="var(--accent)"
+              strokeWidth={2.5}
+              fill="url(#ov-net-grad)"
+              dot={false}
+              activeDot={{ r: 5, fill: 'var(--accent)', stroke: '#fff', strokeWidth: 2 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          )}
+          {visibleBuckets.map(b => {
+            const color = catColor(b);
+            return (
+              <Line
+                key={b.key}
+                dataKey={b.key}
+                name={b.label}
+                type="monotone"
+                stroke={color}
+                strokeWidth={1.5}
+                dot={false}
+                activeDot={{ r: 4, fill: color, stroke: '#fff', strokeWidth: 2 }}
+                connectNulls
+                isAnimationActive={false}
+              />
+            );
+          })}
+        </ComposedChart>
+      </ResponsiveContainer>
     </div>
   );
 }

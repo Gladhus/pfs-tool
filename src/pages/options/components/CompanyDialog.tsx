@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/ui/Dialog';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
+import { Select, SelectItem } from '@/ui/Select';
+import { Checkbox } from '@/ui/Checkbox';
+import { Label } from '@/ui/Label';
 import { TagChipInput } from '@/pages/settings/components/TagChipInput';
 import type { OptionCompany, Currency } from '@/types/sheets';
 
@@ -15,6 +19,10 @@ interface Props {
   mainCurrency: Currency;
   onSave: (company: OptionCompany) => void;
   onDelete: () => void;
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><Label>{label}</Label>{children}</div>;
 }
 
 export function CompanyDialog({ open, onClose, company, availableTags = [], mainCurrency, onSave, onDelete }: Props) {
@@ -48,35 +56,25 @@ export function CompanyDialog({ open, onClose, company, availableTags = [], main
     });
   };
 
-  const inputCls = 'h-8 w-full rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
-  const labelCls = 'block text-xs font-medium text-fg-2 mb-1';
-
   return (
     <Dialog open={open} onClose={onClose} title={isNew ? t('opt_new_company') : t('opt_edit_company')}>
       <div className="space-y-3">
-        <div>
-          <label className={labelCls} htmlFor="comp-name">{t('opt_company_name')}</label>
-          <input id="comp-name" className={inputCls} value={name} onChange={e => setName(e.target.value)} autoFocus />
-        </div>
-        <div>
-          <label className={labelCls} htmlFor="comp-ticker">{t('opt_ticker')}</label>
-          <input id="comp-ticker" className={inputCls} value={ticker} onChange={e => setTicker(e.target.value)} />
-        </div>
-        <div>
-          <label className={labelCls} htmlFor="comp-currency">{t('currency_label')}</label>
-          <select id="comp-currency" className={inputCls} value={currency} onChange={e => setCurrency(e.target.value as Currency)}>
-            {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className={labelCls}>{t('opt_equity_tags')}</label>
+        <Field label={t('opt_company_name')}>
+          <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
+        </Field>
+        <Field label={t('opt_ticker')}>
+          <Input value={ticker} onChange={e => setTicker(e.target.value)} />
+        </Field>
+        <Field label={t('currency_label')}>
+          <Select value={currency} onValueChange={v => setCurrency(v as Currency)}>
+            {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </Select>
+        </Field>
+        <Field label={t('opt_equity_tags')}>
           <TagChipInput value={tags} onChange={setTags} available={availableTags} placeholder={t('add_tag_placeholder')} />
           <p className="mt-1 text-xs text-muted">{t('opt_equity_tags_hint')}</p>
-        </div>
-        <label className="flex items-center gap-2 text-sm text-fg">
-          <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} />
-          {t('opt_active')}
-        </label>
+        </Field>
+        <Checkbox checked={active} onCheckedChange={setActive} label={t('opt_active')} />
       </div>
       <div className="mt-5 flex items-center justify-between">
         {!isNew ? <Button variant="danger" size="sm" onClick={onDelete}>{t('opt_delete_company')}</Button> : <span />}

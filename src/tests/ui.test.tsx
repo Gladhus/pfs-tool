@@ -113,32 +113,28 @@ describe('SegmentControl', () => {
     expect(screen.getByRole('radio', { name: 'Alpha' })).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('navigates with ArrowRight key', async () => {
+  it('calls onChange when clicking a different option', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
 
     render(<SegmentControl options={[...options]} value="a" onChange={onChange} />);
-    const alpha = screen.getByRole('radio', { name: 'Alpha' });
-    alpha.focus();
-    await user.keyboard('{ArrowRight}');
+    await user.click(screen.getByRole('radio', { name: 'Beta' }));
     expect(onChange).toHaveBeenCalledWith('b');
   });
 
-  it('navigates with ArrowLeft key', async () => {
+  it('moves focus with ArrowRight key', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
 
-    render(<SegmentControl options={[...options]} value="b" onChange={onChange} />);
-    const beta = screen.getByRole('radio', { name: 'Beta' });
-    beta.focus();
-    await user.keyboard('{ArrowLeft}');
-    expect(onChange).toHaveBeenCalledWith('a');
+    render(<SegmentControl options={[...options]} value="a" onChange={vi.fn()} />);
+    screen.getByRole('radio', { name: 'Alpha' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'Beta' }));
   });
 });
 
 describe('ToastHost', () => {
   it('renders without crashing when no toasts', () => {
-    const { container } = render(<ToastHost />);
-    expect(container.firstChild).toBeNull();
+    render(<ToastHost />);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

@@ -9,6 +9,7 @@ import { useWriteConfigMutation } from '@/queries/sheetMutations';
 import { SegmentControl } from '@/ui/SegmentControl';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
+import { Checkbox } from '@/ui/Checkbox';
 import SheetPickerDialog from '@/components/SheetPickerDialog';
 import { snapshotsToCsv } from '@/utils/csv';
 import type { Theme, Lang } from '@/stores/ui.store';
@@ -111,12 +112,10 @@ export function PreferencesSection() {
         </Row>
 
         <Row label={t('enable_stock_options')}>
-          <input
-            type="checkbox"
+          <Checkbox
             checked={stockOptionsEnabled}
             disabled={writeConfig.isPending}
-            onChange={e => onToggleStockOptions(e.target.checked)}
-            className="h-4 w-4"
+            onCheckedChange={onToggleStockOptions}
           />
         </Row>
       </section>

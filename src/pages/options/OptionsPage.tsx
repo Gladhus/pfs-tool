@@ -18,6 +18,7 @@ import { Amount } from '@/ui/Amount';
 import { Delta } from '@/ui/Delta';
 import { EmptyState } from '@/ui/EmptyState';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
+import { ChipToggle } from '@/ui/ChipToggle';
 import { SummaryChart } from './components/SummaryChart';
 import { CompanyCard } from './components/CompanyCard';
 import { COMPANY_COLORS } from './components/charts';
@@ -155,25 +156,14 @@ export default function OptionsPage() {
             <div className="no-scrollbar flex gap-2 overflow-x-auto -mx-1 px-1" role="group">
               {companies.map((c, i) => {
                 const color = COMPANY_COLORS[i % COMPANY_COLORS.length];
-                const active = !hidden[c.id];
                 return (
-                  <button
+                  <ChipToggle
                     key={c.id}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={active}
-                    onClick={() => setHidden(h => ({ ...h, [c.id]: active }))}
-                    className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                      active ? 'bg-surface-2 text-fg' : 'text-muted hover:text-fg'
-                    }`}
-                    style={{ borderColor: active ? color : 'var(--color-border)' }}
-                  >
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={active ? { backgroundColor: color } : { boxShadow: `inset 0 0 0 2px ${color}` }}
-                    />
-                    {c.ticker ? `${c.name} (${c.ticker})` : c.name}
-                  </button>
+                    label={c.ticker ? `${c.name} (${c.ticker})` : c.name}
+                    color={color}
+                    active={!hidden[c.id]}
+                    onToggle={() => setHidden(h => ({ ...h, [c.id]: !hidden[c.id] }))}
+                  />
                 );
               })}
             </div>

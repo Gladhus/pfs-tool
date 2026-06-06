@@ -1,6 +1,54 @@
-import { PATHS, type IconName } from '@/utils/icons';
+import type { LucideIcon } from 'lucide-react';
+import {
+  TrendingUp, Home, CreditCard, Activity, Clock,
+  Plus, Pencil, Trash2, Archive, Check, X,
+  ChevronDown, ChevronUp, ChevronRight,
+  ArrowUp, ArrowDown, ExternalLink, Download, Upload,
+  RefreshCw, Save, Copy, Eye, EyeOff,
+  User, Users, Settings, Search, Sun, Moon,
+  Database, Inbox, PieChart, HelpCircle, AlertCircle,
+} from 'lucide-react';
 
-export type { IconName };
+const ICONS = {
+  investments:  TrendingUp,
+  realestate:   Home,
+  cash:         CreditCard,
+  debts:        Activity,
+  other:        Clock,
+  plus:         Plus,
+  edit:         Pencil,
+  trash:        Trash2,
+  archive:      Archive,
+  check:        Check,
+  x:            X,
+  chevronDown:  ChevronDown,
+  chevronUp:    ChevronUp,
+  chevronRight: ChevronRight,
+  arrowUp:      ArrowUp,
+  arrowDown:    ArrowDown,
+  externalLink: ExternalLink,
+  download:     Download,
+  upload:       Upload,
+  refresh:      RefreshCw,
+  save:         Save,
+  copy:         Copy,
+  eye:          Eye,
+  eyeOff:       EyeOff,
+  user:         User,
+  users:        Users,
+  settings:     Settings,
+  search:       Search,
+  sun:          Sun,
+  moon:         Moon,
+  database:     Database,
+  inbox:        Inbox,
+  trendingUp:   TrendingUp,
+  pieChart:     PieChart,
+  helpCircle:   HelpCircle,
+  alert:        AlertCircle,
+} as const satisfies Record<string, LucideIcon>;
+
+export type IconName = keyof typeof ICONS;
 
 export interface IconProps {
   name: IconName;
@@ -11,21 +59,14 @@ export interface IconProps {
 }
 
 export function Icon({ name, size = 16, strokeWidth = 2, className, 'aria-label': label }: IconProps) {
-  const path = PATHS[name];
+  const Component = ICONS[name] as LucideIcon;
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+    <Component
+      size={size}
       strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       className={className}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      dangerouslySetInnerHTML={{ __html: path }}
     />
   );
 }

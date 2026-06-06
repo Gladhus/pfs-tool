@@ -5,9 +5,11 @@ interface SparklineProps {
   className?: string;
   width?: number;
   height?: number;
+  /** Stroke color; defaults to the accent token when omitted. */
+  color?: string;
 }
 
-export function Sparkline({ series, className = '', width = 120, height = 28 }: SparklineProps) {
+export function Sparkline({ series, className = '', width = 120, height = 28, color }: SparklineProps) {
   const points = useMemo(() => {
     const valid = series.filter((v): v is number => v != null);
     if (valid.length < 2) return null;
@@ -37,34 +39,22 @@ export function Sparkline({ series, className = '', width = 120, height = 28 }: 
 
   return (
     <svg
-      width={width}
-      height={height}
       viewBox={`0 0 ${width} ${height}`}
-      className={`block text-accent ${className}`}
+      preserveAspectRatio="none"
+      className={`block w-full ${color ? '' : 'text-accent'} ${className}`}
+      style={{ height, ...(color ? { color } : {}) }}
       aria-hidden="true"
     >
-      <polyline
-        points={series
-          .map((v, i) => {
-            if (v == null) return null;
-            const valid = series.filter((x): x is number => x != null);
-            const min = Math.min(...valid);
-            const max = Math.max(...valid);
-            const span = max - min || 1;
-            const pad = 2;
-            const x = i * (width / (series.length - 1));
-            const y = pad + (height - pad * 2) - ((v - min) / span) * (height - pad * 2);
-            return `${x.toFixed(1)},${y.toFixed(1)}`;
-          })
-          .filter(Boolean)
-          .join(' ')}
+      <path
+        d={points.d}
         fill="none"
         stroke="currentColor"
         strokeWidth={1.5}
         strokeLinejoin="round"
         strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
       />
-      <circle cx={points.lx} cy={points.ly} r={2.2} fill="currentColor" />
+      <circle cx={points.lx} cy={points.ly} r={2.5} fill="currentColor" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

@@ -50,7 +50,7 @@ describe('gapiCall — thenable handling', () => {
       },
     };
     setGapiTokenClient(fakeClient as Parameters<typeof setGapiTokenClient>[0]);
-    globalThis.gapi = { client: { setToken: vi.fn() } } as unknown as typeof gapi;
+    (globalThis as unknown as { gapi: typeof gapi }).gapi = { client: { setToken: vi.fn() } } as unknown as typeof gapi;
 
     const out = await gapiCall(() => {
       calls += 1;
@@ -61,7 +61,7 @@ describe('gapiCall — thenable handling', () => {
 
     expect(calls).toBe(2);
     expect(out).toEqual({ ok: true });
-    expect((globalThis.gapi.client as unknown as { setToken: ReturnType<typeof vi.fn> }).setToken)
+    expect(((globalThis as unknown as { gapi: typeof gapi }).gapi.client as unknown as { setToken: ReturnType<typeof vi.fn> }).setToken)
       .toHaveBeenCalledWith({ access_token: 'new-token' });
   });
 });

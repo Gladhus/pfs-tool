@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { privMoney } from '@/utils/privacy';
+import { Amount } from '@/ui/Amount';
 import { Delta } from '@/ui/Delta';
 
 interface HeroCardProps {
@@ -20,32 +20,34 @@ function fmtDateLong(yyyymmdd: string, locale: string): string {
   );
 }
 
+/** Hero header: eyebrow, value, delta, period label, data-as-of. */
 export function HeroCard({ netWorth, prevNetWorth, latestDate, period, locale, currency, isPrivate }: HeroCardProps) {
   const { t } = useTranslation();
   const delta = prevNetWorth != null ? netWorth - prevNetWorth : null;
-  const periodLabel = t(`period_${period.toLowerCase()}`);
+  const periodLabel = t(`period_long_${period.toLowerCase()}`);
 
   return (
-    <div className="rounded-xl bg-surface-1 shadow-sm p-5 flex flex-col gap-1">
-      <div className="text-3xl font-bold text-fg tabular-nums">
-        {privMoney(netWorth, isPrivate, locale, currency)}
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted">{t('net_worth')}</p>
+      <div className="mt-1 text-4xl md:text-5xl font-bold text-fg tabular-nums leading-tight">
+        <Amount value={netWorth} />
       </div>
-      {latestDate && (
-        <div className="text-xs text-muted">
-          {t('data_as_of', { date: fmtDateLong(latestDate, locale) })}
-        </div>
-      )}
       {delta != null && (
         <Delta
           value={delta}
           baseValue={prevNetWorth}
-          periodLabel={periodLabel}
-          layout="stacked"
+          layout="inline"
           locale={locale}
           currency={currency}
           isPrivate={isPrivate}
-          className="mt-1 text-sm"
+          className="mt-1 text-sm md:text-base font-semibold"
         />
+      )}
+      <div className="mt-1 text-sm text-fg-2">{periodLabel}</div>
+      {latestDate && (
+        <div className="text-xs text-muted">
+          {t('data_as_of', { date: fmtDateLong(latestDate, locale) })}
+        </div>
       )}
     </div>
   );

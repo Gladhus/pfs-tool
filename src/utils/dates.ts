@@ -160,29 +160,44 @@ export function buildXAxisTicks(dates: string[], canvasWidth: number, locale: st
   const first = new Date(dates[0] + 'T12:00:00');
   const last  = new Date(dates[dates.length - 1] + 'T12:00:00');
   const rangeYears = (last.getTime() - first.getTime()) / (365.25 * 24 * 3600 * 1000);
-  const useYearOnly = rangeYears >= 2;
-  const targetTicks = canvasWidth < 400 ? 3 : canvasWidth < 700 ? 5 : 7;
-  let tickIndices: number[] = [];
+  const useYearOnly = rangeYears >= 3;
+  const target = canvasWidth < 400 ? 4 : canvasWidth < 700 ? 6 : 8;
+
+  let tickIndices: number[];
   if (useYearOnly) {
+    // One tick per distinct year (deduped), step-thinned to the target count.
     const seen = new Set<number>();
+    tickIndices = [];
     dates.forEach((d, i) => {
       const y = new Date(d + 'T12:00:00').getFullYear();
       if (!seen.has(y)) { seen.add(y); tickIndices.push(i); }
     });
+    if (tickIndices.length > target) {
+      const step = Math.ceil(tickIndices.length / target);
+      tickIndices = tickIndices.filter((_, i) => i % step === 0);
+    }
   } else {
-    const seen = new Set<string>();
-    dates.forEach((d, i) => {
-      const dt = new Date(d + 'T12:00:00');
-      const key = `${dt.getFullYear()}-${dt.getMonth()}`;
-      if (!seen.has(key)) { seen.add(key); tickIndices.push(i); }
-    });
+    // Evenly spaced across the range so labels never bunch or overlap.
+    const count = Math.min(target, dates.length);
+    tickIndices = [];
+    for (let k = 0; k < count; k++) {
+      tickIndices.push(Math.round((k * (dates.length - 1)) / (count - 1)));
+    }
   }
-  if (tickIndices.length > targetTicks) {
-    const step = Math.ceil(tickIndices.length / targetTicks);
-    tickIndices = tickIndices.filter((_, i) => i % step === 0);
-  }
+
   const xFmt = useYearOnly
     ? (d: Date) => String(d.getFullYear())
     : (d: Date) => d.toLocaleDateString(locale === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', year: 'numeric' });
+
+  // Drop ticks that would render the same label (e.g. two daily points in the
+  // same month on a short range), keeping the first occurrence.
+  const seenLabels = new Set<string>();
+  tickIndices = tickIndices.filter(i => {
+    const label = xFmt(new Date(dates[i] + 'T12:00:00'));
+    if (seenLabels.has(label)) return false;
+    seenLabels.add(label);
+    return true;
+  });
+
   return { tickSet: new Set(tickIndices), xFmt };
 }

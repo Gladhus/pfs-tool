@@ -1,68 +1,73 @@
 import { useTranslation } from 'react-i18next';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { useAuthStore, selectIsSignedIn } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
-import Logo from './Logo';
+import { Icon } from '@/ui/Icon';
+import { todayISO } from '@/utils/dates';
+import NavTabs from './NavTabs';
+
+const ICON_BTN = 'flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-fg-2 transition-colors hover:bg-surface-3 hover:text-fg';
 
 export default function Header() {
   const { t } = useTranslation();
-  const { signIn, signOut, canSignIn } = useAuth();
+  const { signIn, canSignIn } = useAuth();
   const isSignedIn = useAuthStore(selectIsSignedIn);
-  const userEmail = useAuthStore((s) => s.userEmail);
-  const sheetId = useAuthStore((s) => s.sheetId);
   const privateMode = useUIStore((s) => s.privateMode);
   const togglePrivateMode = useUIStore((s) => s.togglePrivateMode);
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 px-4 h-14 flex items-center gap-4">
+    <header className="sticky top-0 z-40 bg-surface-1 border-b border-border px-4 h-14 flex items-center gap-6">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 text-white shrink-0">
-        <Logo size={18} />
+      <div className="flex items-center gap-2.5 text-fg shrink-0">
+        <Icon name="logo" size={24} strokeWidth={2.5} className="text-accent" />
         <span className="font-semibold text-sm tracking-tight">Net Worth Tracker</span>
       </div>
 
+      {/* Inline nav tabs (desktop) */}
+      {isSignedIn && (
+        <div className="hidden md:flex h-full">
+          <NavTabs />
+        </div>
+      )}
+
       <div className="flex-1" />
 
-      {/* Right-side controls */}
+      {/* Right-side icon buttons */}
       <div className="flex items-center gap-2">
-        {isSignedIn && sheetId && (
-          <a
-            href={`https://docs.google.com/spreadsheets/d/${sheetId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:inline text-xs text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            ↗ Sheet
-          </a>
-        )}
-
-        {isSignedIn && (
-          <button
-            onClick={togglePrivateMode}
-            title={privateMode ? t('private_mode_off') : t('private_mode')}
-            className="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-          >
-            {privateMode ? '👁 ' + t('private_mode_off') : '🔒 ' + t('private_mode')}
-          </button>
-        )}
-
         {isSignedIn ? (
-          <div className="flex items-center gap-2">
-            {userEmail && (
-              <span className="hidden md:inline text-xs text-slate-500">{userEmail}</span>
-            )}
-            <button
-              onClick={signOut}
-              className="text-xs px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+          <>
+            <Link
+              to={`/entry/${todayISO()}`}
+              aria-label="New entry"
+              title="New entry"
+              className={`hidden md:flex ${ICON_BTN}`}
             >
-              {t('sign_out')}
+              <Icon name="plus" size={22} strokeWidth={2.5} />
+            </Link>
+            <button
+              type="button"
+              onClick={togglePrivateMode}
+              aria-label={privateMode ? t('private_mode_off') : t('private_mode')}
+              title={privateMode ? t('private_mode_off') : t('private_mode')}
+              className={ICON_BTN}
+            >
+              <Icon name={privateMode ? 'eyeOff' : 'eye'} size={19} strokeWidth={2.25} />
             </button>
-          </div>
+            <NavLink
+              to="/settings"
+              aria-label={t('tab_settings')}
+              title={t('tab_settings')}
+              className={({ isActive }) => `hidden md:flex ${ICON_BTN} ${isActive ? 'bg-surface-3 text-fg' : ''}`}
+            >
+              <Icon name="settings" size={19} strokeWidth={2.25} />
+            </NavLink>
+          </>
         ) : (
           <button
             onClick={signIn}
             disabled={!canSignIn}
-            className="text-xs px-3 py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors"
+            className="text-xs px-3 py-1.5 rounded bg-accent hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed text-accent-fg transition-colors"
           >
             {t('sign_in')}
           </button>

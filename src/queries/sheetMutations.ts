@@ -56,6 +56,51 @@ export function useSaveSnapshotMutation() {
   });
 }
 
+// ── Month save (replace all rows for one date) ──────────────────────────
+// Mirrors vanilla saveSnapshot: every active account is represented in the
+// Entry form, so saving rewrites the full set of rows for `date` — entered
+// rows are kept, cleared rows are dropped (deleted), and the day comment row
+// is upserted. Rows for other dates are untouched.
+export interface SaveMonthInput {
+  date: string;
+  rows: Snapshot[]; // complete desired set of rows for `date` (incl. __day__ if any)
+}
+
+export function useSaveMonthMutation() {
+  const qc = useQueryClient();
+  const sheetId = useSheetId();
+
+  const replaceForDate = (cached: Snapshot[], { date, rows }: SaveMonthInput): Snapshot[] => {
+    const kept = cached.filter(s => s.date !== date);
+    return [...kept, ...rows];
+  };
+
+  return useMutation({
+    mutationFn: async (input: SaveMonthInput) => {
+      const cached = qc.getQueryData<Snapshot[]>(qk.snapshots(sheetId)) ?? [];
+      const next = replaceForDate(cached, input);
+      const allRows: unknown[][] = [
+        HEADERS.snapshots as unknown as string[],
+        ...next.map(s => [s.date, s.account_id, s.balance_raw, s.comment ?? '', s.entered_at ?? '']),
+      ];
+      await safeWriteTab(sheetId, 'snapshots', allRows, cached.length);
+      return next;
+    },
+    onMutate: async (input: SaveMonthInput) => {
+      await qc.cancelQueries({ queryKey: qk.snapshots(sheetId) });
+      const prev = qc.getQueryData<Snapshot[]>(qk.snapshots(sheetId));
+      qc.setQueryData<Snapshot[]>(qk.snapshots(sheetId), old => replaceForDate(old ?? [], input));
+      return { prev };
+    },
+    onError: (_err, _input, ctx) => {
+      if (ctx?.prev) qc.setQueryData(qk.snapshots(sheetId), ctx.prev);
+    },
+    onSuccess: (next) => {
+      qc.setQueryData(qk.snapshots(sheetId), next);
+    },
+  });
+}
+
 // ── Accounts ────────────────────────────────────────────────────────────
 export function useWriteAccountsMutation() {
   const qc = useQueryClient();
@@ -66,7 +111,7 @@ export function useWriteAccountsMutation() {
       const rows: unknown[][] = [
         HEADERS.accounts as unknown as string[],
         ...accounts.map(a => HEADERS.accounts.map(h => {
-          const v = (a as Record<string, unknown>)[h];
+          const v = (a as unknown as Record<string, unknown>)[h];
           if (h === 'active') return a.active ? 'TRUE' : 'FALSE';
           if (h === 'tags') return Array.isArray(a.tags) ? a.tags.join(', ') : '';
           return v ?? '';

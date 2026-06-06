@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/auth/AuthProvider';
-import Logo from './Logo';
+import { Icon } from '@/ui/Icon';
 import SheetPickerDialog from './SheetPickerDialog';
 
 export default function SignedOutScreen() {
@@ -13,12 +13,12 @@ export default function SignedOutScreen() {
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       <div className="text-center space-y-6 max-w-sm">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-            <Logo size={32} />
+          <div className="w-16 h-16 rounded-2xl bg-accent-light border border-accent/20 flex items-center justify-center text-accent">
+            <Icon name="logo" size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-white">Net Worth Tracker</h1>
-            <p className="text-slate-400 text-sm mt-1">Track your financial progress over time</p>
+            <h1 className="text-2xl font-semibold text-fg">Net Worth Tracker</h1>
+            <p className="text-muted text-sm mt-1">Track your financial progress over time</p>
           </div>
         </div>
 
@@ -37,7 +37,7 @@ export default function SignedOutScreen() {
         </button>
 
         {!canSignIn && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted">
             Connecting to Google…
           </p>
         )}

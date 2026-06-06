@@ -11,10 +11,13 @@ import {
   useOptionGrantsQuery,
   useOptionFmvQuery,
   useOptionExercisesQuery,
+  useFxRatesQuery,
 } from '@/queries/sheetQueries';
 import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
+import { fxMap as buildFxMap } from '@/utils/currency';
+import type { Currency } from '@/types/sheets';
 import { Skeleton } from '@/ui/Skeleton';
-import { PeriodPills, type Period } from '@/ui/PeriodPills';
+import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { useOverviewStats } from './hooks/useOverviewStats';
 import { HeroCard } from './components/HeroCard';
 import { OverviewChart } from './components/OverviewChart';
@@ -24,9 +27,8 @@ import { ViewToggle } from './components/ViewToggle';
 import { EmptyOverviewState } from './components/EmptyOverviewState';
 import { chartColors } from '@/utils/chartOptions';
 import { categoryKey } from '@/utils/icons';
-import cfg from '@/config';
+import { useMemo } from 'react';
 
-const OVERVIEW_PERIODS: Period[] = ['3m', '6m', '1y', '3y', '5y', 'all'];
 const DEFAULT_PERIOD: Period = '1y';
 
 export default function OverviewPage() {
@@ -38,7 +40,6 @@ export default function OverviewPage() {
   const setOvView = useUIStore(s => s.setOvView);
 
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
-  const currency = cfg.CURRENCY;
 
   const [searchParams, setSearchParams] = useSearchParams();
   const period = (searchParams.get('period') as Period) ?? DEFAULT_PERIOD;
@@ -48,6 +49,10 @@ export default function OverviewPage() {
   const categoryMetaQ = useCategoryMetaQuery();
   const groupsQ = useGroupsQuery();
   const configQ = useConfigQuery();
+  const fxRatesQ = useFxRatesQuery();
+  const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
+  const currency = mainCurrency;
+  const fxRateMap = useMemo(() => buildFxMap(fxRatesQ.data ?? []), [fxRatesQ.data]);
 
   const stockOptEnabled = configQ.isSuccess && configQ.data.stock_options_enabled === true;
   const optCompaniesQ = useOptionCompaniesQuery();
@@ -93,6 +98,8 @@ export default function OverviewPage() {
     view: ovView,
     seriesVisible,
     stockOptEnabled,
+    main: mainCurrency,
+    fxMap: fxRateMap,
   });
 
   const colors = chartColors();
@@ -121,50 +128,58 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-4">
-      <HeroCard
-        netWorth={stats.netWorth}
-        prevNetWorth={stats.prevNetWorth}
-        latestDate={stats.latestDate}
-        period={period}
-        locale={locale}
-        currency={currency}
-        isPrivate={privateMode}
-      />
-
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <PeriodPills
-          value={period}
-          onChange={onPeriodChange}
-          options={OVERVIEW_PERIODS}
-        />
-        <ViewToggle value={ovView} onChange={setOvView} />
-      </div>
-
-      {stats.chartDates.length > 0 && (
-        <div className="rounded-xl bg-surface-1 shadow-sm p-4 space-y-3">
-          <SeriesToggle
-            netColor={colors.accent}
-            buckets={stats.bucketData}
-            catsWithData={stats.catsWithData}
-            view={ovView}
-            catColor={catColor}
-          />
-          <OverviewChart
-            dates={stats.chartDates}
-            netData={stats.netData}
-            buckets={stats.bucketData}
-            seriesVisible={seriesVisible}
+      {/* Hero card — header, period pills, legend, chart */}
+      <div className="rounded-xl bg-surface-1 shadow-sm p-5 space-y-4">
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-start md:justify-between">
+          <HeroCard
+            netWorth={stats.netWorth}
+            prevNetWorth={stats.prevNetWorth}
+            latestDate={stats.latestDate}
+            period={period}
             locale={locale}
             currency={currency}
             isPrivate={privateMode}
-            netLabel={t('net_worth_chart')}
-            view={ovView}
           />
+          <div className="hidden md:block max-w-full shrink-0 overflow-x-auto no-scrollbar">
+            <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} />
+          </div>
         </div>
-      )}
 
+        {stats.chartDates.length > 0 && (
+          <>
+            <SeriesToggle
+              netColor={colors.accent}
+              buckets={stats.bucketData}
+              catsWithData={stats.catsWithData}
+              view={ovView}
+              catColor={catColor}
+            />
+            <OverviewChart
+              dates={stats.chartDates}
+              netData={stats.netData}
+              buckets={stats.bucketData}
+              seriesVisible={seriesVisible}
+              locale={locale}
+              currency={currency}
+              isPrivate={privateMode}
+              netLabel={t('net_worth_chart')}
+              view={ovView}
+            />
+          </>
+        )}
+
+        {/* Mobile: period pills pinned to the bottom of the card */}
+        <div className="md:hidden">
+          <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} block />
+        </div>
+      </div>
+
+      {/* Allocation */}
       <div className="space-y-2">
-        <h2 className="text-sm font-medium text-muted">{t('allocation_title')}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium text-muted">{t('allocation_title')}</h2>
+          <ViewToggle value={ovView} onChange={setOvView} />
+        </div>
         <StatCardGrid
           view={ovView}
           effectiveCats={stats.effectiveCats}
@@ -174,6 +189,9 @@ export default function OverviewPage() {
           accounts={accounts}
           sparkDates={stats.sparkDates}
           sweepForSpark={stats.sweepForSpark}
+          optionData={optionData}
+          main={mainCurrency}
+          fxMap={fxRateMap}
           equityValue={stats.byCategory['equity']}
           prevEquityValue={stats.prevByCategory?.['equity']}
           period={period}

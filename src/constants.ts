@@ -6,15 +6,16 @@ export const OWNERS = ['self', 'partner', 'joint'] as const;
 export const KINDS  = ['asset', 'debt'] as const;
 
 export const HEADERS = {
-  accounts:         ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order', 'tags', 'annual_rate'],
+  accounts:         ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order', 'tags', 'annual_rate', 'currency'],
   snapshots:        ['date', 'account_id', 'balance_raw', 'comment', 'entered_at'],
   config:           ['key', 'value'],
   tags:             ['name'],
   groups:           ['name', 'color', 'all', 'any', 'exclude'],
-  option_companies: ['id', 'name', 'ticker', 'active'],
+  option_companies: ['id', 'name', 'ticker', 'active', 'tags', 'currency'],
   option_grants:    ['id', 'company_id', 'label', 'grant_type', 'grant_date', 'total_shares', 'strike_price', 'vesting_start', 'cliff_months', 'vesting_months', 'vesting_interval', 'expiry_date'],
   option_fmv:       ['date', 'company_id', 'fmv', 'note'],
   option_exercises: ['id', 'grant_id', 'date', 'shares_exercised', 'price_paid', 'note'],
+  fx_rates:         ['date', 'usd_cad'],
 } as const;
 
 export const LS_KEY_IMPORT_MAP = 'pfs_import_mappings';

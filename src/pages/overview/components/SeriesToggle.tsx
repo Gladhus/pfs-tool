@@ -38,25 +38,31 @@ export function SeriesToggle({ netColor, buckets, catsWithData, view, catColor }
   if (!chips.length) return null;
 
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label={t('allocation_title')}>
-      {chips.map(({ key, label, color }) => (
-        <label
-          key={key}
-          className="flex items-center gap-1.5 cursor-pointer text-xs text-muted select-none"
-        >
-          <input
-            type="checkbox"
-            checked={isVis(key)}
-            onChange={() => toggle(key)}
-            className="sr-only"
-          />
-          <span
-            className="w-2.5 h-2.5 rounded-full shrink-0 transition-opacity"
-            style={{ background: color, opacity: isVis(key) ? 1 : 0.3 }}
-          />
-          <span className={isVis(key) ? 'text-fg' : 'text-muted'}>{label}</span>
-        </label>
-      ))}
+    <div className="no-scrollbar flex gap-2 overflow-x-auto -mx-1 px-1" role="group" aria-label={t('allocation_title')}>
+      {chips.map(({ key, label, color }) => {
+        const active = isVis(key);
+        return (
+          <button
+            key={key}
+            type="button"
+            role="checkbox"
+            aria-checked={active}
+            onClick={() => toggle(key)}
+            className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+              active ? 'bg-surface-2 text-fg' : 'text-muted hover:text-fg'
+            }`}
+            style={{ borderColor: active ? color : 'var(--color-border)' }}
+          >
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={active
+                ? { backgroundColor: color }
+                : { backgroundColor: 'transparent', boxShadow: `inset 0 0 0 2px ${color}` }}
+            />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

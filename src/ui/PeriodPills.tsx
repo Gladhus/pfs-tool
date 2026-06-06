@@ -3,16 +3,18 @@ import { SegmentControl } from './SegmentControl';
 
 export type Period = '3m' | '6m' | '1y' | '2y' | '3y' | '5y' | 'ytd' | 'all';
 
+/** Canonical period set used app-wide (Overview, History). Detail uses its own YoY set. */
+export const APP_PERIODS: Period[] = ['3m', '6m', 'ytd', '1y', '2y', '5y', 'all'];
+
 interface PeriodPillsProps {
   value: Period;
   onChange: (p: Period) => void;
   options?: Period[];
   className?: string;
+  block?: boolean;
 }
 
-const DEFAULT_OPTIONS: Period[] = ['1y', '3y', '5y', 'all'];
-
-export function PeriodPills({ value, onChange, options = DEFAULT_OPTIONS, className }: PeriodPillsProps) {
+export function PeriodPills({ value, onChange, options = APP_PERIODS, className, block }: PeriodPillsProps) {
   const { t } = useTranslation();
 
   const segOptions = options.map((p) => ({
@@ -26,6 +28,7 @@ export function PeriodPills({ value, onChange, options = DEFAULT_OPTIONS, classN
       value={value}
       onChange={onChange}
       className={className}
+      block={block}
       aria-label="Time period"
     />
   );

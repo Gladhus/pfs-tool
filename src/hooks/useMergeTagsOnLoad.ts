@@ -24,5 +24,5 @@ export function useMergeTagsOnLoad() {
     } else {
       ranRef.current = true;
     }
-  }, [accountsQuery.isSuccess, tagsQuery.isSuccess]);
+  }, [accountsQuery.isSuccess, tagsQuery.isSuccess, accountsQuery.data, tagsQuery.data, mergeTagsMutation]);
 }

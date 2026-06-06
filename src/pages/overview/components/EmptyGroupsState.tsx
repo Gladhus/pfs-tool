@@ -13,7 +13,7 @@ export function EmptyGroupsState() {
       description={t('no_groups_body')}
       action={
         <Button asChild variant="primary" size="sm">
-          <Link to="/settings">{t('manage_groups')}</Link>
+          <Link to="/settings/groups">{t('manage_groups')}</Link>
         </Button>
       }
       className="col-span-full"

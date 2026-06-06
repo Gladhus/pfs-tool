@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/ui.store';
-import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery } from '@/queries/sheetQueries';
+import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery } from '@/queries/sheetQueries';
 import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
-import { foldCategoryId } from '@/utils/colors';
+import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
 import { Skeleton } from '@/ui/Skeleton';
-import { PeriodPills, type Period } from '@/ui/PeriodPills';
+import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
 import { Icon } from '@/ui/Icon';
 import { AccountSelect } from './components/AccountSelect';
@@ -16,17 +16,16 @@ import { SeriesToggleBar, type SeriesState } from './components/SeriesToggleBar'
 import { HistoryChart } from './components/HistoryChart';
 import { HistoryCard, type CardData } from './components/HistoryCard';
 import { Pagination } from './components/Pagination';
-import { ExportCsvButton } from './components/ExportCsvButton';
-import type { Account, Snapshot } from '@/types/sheets';
-import cfg from '@/config';
+import type { Account, Snapshot, Currency } from '@/types/sheets';
 
-const HISTORY_PERIODS: Period[] = ['3m', '6m', '1y', '3y', '5y', 'all'];
 const HIST_PAGE_SIZE = 12;
 
 function computeSeries(
   dates: string[],
   accounts: Account[],
   snapshots: Snapshot[],
+  main: Currency,
+  fxMap: Map<string, number>,
 ) {
   if (!dates.length) return { dates: [], investments: [], realEstateNet: [], other: [] };
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
@@ -39,11 +38,12 @@ function computeSeries(
   for (let i = 0; i < dates.length; i++) {
     const balances = sweep[i];
     if (!Object.keys(balances).length) continue;
+    const usdCad = rateFor(fxMap, dates[i]);
     let n = 0, inv = 0, re = 0, red = 0;
     for (const [id, balance_raw] of Object.entries(balances)) {
       const a = acctById[id];
       if (!a) continue;
-      const signed = balance_raw * (a.ownership_share ?? 1) * (a.kind === 'debt' ? -1 : 1);
+      const signed = signedMain(a, balance_raw, main, usdCad);
       n += signed;
       if (a.category === 'investments') inv += signed;
       else if (a.category === 'real_estate') re += signed;
@@ -73,7 +73,11 @@ export default function HistoryPage() {
   const lang = useUIStore(s => s.lang);
   const privateMode = useUIStore(s => s.privateMode);
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
-  const currency = cfg.CURRENCY;
+  const configQ = useConfigQuery();
+  const fxRatesQ = useFxRatesQuery();
+  const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
+  const currency = mainCurrency;
+  const fxRateMap = useMemo(() => buildFxMap(fxRatesQ.data ?? []), [fxRatesQ.data]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const period = (searchParams.get('period') as Period) ?? '1y';
@@ -91,16 +95,16 @@ export default function HistoryPage() {
   const categoryMetaQ = useCategoryMetaQuery();
 
   const isPending = snapshotsQ.isPending || accountsQ.isPending;
-  const snapshots = snapshotsQ.data ?? [];
-  const accounts = accountsQ.data ?? [];
+  const snapshots = useMemo(() => snapshotsQ.data ?? [], [snapshotsQ.data]);
+  const accounts = useMemo(() => accountsQ.data ?? [], [accountsQ.data]);
   const categoryMeta = categoryMetaQ.data ?? [];
 
   const datesSorted = useMemo(() => deriveDatesSorted(snapshots), [snapshots]);
   const filteredDates = useMemo(() => getDatesForPeriod(datesSorted, period), [datesSorted, period]);
 
   const overviewSeries = useMemo(
-    () => computeSeries(filteredDates, activeAccounts(accounts), snapshots),
-    [filteredDates, accounts, snapshots],
+    () => computeSeries(filteredDates, activeAccounts(accounts), snapshots, mainCurrency, fxRateMap),
+    [filteredDates, accounts, snapshots, mainCurrency, fxRateMap],
   );
 
   const cardData = useMemo((): CardData[] => {
@@ -125,17 +129,20 @@ export default function HistoryPage() {
       const date = datesSorted[i];
       const balances = sweep[i];
       if (!Object.keys(balances).length) continue;
+      const usdCad = rateFor(fxRateMap, date);
       let net = 0, inv = 0, re = 0, red = 0, debts = 0;
       for (const [id, balance_raw] of Object.entries(balances)) {
         const a = acctById[id];
         if (!a) continue;
-        const signed = balance_raw * (a.ownership_share ?? 1) * (a.kind === 'debt' ? -1 : 1);
+        const signed = signedMain(a, balance_raw, mainCurrency, usdCad);
         net += signed;
         if (a.kind === 'debt') debts += signed;
-        const folded = foldCategoryId(a.category);
-        if (folded === 'investments') inv += signed;
-        else if (folded === 'real_estate') re += signed;
-        if (a.category === 'real_estate_debt') red += signed;
+        // Use exact categories (matching computeSeries): re = real-estate assets,
+        // red = real-estate debt. HistoryCard sums them for net real estate — folding
+        // the debt into `re` here would double-count it (it appeared all-negative).
+        if (a.category === 'investments') inv += signed;
+        else if (a.category === 'real_estate') re += signed;
+        else if (a.category === 'real_estate_debt') red += signed;
       }
       const exact = exactByDate.get(date) ?? new Set<string>();
       byDate.set(date, {
@@ -186,7 +193,7 @@ export default function HistoryPage() {
         olderDates,
       };
     });
-  }, [datesSorted, accounts, snapshots]);
+  }, [datesSorted, accounts, snapshots, mainCurrency, fxRateMap]);
 
   const totalPages = Math.ceil(cardData.length / HIST_PAGE_SIZE);
   const safePage = Math.min(page, Math.max(0, totalPages - 1));
@@ -205,7 +212,7 @@ export default function HistoryPage() {
     return (
       <div className="space-y-4">
         <Skeleton variant="card" className="h-[280px]" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} variant="card" />)}
         </div>
       </div>
@@ -231,7 +238,7 @@ export default function HistoryPage() {
       {/* Chart section */}
       <div className="rounded-xl bg-surface-1 shadow-sm p-4 space-y-3">
         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-          <PeriodPills value={period} onChange={onPeriodChange} options={HISTORY_PERIODS} />
+          <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} />
           <div className="flex items-center gap-2">
             <AccountSelect
               accounts={accounts}
@@ -239,7 +246,6 @@ export default function HistoryPage() {
               value={selectedAccount}
               onChange={onAccountChange}
             />
-            <ExportCsvButton snapshots={snapshots} accounts={accounts} />
           </div>
         </div>
 
@@ -266,7 +272,7 @@ export default function HistoryPage() {
           {t('history_summary', { count: datesSorted.length, from: summaryFirst, to: summaryLast })}
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {pageCards.map(card => (
             <HistoryCard
               key={card.month}

@@ -163,6 +163,14 @@ function useGoogleAuth(): AuthContextValue {
   const initGis = useCallback(() => {
     // Module-level flag prevents double-init under StrictMode's double-effect invocation
     if (_tokenClientInitialized) return;
+    // Without a valid CLIENT_ID, initTokenClient throws "Missing required parameter
+    // client_id" and takes the whole app down. Degrade gracefully to the setup prompt
+    // instead — the signed-out screen surfaces this status.
+    if (!hasValidClientId()) {
+      setStatus('Edit config.js and set CLIENT_ID. See docs/SETUP.md.', 'warn');
+      setGisReady(true);
+      return;
+    }
     _tokenClientInitialized = true;
     tokenClientRef.current = google.accounts.oauth2.initTokenClient({
       client_id: cfg.CLIENT_ID,

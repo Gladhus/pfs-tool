@@ -1,5 +1,5 @@
 import seedData from '../../seed/default-accounts.json';
-import type { Account, Snapshot, CategoryMeta } from '@/types/sheets';
+import type { Account, Snapshot, CategoryMeta, AccountType } from '@/types/sheets';
 import { gapiCall } from './sheets';
 import { normalizeDate } from '@/utils/dates';
 
@@ -33,6 +33,8 @@ export async function loadAccounts(sheetId: string): Promise<Account[]> {
     obj.annual_rate     = parseNum(obj.annual_rate, 0);
     obj.active = obj.active === true || String(obj.active).toUpperCase() === 'TRUE';
     obj.tags = parseTags(obj.tags);
+    const cur = String(obj.currency).toUpperCase();
+    obj.currency = cur === 'USD' || cur === 'CAD' ? cur : undefined;
     return obj as unknown as Account;
   }).filter(a => a.id);
 }
@@ -77,4 +79,9 @@ export async function loadSnapshots(sheetId: string): Promise<Snapshot[]> {
 export async function loadCategoryMeta(): Promise<CategoryMeta[]> {
   const seed = seedData as { categories?: CategoryMeta[] };
   return seed.categories ?? [];
+}
+
+export async function loadAccountTypes(): Promise<AccountType[]> {
+  const seed = seedData as { account_types?: AccountType[] };
+  return seed.account_types ?? [];
 }

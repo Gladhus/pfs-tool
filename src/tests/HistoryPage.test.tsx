@@ -30,6 +30,8 @@ vi.mock('@/queries/sheetQueries', () => ({
   useAccountsQuery: vi.fn(),
   useSnapshotsQuery: vi.fn(),
   useCategoryMetaQuery: vi.fn(),
+  useConfigQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: { currency: 'CAD' } })),
+  useFxRatesQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [] })),
 }));
 
 import {
@@ -138,11 +140,6 @@ describe('HistoryPage', () => {
     useUIStore.setState({ privateMode: true });
     render(<HistoryPage />, { wrapper: Wrapper });
     expect(document.body.textContent).toMatch(/•/);
-  });
-
-  it('shows export csv button', () => {
-    render(<HistoryPage />, { wrapper: Wrapper });
-    expect(screen.getByRole('button', { name: /export_csv/i })).toBeTruthy();
   });
 
   it('opening account select shows overview option', () => {

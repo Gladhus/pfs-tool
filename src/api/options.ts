@@ -9,6 +9,12 @@ function parseNum(v: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function parseTags(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map(t => String(t).trim()).filter(Boolean);
+  if (!raw) return [];
+  return String(raw).split(',').map(t => t.trim()).filter(Boolean);
+}
+
 async function ensureTab(sheetId: string, title: string, headers: readonly string[]): Promise<void> {
   try {
     await gapi.client.sheets.spreadsheets.batchUpdate({
@@ -48,7 +54,13 @@ async function loadTab<T>(sheetId: string, tab: string, headers: readonly string
 export const loadOptionCompanies = (sheetId: string): Promise<OptionCompany[]> =>
   loadTab(sheetId, 'option_companies', HEADERS.option_companies, obj => {
     if (!obj.id) return null;
-    return { ...obj, active: obj.active === true || String(obj.active).toUpperCase() !== 'FALSE' } as OptionCompany;
+    const cur = String(obj.currency).toUpperCase();
+    return {
+      ...obj,
+      active: obj.active === true || String(obj.active).toUpperCase() !== 'FALSE',
+      tags: parseTags(obj.tags),
+      currency: cur === 'USD' || cur === 'CAD' ? cur : undefined,
+    } as OptionCompany;
   });
 
 export const loadOptionGrants = (sheetId: string): Promise<OptionGrant[]> =>
@@ -87,7 +99,11 @@ async function writeTab<T extends Record<string, unknown>>(
 
 export const writeOptionCompanies = (sheetId: string, items: OptionCompany[], prev: number) =>
   writeTab(sheetId, 'option_companies', HEADERS.option_companies,
-    items.map(c => ({ ...c, active: c.active === false ? 'FALSE' : 'TRUE' })), prev);
+    items.map(c => ({
+      ...c,
+      active: c.active === false ? 'FALSE' : 'TRUE',
+      tags: Array.isArray(c.tags) ? c.tags.join(', ') : '',
+    })), prev);
 
 export const writeOptionGrants = (sheetId: string, items: OptionGrant[], prev: number) =>
   writeTab(sheetId, 'option_grants', HEADERS.option_grants, items as unknown as Record<string, unknown>[], prev);

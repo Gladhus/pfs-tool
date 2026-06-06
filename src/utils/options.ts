@@ -88,6 +88,31 @@ export function computeTotalEquityValue(
     .reduce((sum, c) => sum + computeCompanyEquityValue(c.id, grants, fmvRows, exercises, asOfDate), 0);
 }
 
+export function computeCompanyUnvestedValue(
+  companyId: string,
+  grants: OptionGrant[],
+  fmvRows: OptionFmv[],
+  asOfDate: string,
+): number {
+  const entry = getEffectiveFmv(fmvRows, companyId, asOfDate);
+  if (!entry) return 0;
+  return grants
+    .filter(g => g.company_id === companyId)
+    .reduce((sum, g) => sum + computeUnvestedValue(g, entry.fmv, asOfDate), 0);
+}
+
+export function computeTotalUnvestedValue(
+  companies: OptionCompany[],
+  grants: OptionGrant[],
+  fmvRows: OptionFmv[],
+  asOfDate: string,
+): number {
+  if (!companies?.length) return 0;
+  return companies
+    .filter(c => c.active !== false)
+    .reduce((sum, c) => sum + computeCompanyUnvestedValue(c.id, grants, fmvRows, asOfDate), 0);
+}
+
 export function grantFullyVestedDate(grant: OptionGrant): string | null {
   const start = grant.vesting_start || grant.grant_date;
   if (!start) return null;

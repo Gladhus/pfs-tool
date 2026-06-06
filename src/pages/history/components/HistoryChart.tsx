@@ -1,5 +1,7 @@
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Chart from 'chart.js/auto';
+import type { ChartDataset } from 'chart.js';
 import type { Account, Snapshot } from '@/types/sheets';
 import { buildBalanceSweep } from '@/utils/stats';
 import { chartColors, chartTooltip, moneyTickFmt } from '@/utils/chartOptions';
@@ -14,6 +16,9 @@ export interface OverviewSeries {
   realEstateNet: (number | null)[];
   other: (number | null)[];
 }
+
+/** Line dataset that also carries the per-point un-stacked value for tooltips. */
+type AreaDataset = ChartDataset<'line', (number | null)[]> & { _rawData?: (number | null)[] };
 
 interface Props {
   filteredDates: string[];
@@ -31,17 +36,22 @@ interface Props {
 export function HistoryChart({
   filteredDates, snapshots, series, seriesVisible, selectedAccount, accounts, locale, currency, isPrivate,
 }: Props) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
-  const prevModeRef = useRef(selectedAccount === '' ? 'overview' : selectedAccount);
+  const prevModeRef = useRef(`${selectedAccount === '' ? 'overview' : selectedAccount}|false`);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const isOverview = selectedAccount === '';
-    const modeKey = isOverview ? 'overview' : selectedAccount;
+    // Include isPrivate AND the period's date range so toggling privacy or changing
+    // the period rebuilds the tick/tooltip callbacks (the data-only update path keeps
+    // stale closures → stale/bunched x-axis labels).
+    const datesSig = `${filteredDates.length}|${filteredDates[0] ?? ''}|${filteredDates[filteredDates.length - 1] ?? ''}`;
+    const modeKey = `${isOverview ? 'overview' : selectedAccount}|${isPrivate}|${datesSig}`;
     const modeChanged = prevModeRef.current !== modeKey;
     prevModeRef.current = modeKey;
 
@@ -55,7 +65,7 @@ export function HistoryChart({
       return g;
     };
 
-    const datasets: Chart['data']['datasets'] = [];
+    const datasets: AreaDataset[] = [];
     let chartDates: string[] = [];
 
     if (isOverview) {
@@ -81,13 +91,13 @@ export function HistoryChart({
           pointRadius: 0,
           pointHoverRadius: 5,
           spanGaps: true,
-        } as any);
+        });
         stackIdx++;
       };
 
-      if (seriesVisible.investments) pushArea(series.investments, colors.invest,     'show_investments');
-      if (seriesVisible.realEstate)  pushArea(series.realEstateNet, colors.realEstate, 'show_real_estate');
-      if (seriesVisible.other)       pushArea(series.other, colors.cash,              'show_other');
+      if (seriesVisible.investments) pushArea(series.investments, colors.invest,     t('show_investments'));
+      if (seriesVisible.realEstate)  pushArea(series.realEstateNet, colors.realEstate, t('show_real_estate'));
+      if (seriesVisible.other)       pushArea(series.other, colors.cash,              t('show_other'));
 
       if (!datasets.length) return;
     } else {
@@ -143,12 +153,10 @@ export function HistoryChart({
           legend: { display: false },
           tooltip: chartTooltip({
             labelFn: (ctx) => {
-              const raw = (ctx.dataset as any)._rawData;
-              const v = raw
-                ? (raw[(ctx as any).dataIndex] ?? (ctx.parsed as any).y)
-                : (ctx.parsed as any).y;
-              if (isPrivate) return '••••••';
-              return `${ctx.dataset.label}: ${fmtMoney(v, locale, currency)}`;
+              const raw = ctx.dataset._rawData;
+              const v = raw ? (raw[ctx.dataIndex] ?? ctx.parsed.y) : ctx.parsed.y;
+              const valStr = isPrivate ? '••••••' : fmtMoney(v, locale, currency);
+              return `${ctx.dataset.label}: ${valStr}`;
             },
           }),
         },

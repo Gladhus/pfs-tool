@@ -2,9 +2,9 @@ import { useToastStore, type ToastVariant } from '@/stores/toast.store';
 
 const variantClass: Record<ToastVariant, string> = {
   default: 'bg-fg text-surface-1',
-  ok:      'bg-ok text-white',
+  ok:      'bg-ok-bg text-ok border border-ok/30',
   warn:    'bg-warn-bg text-warn border border-warn/30',
-  error:   'bg-red text-white',
+  error:   'bg-red-light text-red border border-red/30',
 };
 
 export function ToastHost() {

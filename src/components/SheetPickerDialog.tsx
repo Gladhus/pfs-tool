@@ -52,38 +52,38 @@ export default function SheetPickerDialog({ open, onClose }: Props) {
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-700 p-0 max-w-sm w-full backdrop:bg-black/60"
+      className="bg-surface-1 text-fg rounded-xl shadow-lg border border-border p-0 max-w-sm w-full backdrop:bg-black/60"
     >
-      <div className="p-5 border-b border-slate-800">
+      <div className="p-5 border-b border-border">
         <h2 className="font-semibold">{t('choose_sheet')}</h2>
-        <p className="text-sm text-slate-400 mt-1">{t('choose_sheet_hint')}</p>
+        <p className="text-sm text-muted mt-1">{t('choose_sheet_hint')}</p>
       </div>
 
       <div className="p-3 max-h-72 overflow-y-auto">
         {loading && (
-          <p className="text-sm text-slate-400 text-center py-4">{t('loading')}</p>
+          <p className="text-sm text-muted text-center py-4">{t('loading')}</p>
         )}
         {error && (
-          <p className="text-sm text-red-400 text-center py-4">{error}</p>
+          <p className="text-sm text-red text-center py-4">{error}</p>
         )}
         {!loading && !error && sheets.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-4">{t('no_sheets_found')}</p>
+          <p className="text-sm text-muted text-center py-4">{t('no_sheets_found')}</p>
         )}
         {sheets.map((f) => (
           <button
             key={f.id}
             onClick={() => void handlePick(f)}
-            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-800 text-sm transition-colors"
+            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-surface-2 text-sm transition-colors"
           >
             {f.name}
           </button>
         ))}
       </div>
 
-      <div className="p-3 border-t border-slate-800 flex justify-end">
+      <div className="p-3 border-t border-border flex justify-end">
         <button
           onClick={onClose}
-          className="text-sm px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+          className="text-sm px-3 py-1.5 rounded bg-surface-2 hover:bg-surface-3 text-fg-2 transition-colors"
         >
           {t('cancel')}
         </button>

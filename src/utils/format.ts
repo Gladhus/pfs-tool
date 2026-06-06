@@ -34,7 +34,7 @@ export function hexToRgba(hex: string, a: number): string {
   return `rgba(${r},${g},${b},${a})`;
 }
 
-export function parseMoney(str: string | null | undefined): number | null {
+export function parseMoney(str: string | number | null | undefined): number | null {
   if (str == null) return null;
   let s = String(str).trim();
   if (s === '') return null;

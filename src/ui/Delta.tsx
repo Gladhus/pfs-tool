@@ -34,7 +34,7 @@ export function Delta({
       <div className={className}>
         <span className={dirClass}>{numText}</span>
         {periodLabel && (
-          <span className="block text-xs text-muted">{periodLabel}</span>
+          <span className="block text-xs text-fg-2">{periodLabel}</span>
         )}
       </div>
     );

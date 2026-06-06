@@ -26,6 +26,8 @@ interface SegmentControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
+  /** Stretch to fill the container with equal-width segments. */
+  block?: boolean;
   'aria-label'?: string;
 }
 
@@ -34,6 +36,7 @@ export function SegmentControl<T extends string>({
   value,
   onChange,
   className,
+  block = false,
   'aria-label': label,
 }: SegmentControlProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -51,7 +54,7 @@ export function SegmentControl<T extends string>({
   };
 
   return (
-    <div role="group" aria-label={label} className={track({ className })}>
+    <div role="group" aria-label={label} className={track({ className: `${block ? 'flex w-full' : ''} ${className ?? ''}` })}>
       {options.map((opt, i) => (
         <button
           key={opt.value}
@@ -59,7 +62,7 @@ export function SegmentControl<T extends string>({
           type="button"
           role="radio"
           aria-checked={opt.value === value}
-          className={seg({ active: opt.value === value })}
+          className={seg({ active: opt.value === value, className: block ? 'flex-1 text-center' : '' })}
           onClick={() => onChange(opt.value)}
           onKeyDown={(e) => handleKeyDown(e, i)}
           tabIndex={opt.value === value ? 0 : -1}

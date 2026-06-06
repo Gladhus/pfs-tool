@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { qk } from './keys';
-import { loadAccounts, loadSnapshots, loadCategoryMeta } from '@/api/accounts';
+import { loadAccounts, loadSnapshots, loadCategoryMeta, loadAccountTypes } from '@/api/accounts';
 import { loadConfig } from '@/api/config';
 import { loadTagsCatalog } from '@/api/tags';
 import { loadGroupsCatalog } from '@/api/groups';
 import { loadOptionCompanies, loadOptionGrants, loadOptionFmv, loadOptionExercises } from '@/api/options';
+import { loadFxRates } from '@/api/fx';
 
 const STALE_5M = 5 * 60_000;
 
@@ -36,6 +37,25 @@ export function useCategoryMetaQuery() {
     queryKey: qk.categoryMeta(),
     queryFn: loadCategoryMeta,
     staleTime: Infinity,
+  });
+}
+
+export function useAccountTypesQuery() {
+  return useQuery({
+    queryKey: qk.accountTypes(),
+    queryFn: loadAccountTypes,
+    staleTime: Infinity,
+  });
+}
+
+export function useFxRatesQuery() {
+  const sheetId = useAuthStore(s => s.sheetId);
+  const gapiReady = useAuthStore(s => s.gapiReady);
+  return useQuery({
+    queryKey: qk.fxRates(sheetId ?? ''),
+    queryFn: () => loadFxRates(sheetId!),
+    enabled: gapiReady && !!sheetId,
+    staleTime: STALE_5M,
   });
 }
 

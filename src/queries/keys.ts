@@ -2,6 +2,7 @@ export const qk = {
   accounts:      (s: string) => ['sheet', s, 'accounts'] as const,
   snapshots:     (s: string) => ['sheet', s, 'snapshots'] as const,
   categoryMeta:  ()          => ['categoryMeta'] as const,
+  accountTypes:  ()          => ['accountTypes'] as const,
   config:        (s: string) => ['sheet', s, 'config'] as const,
   tags:          (s: string) => ['sheet', s, 'tags'] as const,
   groups:        (s: string) => ['sheet', s, 'groups'] as const,
@@ -9,5 +10,6 @@ export const qk = {
   optGrants:     (s: string) => ['sheet', s, 'option_grants'] as const,
   optFmv:        (s: string) => ['sheet', s, 'option_fmv'] as const,
   optExercises:  (s: string) => ['sheet', s, 'option_exercises'] as const,
+  fxRates:       (s: string) => ['sheet', s, 'fx_rates'] as const,
   sheetsList:    ()          => ['drive', 'sheets'] as const,
 };

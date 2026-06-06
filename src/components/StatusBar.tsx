@@ -10,7 +10,7 @@ export default function StatusBar() {
       aria-live="polite"
       className={[
         'px-4 py-2 text-sm text-center transition-all',
-        level === 'warn' ? 'bg-amber-900/60 text-amber-200' : 'bg-slate-800 text-slate-300',
+        level === 'warn' ? 'bg-warn-bg text-warn' : 'bg-surface-2 text-fg-2',
       ].join(' ')}
     >
       {message}

@@ -7,6 +7,7 @@ import {
   RefreshCw, Save, Copy, Eye, EyeOff,
   User, Users, Settings, Search, Sun, Moon,
   Database, Inbox, PieChart, HelpCircle, AlertCircle,
+  LayoutDashboard, Calendar, Table2, Lock, Wallet, ChartColumnIncreasing,
 } from 'lucide-react';
 
 const ICONS = {
@@ -46,6 +47,12 @@ const ICONS = {
   pieChart:     PieChart,
   helpCircle:   HelpCircle,
   alert:        AlertCircle,
+  dashboard:    LayoutDashboard,
+  calendar:     Calendar,
+  table:        Table2,
+  lock:         Lock,
+  wallet:       Wallet,
+  logo:         ChartColumnIncreasing,
 } as const satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Delta } from '@/ui/Delta';
 import { Icon } from '@/ui/Icon';
-import { fmtMoney } from '@/utils/format';
+import { Amount } from '@/ui/Amount';
 import { fmtMonth } from '@/utils/dates';
 
 export interface CardData {
@@ -39,9 +39,6 @@ export function HistoryCard({ card, locale, currency, isPrivate }: Props) {
   const reNet = card.realEstate + card.realEstateDebts;
   const delta = card.prevNet != null ? card.net - card.prevNet : null;
 
-  const fmtVal = (v: number) =>
-    isPrivate ? '••••••' : fmtMoney(v, locale, currency);
-
   return (
     <div className="rounded-xl bg-surface-1 border border-border overflow-hidden">
       {/* Main row */}
@@ -66,7 +63,7 @@ export function HistoryCard({ card, locale, currency, isPrivate }: Props) {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-sm font-semibold text-foreground">{fmtVal(card.net)}</div>
+          <div className="text-sm font-semibold text-foreground"><Amount value={card.net} /></div>
           {delta != null ? (
             <Delta
               value={delta}
@@ -88,15 +85,15 @@ export function HistoryCard({ card, locale, currency, isPrivate }: Props) {
       <div className="flex gap-4 px-4 py-2 border-t border-border/50 text-xs text-muted">
         <span>
           <span className="inline-block w-2 h-2 rounded-full bg-[var(--cat-investments)] mr-1" />
-          {fmtVal(card.investments)}
+          <Amount value={card.investments} />
         </span>
         <span>
           <span className="inline-block w-2 h-2 rounded-full bg-[var(--cat-real-estate)] mr-1" />
-          {fmtVal(reNet)}
+          <Amount value={reNet} />
         </span>
         <span>
           <span className="inline-block w-2 h-2 rounded-full bg-[var(--cat-debts)] mr-1" />
-          {fmtVal(card.debts)}
+          <Amount value={card.debts} />
         </span>
       </div>
 
@@ -133,7 +130,7 @@ export function HistoryCard({ card, locale, currency, isPrivate }: Props) {
                       )}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="text-foreground font-medium">{fmtVal(row.net)}</span>
+                      <span className="text-foreground font-medium"><Amount value={row.net} /></span>
                       {rDelta != null ? (
                         <Delta
                           value={rDelta}

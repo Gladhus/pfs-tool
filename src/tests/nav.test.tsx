@@ -43,55 +43,55 @@ beforeEach(() => {
 // ── NavTabs ──────────────────────────────────────────────────────────────────
 
 describe('NavTabs', () => {
-  it('renders 5 base links (no Options when flag off)', () => {
+  it('renders inline tabs (no Stock Options when flag off)', () => {
     mockConfigQuery.mockReturnValue({ data: { stock_options_enabled: false } });
     render(<NavTabs />, { wrapper: Wrapper });
 
     expect(screen.getByRole('link', { name: 'Overview' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'History' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Detail' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Entry' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Options' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Accounts' })).toBeInTheDocument();
+    // Settings + New entry are now right-side header icon buttons, not tabs.
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /new entry/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Stock Options' })).toBeNull();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
   });
 
-  it('renders 6 links including Options when flag is on', () => {
+  it('renders Stock Options when flag is on', () => {
     mockConfigQuery.mockReturnValue({ data: { stock_options_enabled: true } });
     render(<NavTabs />, { wrapper: Wrapper });
 
-    expect(screen.getByRole('link', { name: 'Options' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(6);
+    expect(screen.getByRole('link', { name: 'Stock Options' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(3);
   });
 
-  it('renders 5 links when config is still loading (flag undefined)', () => {
+  it('hides Stock Options when config is still loading (flag undefined)', () => {
     mockConfigQuery.mockReturnValue({ data: undefined, isPending: true });
     render(<NavTabs />, { wrapper: Wrapper });
 
-    expect(screen.queryByRole('link', { name: 'Options' })).toBeNull();
-    expect(screen.getAllByRole('link')).toHaveLength(5);
+    expect(screen.queryByRole('link', { name: 'Stock Options' })).toBeNull();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
   });
 });
 
 // ── BottomTabBar ──────────────────────────────────────────────────────────────
 
 describe('BottomTabBar', () => {
-  it('renders base links and the Entry FAB without Options when flag off', () => {
+  it('renders base links and the Entry FAB without Stock Options when flag off', () => {
     mockConfigQuery.mockReturnValue({ data: { stock_options_enabled: false } });
     render(<BottomTabBar />, { wrapper: Wrapper });
 
     expect(screen.getByRole('link', { name: 'Overview' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'History' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Accounts' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /new entry/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Detail' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Options' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Stock Options' })).toBeNull();
   });
 
-  it('shows Options tab when flag is on', () => {
+  it('shows Stock Options tab when flag is on', () => {
     mockConfigQuery.mockReturnValue({ data: { stock_options_enabled: true } });
     render(<BottomTabBar />, { wrapper: Wrapper });
 
-    expect(screen.getByRole('link', { name: 'Options' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Stock Options' })).toBeInTheDocument();
   });
 
   it('has aria-label "Main navigation"', () => {

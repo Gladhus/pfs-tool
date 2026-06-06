@@ -1,3 +1,11 @@
+export type Currency = 'CAD' | 'USD';
+
+/** Daily USD→CAD exchange rate (CAD→USD = 1/usd_cad). Persisted in the fx_rates tab. */
+export interface FxRate {
+  date: string;
+  usd_cad: number;
+}
+
 export interface Account {
   id: string;
   type: string;
@@ -11,6 +19,8 @@ export interface Account {
   sort_order: number;
   tags: string[];
   annual_rate: number;
+  /** Account's native currency. Absent on legacy rows → treated as the main currency. */
+  currency?: Currency;
 }
 
 export interface Snapshot {
@@ -19,6 +29,17 @@ export interface Snapshot {
   balance_raw: number;
   comment?: string;
   entered_at?: string;
+}
+
+/** Sourced from seed/default-accounts.json — drives new-account id prefixes and defaults. */
+export interface AccountType {
+  id_prefix: string;
+  name_fr: string;
+  name_en: string;
+  category: string;
+  kind: 'asset' | 'debt';
+  default_owner: string;
+  default_ownership_share: number;
 }
 
 /** Sourced from seed/default-accounts.json, not from sheet column headers. */
@@ -50,6 +71,7 @@ export interface AppConfig {
   schema_version: string;
   last_imported_at?: string;
   stock_options_enabled?: boolean;
+  theme?: 'system' | 'light' | 'dark';
 }
 
 export interface OptionCompany {
@@ -57,6 +79,10 @@ export interface OptionCompany {
   name: string;
   ticker: string;
   active: boolean;
+  /** Tags used to roll this company's equity value into matching Overview groups. */
+  tags: string[];
+  /** Currency of this company's FMV + strike prices. Absent → main currency. */
+  currency?: Currency;
 }
 
 export interface OptionGrant {
@@ -70,7 +96,7 @@ export interface OptionGrant {
   vesting_start: string;
   cliff_months: number;
   vesting_months: number;
-  vesting_interval: number;
+  vesting_interval: string;
   expiry_date: string;
 }
 

@@ -32,6 +32,7 @@ vi.mock('@/queries/sheetQueries', () => ({
   useOptionGrantsQuery: vi.fn(),
   useOptionFmvQuery: vi.fn(),
   useOptionExercisesQuery: vi.fn(),
+  useFxRatesQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [] })),
 }));
 
 import {
@@ -121,8 +122,9 @@ describe('OverviewPage', () => {
   it('renders allocation section and period pills with data', () => {
     render(<OverviewPage />, { wrapper: Wrapper });
     expect(screen.getByText('allocation_title')).toBeTruthy();
-    // Period pill is a radio button — target it by role to avoid matching delta labels
-    expect(screen.getByRole('radio', { name: 'period_1y' })).toBeTruthy();
+    // Period pill is a radio button — target it by role to avoid matching delta labels.
+    // Two instances render (desktop top-right + mobile bottom, toggled via CSS).
+    expect(screen.getAllByRole('radio', { name: 'period_1y' }).length).toBeGreaterThan(0);
   });
 
   it('renders view toggle buttons', () => {

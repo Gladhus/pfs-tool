@@ -10,7 +10,7 @@ export default function ProtectedLayout() {
 
   if (isBootstrapping || !isDataLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-dvh text-slate-400 text-sm animate-pulse">
+      <div className="flex items-center justify-center min-h-dvh bg-bg text-muted text-sm animate-pulse">
         Setting up…
       </div>
     );

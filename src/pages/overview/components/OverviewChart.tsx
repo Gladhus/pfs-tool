@@ -24,7 +24,7 @@ export function OverviewChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
-  const prevViewRef = useRef(view);
+  const prevViewRef = useRef(`${view}|false`);
 
   const isVis = (key: string) => seriesVisible[key] !== false;
 
@@ -33,8 +33,12 @@ export function OverviewChart({
     const canvas = canvasRef.current;
     if (!canvas || !dates.length) return;
 
-    const viewChanged = prevViewRef.current !== view;
-    prevViewRef.current = view;
+    // Include isPrivate AND the date range so toggling privacy or changing the
+    // period rebuilds the tick/tooltip callbacks rather than only swapping data
+    // (the fast path keeps stale closures → stale/bunched x-axis labels).
+    const viewKey = `${view}|${isPrivate}|${dates.length}|${dates[0] ?? ''}|${dates[dates.length - 1] ?? ''}`;
+    const viewChanged = prevViewRef.current !== viewKey;
+    prevViewRef.current = viewKey;
 
     const colors = chartColors();
     const cs = getComputedStyle(document.documentElement);
@@ -120,9 +124,8 @@ export function OverviewChart({
           legend: { display: false },
           tooltip: chartTooltip({
             labelFn: (ctx) => {
-              if (isPrivate) return '••••••';
-              const v = ctx.parsed.y;
-              return `${ctx.dataset.label}: ${fmtMoney(v, locale, currency)}`;
+              const valStr = isPrivate ? '••••••' : fmtMoney(ctx.parsed.y, locale, currency);
+              return `${ctx.dataset.label}: ${valStr}`;
             },
           }),
         },

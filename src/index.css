@@ -5,6 +5,35 @@
    Auto dark via prefers-color-scheme is handled by CSS variable overrides below. */
 @custom-variant dark (&:where([data-theme="dark"],[data-theme="dark"] *));
 
+/* Page background + base text follow the active theme so areas outside the
+   app shell (signed-out screen, overscroll) flip with light/dark too. */
+@layer base {
+  html, body {
+    background-color: var(--bg);
+    color: var(--fg);
+  }
+
+  /* Hide scrollbars app-wide (scrolling still works) — cleaner look on mobile and desktop. */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Kept for explicit opt-in on horizontal chrome rows. */
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* ── Theme tokens — map Tailwind utilities to CSS variables ── */
 @theme inline {
   /* Surfaces */

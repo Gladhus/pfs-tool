@@ -5,7 +5,7 @@ export type ActiveDialog = 'account' | 'migrate' | 'group' | 'confirm' | null;
 interface DialogState {
   activeDialog: ActiveDialog;
   onConfirm: (() => void) | null;
-  openDialog: (d: ActiveDialog, onConfirm?: () => void) => void;
+  openDialog: (d: ActiveDialog, onConfirm?: (() => void) | null) => void;
   closeDialog: () => void;
 }
 

@@ -4,18 +4,14 @@ import { StatCard } from '@/ui/StatCard';
 import { Delta } from '@/ui/Delta';
 import { Sparkline } from './Sparkline';
 import { EmptyGroupsState } from './EmptyGroupsState';
+import type { EquityData } from '../hooks/useOverviewStats';
 import { foldCategoryId, accountMatchesGroup, groupColor } from '@/utils/colors';
-import { categoryIcon } from '@/utils/icons';
+import { categoryKey } from '@/utils/icons';
+import { computeCompanyEquityValue } from '@/utils/options';
+import { signedMain, toMain, rateFor } from '@/utils/currency';
+import type { Currency } from '@/types/sheets';
 import { tr } from '@/i18n';
 import { useTranslation } from 'react-i18next';
-
-// Inline SVG for equity — no icon glyph in the set
-const EQUITY_SVG = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
 
 interface GroupStat {
   group: Group;
@@ -32,6 +28,9 @@ interface Props {
   accounts: Account[];
   sparkDates: string[];
   sweepForSpark: Record<string, number>[];
+  optionData?: EquityData;
+  main: Currency;
+  fxMap: Map<string, number>;
   equityValue?: number;
   prevEquityValue?: number | null;
   period: string;
@@ -40,39 +39,73 @@ interface Props {
   isPrivate: boolean;
 }
 
+/** Read a category accent color from the CSS theme tokens. */
+function catColorVar(catId?: string): string {
+  const cs = getComputedStyle(document.documentElement);
+  if (!catId || catId === 'equity') return cs.getPropertyValue('--cat-equity').trim() || '#06b6d4';
+  return cs.getPropertyValue('--cat-' + categoryKey(catId)).trim() || cs.getPropertyValue('--accent').trim();
+}
+
+/** Drop leading entries that have no underlying data so the line starts at the first real point. */
+function trimLeading(raw: { total: number; has: boolean }[]): number[] {
+  const first = raw.findIndex(r => r.has);
+  return first < 0 ? [] : raw.slice(first).map(r => r.total);
+}
+
 function buildCategorySpark(
   catId: string,
   accounts: Account[],
-  sparkDates: string[],
   sweepForSpark: Record<string, number>[],
+  sparkDates: string[],
+  main: Currency,
+  fxMap: Map<string, number>,
 ): number[] {
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
-  return sweepForSpark.map(balances => {
+  return trimLeading(sweepForSpark.map((balances, i) => {
+    const usdCad = rateFor(fxMap, sparkDates[i]);
     let total = 0;
+    let has = false;
     for (const [id, balance_raw] of Object.entries(balances)) {
       const a = acctById[id];
       if (!a || foldCategoryId(a.category) !== catId) continue;
-      total += balance_raw * (a.ownership_share ?? 1) * (a.kind === 'debt' ? -1 : 1);
+      total += signedMain(a, balance_raw, main, usdCad);
+      has = true;
     }
-    return total;
-  });
+    return { total, has };
+  }));
 }
 
 function buildGroupSpark(
   group: Group,
   accounts: Account[],
   sweepForSpark: Record<string, number>[],
+  sparkDates: string[],
+  main: Currency,
+  fxMap: Map<string, number>,
+  optionData?: EquityData,
 ): number[] {
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
-  return sweepForSpark.map(balances => {
+  return trimLeading(sweepForSpark.map((balances, i) => {
+    const usdCad = rateFor(fxMap, sparkDates[i]);
     let total = 0;
+    let has = false;
     for (const [id, balance_raw] of Object.entries(balances)) {
       const a = acctById[id];
       if (!a || !accountMatchesGroup(a, group)) continue;
-      total += balance_raw * (a.ownership_share ?? 1) * (a.kind === 'debt' ? -1 : 1);
+      total += signedMain(a, balance_raw, main, usdCad);
+      has = true;
     }
-    return total;
-  });
+    if (optionData) {
+      for (const c of optionData.companies) {
+        if (c.active === false) continue;
+        if (accountMatchesGroup({ tags: c.tags }, group)) {
+          const raw = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, sparkDates[i]);
+          if (raw) { total += toMain(raw, c.currency ?? main, main, usdCad); has = true; }
+        }
+      }
+    }
+    return { total, has };
+  }));
 }
 
 export function StatCardGrid({
@@ -84,6 +117,9 @@ export function StatCardGrid({
   accounts,
   sparkDates,
   sweepForSpark,
+  optionData,
+  main,
+  fxMap,
   equityValue,
   prevEquityValue,
   period,
@@ -92,59 +128,64 @@ export function StatCardGrid({
   isPrivate,
 }: Props) {
   const { t } = useTranslation();
-  const periodLabel = t(`period_${period.toLowerCase()}`);
+  const periodLabel = t(`period_long_${period.toLowerCase()}`);
 
   const catSparks = useMemo(() =>
     effectiveCats.reduce<Record<string, number[]>>((acc, cat) => {
-      acc[cat.id] = buildCategorySpark(cat.id, accounts, sparkDates, sweepForSpark);
+      acc[cat.id] = buildCategorySpark(cat.id, accounts, sweepForSpark, sparkDates, main, fxMap);
       return acc;
     }, {}),
-    [effectiveCats, accounts, sparkDates, sweepForSpark],
+    [effectiveCats, accounts, sweepForSpark, sparkDates, main, fxMap],
   );
 
   const groupSparks = useMemo(() =>
-    groupStats.map(({ group }) => buildGroupSpark(group, accounts, sweepForSpark)),
-    [groupStats, accounts, sweepForSpark],
+    groupStats.map(({ group }) => buildGroupSpark(group, accounts, sweepForSpark, sparkDates, main, fxMap, optionData)),
+    [groupStats, accounts, sweepForSpark, sparkDates, main, fxMap, optionData],
   );
+
+  const equitySpark = useMemo(() => {
+    if (!optionData) return [];
+    const raw = sparkDates.map(d => {
+      const usdCad = rateFor(fxMap, d);
+      return optionData.companies.reduce((s, c) => {
+        if (c.active === false) return s;
+        const v = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, d);
+        return s + toMain(v, c.currency ?? main, main, usdCad);
+      }, 0);
+    });
+    const first = raw.findIndex(v => v !== 0);
+    return first < 0 ? [] : raw.slice(first);
+  }, [optionData, sparkDates, main, fxMap]);
+
+  const renderDelta = (delta: number | null, base: number | null) =>
+    delta != null ? (
+      <Delta
+        value={delta}
+        baseValue={base}
+        periodLabel={periodLabel}
+        layout="stacked"
+        locale={locale}
+        currency={currency}
+        isPrivate={isPrivate}
+        className="mt-2 text-xs"
+      />
+    ) : undefined;
 
   if (view === 'group') {
     if (!groupStats.length) return <EmptyGroupsState />;
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {groupStats.map(({ group, value, prevValue }, i) => {
-          const delta = prevValue != null ? value - prevValue : null;
+          const color = groupColor(group);
           return (
             <StatCard
               key={group.name}
-              groupColor={groupColor(group)}
+              accentColor={color}
               head={{ dot: true, label: group.name }}
               value={value}
               valueNegative={value < 0}
-              locale={locale}
-              currency={currency}
-              isPrivate={isPrivate}
-              spark={
-                <Sparkline
-                  series={groupSparks[i]}
-                  className="mt-1 w-full"
-                  width={120}
-                  height={28}
-                />
-              }
-              delta={
-                delta != null ? (
-                  <Delta
-                    value={delta}
-                    baseValue={prevValue}
-                    periodLabel={periodLabel}
-                    layout="stacked"
-                    locale={locale}
-                    currency={currency}
-                    isPrivate={isPrivate}
-                    className="text-xs mt-0.5"
-                  />
-                ) : undefined
-              }
+              spark={<Sparkline series={groupSparks[i]} color={color} className="mt-3 w-full" height={56} />}
+              delta={renderDelta(prevValue != null ? value - prevValue : null, prevValue)}
             />
           );
         })}
@@ -158,73 +199,34 @@ export function StatCardGrid({
     .map(cat => {
       const val = byCategory[cat.id];
       const prev = prevByCategory?.[cat.id] ?? null;
-      const delta = prev != null ? val - prev : null;
+      const color = catColorVar(cat.id);
       return (
         <StatCard
           key={cat.id}
-          head={{ iconKey: categoryIcon(cat.id), label: tr(cat) }}
+          accentColor={color}
+          head={{ dot: true, label: tr(cat) }}
           value={val}
           valueNegative={cat.kind === 'debt'}
-          locale={locale}
-          currency={currency}
-          isPrivate={isPrivate}
-          spark={
-            <Sparkline
-              series={catSparks[cat.id] ?? []}
-              className="mt-1 w-full"
-              width={120}
-              height={28}
-            />
-          }
-          delta={
-            delta != null ? (
-              <Delta
-                value={delta}
-                baseValue={prev}
-                periodLabel={periodLabel}
-                layout="stacked"
-                locale={locale}
-                currency={currency}
-                isPrivate={isPrivate}
-                className="text-xs mt-0.5"
-              />
-            ) : undefined
-          }
+          spark={<Sparkline series={catSparks[cat.id] ?? []} color={color} className="mt-3 w-full" height={56} />}
+          delta={renderDelta(prev != null ? val - prev : null, prev)}
         />
       );
     });
 
-  // Equity card
+  // Equity card (category view)
   if (equityValue != null && equityValue > 0) {
-    const delta = prevEquityValue != null ? equityValue - prevEquityValue : null;
+    const color = catColorVar('equity');
     cards.push(
       <StatCard
         key="equity"
-        head={{ label: t('equity_label') }}
+        accentColor={color}
+        head={{ dot: true, label: t('equity_label') }}
         value={equityValue}
-        locale={locale}
-        currency={currency}
-        isPrivate={isPrivate}
-        spark={
-          <span className="mt-1 flex items-center justify-center">{EQUITY_SVG}</span>
-        }
-        delta={
-          delta != null ? (
-            <Delta
-              value={delta}
-              baseValue={prevEquityValue ?? 0}
-              periodLabel={periodLabel}
-              layout="stacked"
-              locale={locale}
-              currency={currency}
-              isPrivate={isPrivate}
-              className="text-xs mt-0.5"
-            />
-          ) : undefined
-        }
+        spark={<Sparkline series={equitySpark} color={color} className="mt-3 w-full" height={56} />}
+        delta={renderDelta(prevEquityValue != null ? equityValue - prevEquityValue : null, prevEquityValue ?? 0)}
       />,
     );
   }
 
-  return <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{cards}</div>;
+  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{cards}</div>;
 }

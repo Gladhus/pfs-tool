@@ -10,7 +10,11 @@ export const TOOLTIP_STYLE = {
   bodyFont: { size: 13, weight: '600' as const },
 };
 
-type TooltipCtx = { dataset: { label: string }; parsed: { y: number } };
+type TooltipCtx = {
+  dataset: { label?: string; _rawData?: (number | null)[] };
+  parsed: { y: number };
+  dataIndex: number;
+};
 
 export function chartTooltip({
   labelFn,
@@ -61,8 +65,9 @@ export function moneyTickFmt({
   mask?: string;
   isPrivate?: boolean;
 } = {}) {
-  return (v: number) => {
+  return (raw: string | number) => {
     if (isPrivate) return mask;
+    const v = typeof raw === 'number' ? raw : Number(raw);
     const abs = Math.abs(v);
     if (abs >= 1_000_000) return `${prefix}${(v / 1_000_000).toFixed(1)}M${suffix}`;
     if (abs >= 1_000)     return `${prefix}${(v / 1_000).toFixed(0)}k${suffix}`;
@@ -71,8 +76,9 @@ export function moneyTickFmt({
 }
 
 export function sharesTickFmt({ mask = MASK.short, isPrivate = false } = {}) {
-  return (v: number) => {
+  return (raw: string | number) => {
     if (isPrivate) return mask;
+    const v = typeof raw === 'number' ? raw : Number(raw);
     const abs = Math.abs(v);
     if (abs >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
     if (abs >= 1_000)     return (v / 1_000).toFixed(0) + 'k';
@@ -81,8 +87,9 @@ export function sharesTickFmt({ mask = MASK.short, isPrivate = false } = {}) {
 }
 
 export function pctTickFmt({ isPrivate = false } = {}) {
-  return (v: number) => {
+  return (raw: string | number) => {
     if (isPrivate) return MASK.short;
+    const v = typeof raw === 'number' ? raw : Number(raw);
     return v.toFixed(1) + '%';
   };
 }

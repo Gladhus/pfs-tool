@@ -53,7 +53,7 @@ describe('Delta', () => {
 describe('StatCard', () => {
   it('renders with label and value text', () => {
     render(
-      <StatCard head={{ label: 'Cash' }} valueText="$5,000" locale="en" currency="CAD" />,
+      <StatCard head={{ label: 'Cash' }} valueText="$5,000" />,
     );
     expect(screen.getByText('Cash')).toBeInTheDocument();
     expect(screen.getByText('$5,000')).toBeInTheDocument();

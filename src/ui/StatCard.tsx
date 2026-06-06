@@ -1,11 +1,8 @@
-import { Icon, type IconProps } from './Icon';
-import { privMoney } from '@/utils/privacy';
+import { Amount } from '@/ui/Amount';
 
 interface StatCardHead {
-  iconKey?: string;
-  dot?: string | boolean;
+  dot?: boolean;
   label?: string;
-  html?: string;
 }
 
 interface StatCardProps {
@@ -14,10 +11,8 @@ interface StatCardProps {
   value?: number;
   valueText?: string;
   valueNegative?: boolean;
-  groupColor?: string;
-  locale: string;
-  currency: string;
-  isPrivate?: boolean;
+  /** Series color — drives the left accent border and the header dot. */
+  accentColor?: string;
   spark?: React.ReactNode;
   delta?: React.ReactNode;
 }
@@ -28,43 +23,30 @@ export function StatCard({
   value,
   valueText,
   valueNegative = false,
-  groupColor,
-  locale,
-  currency,
-  isPrivate = false,
+  accentColor,
   spark,
   delta,
 }: StatCardProps) {
-  const style = groupColor ? { '--group-color': groupColor } as React.CSSProperties : undefined;
-
   return (
-    <div className={`rounded-lg bg-surface-1 shadow-sm p-3 ${className}`} style={style}>
-      {head && (
-        <div className="flex items-center gap-1.5 mb-1">
-          {head.html ? (
-            <span dangerouslySetInnerHTML={{ __html: head.html }} />
-          ) : (
-            <>
-              {head.iconKey && (
-                <span className="cat-icon">
-                  <Icon name={head.iconKey as IconProps['name']} size={14} />
-                </span>
-              )}
-              {head.dot && !head.iconKey && (
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={typeof head.dot === 'string' ? { background: head.dot } : undefined}
-                />
-              )}
-              {head.label && (
-                <div className="text-xs text-muted truncate">{head.label}</div>
-              )}
-            </>
+    <div
+      className={`rounded-xl border-l-4 bg-surface-1 shadow-sm p-4 ${className}`}
+      style={{ borderLeftColor: accentColor ?? 'transparent' }}
+    >
+      {head?.label && (
+        <div className="mb-1 flex items-center gap-2">
+          {head.dot && (
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: accentColor }}
+            />
           )}
+          <div className="truncate text-xs font-semibold uppercase tracking-wide text-muted">
+            {head.label}
+          </div>
         </div>
       )}
-      <div className={`text-base font-semibold ${valueNegative ? 'text-red' : 'text-fg'}`}>
-        {valueText ?? (value != null ? privMoney(value, isPrivate, locale, currency) : '—')}
+      <div className={`text-2xl font-bold tabular-nums ${valueNegative ? 'text-red' : 'text-fg'}`}>
+        {valueText ?? (value != null ? <Amount value={value} /> : '—')}
       </div>
       {spark}
       {delta}

@@ -9,6 +9,7 @@ export async function loadConfig(sheetId: string): Promise<AppConfig> {
   }));
   const rows = resp.result.values ?? [];
   const map = Object.fromEntries((rows.slice(1) as string[][]).map(r => [r[0], r[1] ?? '']));
+  const theme = map.theme as 'system' | 'light' | 'dark' | undefined;
   return {
     language: (map.language as 'en' | 'fr') || 'fr',
     currency: map.currency || 'CAD',
@@ -17,6 +18,7 @@ export async function loadConfig(sheetId: string): Promise<AppConfig> {
     stock_options_enabled:
       map.stock_options_enabled === '1' ? true :
       map.stock_options_enabled === '0' ? false : undefined,
+    theme: (theme === 'system' || theme === 'light' || theme === 'dark') ? theme : undefined,
   };
 }
 

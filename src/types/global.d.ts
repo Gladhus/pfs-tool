@@ -1,4 +1,7 @@
+/// <reference types="vite/client" />
 // Minimal type declarations for Google APIs loaded via CDN scripts
+
+declare global {
 
 interface GapiClientSheets {
   spreadsheets: {
@@ -83,7 +86,6 @@ interface PFSConfig {
   SHEET_TITLE: string;
 }
 
-declare global {
   interface Window {
     PFS_CONFIG: PFSConfig;
   }

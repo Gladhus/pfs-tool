@@ -29,7 +29,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   gisReady: false,
   accessToken: null,
   expiresAt: null,
-  sheetId: localStorage.getItem('pfs_sheet_id'),
+  sheetId: typeof localStorage !== 'undefined' ? localStorage.getItem('pfs_sheet_id') : null,
   userEmail: null,
   isBootstrapping: false,
   isDataLoaded: false,

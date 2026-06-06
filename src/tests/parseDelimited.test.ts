@@ -1,9 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-
-vi.mock('../core/state.js', () => ({ state: {}, LS_KEY_IMPORT_MAP: 'pfs_import_mappings' }));
-vi.mock('../utils/balance.js', () => ({ activeAccounts: () => [] }));
-
-const { parseDelimited } = await import('../utils/import.js');
+import { describe, it, expect } from 'vitest';
+import { parseDelimited } from '@/utils/import';
 
 describe('parseDelimited', () => {
   it('parses simple comma CSV', () => {
@@ -41,8 +37,7 @@ describe('parseDelimited', () => {
 
   it('unclosed quote — does not throw, returns observed partial content', () => {
     expect(() => parseDelimited('"unclosed')).not.toThrow();
-    const result = parseDelimited('"unclosed');
-    expect(Array.isArray(result)).toBe(true);
+    expect(Array.isArray(parseDelimited('"unclosed'))).toBe(true);
   });
 
   it('empty input returns empty array', () => {

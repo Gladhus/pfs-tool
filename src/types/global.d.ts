@@ -4,11 +4,13 @@ interface GapiClientSheets {
   spreadsheets: {
     get(params: { spreadsheetId: string; fields?: string }): Promise<{ result: unknown }>;
     create(params: { resource: unknown; fields?: string }): Promise<{ result: { spreadsheetId: string } }>;
+    batchUpdate(params: { spreadsheetId: string; resource: unknown }): Promise<{ result: unknown }>;
     values: {
       get(params: {
         spreadsheetId: string;
         range: string;
         valueRenderOption?: string;
+        dateTimeRenderOption?: string;
       }): Promise<{ result: { values?: unknown[][] } }>;
       update(params: {
         spreadsheetId: string;
@@ -16,6 +18,14 @@ interface GapiClientSheets {
         valueInputOption: string;
         resource: { values: unknown[][] };
       }): Promise<{ result: unknown }>;
+      append(params: {
+        spreadsheetId: string;
+        range: string;
+        valueInputOption: string;
+        insertDataOption?: string;
+        resource: { values: unknown[][] };
+      }): Promise<{ result: unknown }>;
+      clear(params: { spreadsheetId: string; range: string }): Promise<{ result: unknown }>;
       batchUpdate(params: {
         spreadsheetId: string;
         resource: {

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type Theme = 'system' | 'light' | 'dark';
 export type Lang = 'fr' | 'en';
@@ -35,6 +35,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'pfs_ui',
+      storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         privateMode: s.privateMode,
         lang: s.lang,

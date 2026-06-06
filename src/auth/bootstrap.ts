@@ -1,5 +1,4 @@
 import { verifySheet, findSheetByName, createSheet, seedNewSheet } from '@/api/drive';
-import { loadAll } from '@/api/data';
 import { useAuthStore } from '@/stores/auth.store';
 import { setStatus } from '@/stores/status.store';
 import { SHEET_TITLE, LS_KEY_SHEET_ID } from '@/constants';
@@ -36,11 +35,7 @@ export async function bootstrapSheet(): Promise<void> {
   }
 
   setSheetId(sheetId);
-  setStatus(created ? 'Sheet created.' : 'Sheet linked.', 'ok');
-
-  setStatus('Loading your data…');
-  await loadAll();
   setIsBootstrapping(false);
   setIsDataLoaded(true);
-  setStatus('');
+  setStatus(created ? 'Sheet created.' : 'Sheet linked.', 'ok');
 }

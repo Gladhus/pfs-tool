@@ -38,6 +38,7 @@ export async function createSheet(): Promise<string> {
         { properties: { title: 'option_companies' } },
         { properties: { title: 'option_grants' } },
         { properties: { title: 'option_fmv' } },
+        { properties: { title: 'option_exercises' } },
       ],
     },
     fields: 'spreadsheetId',
@@ -76,6 +77,7 @@ export async function seedNewSheet(sheetId: string): Promise<void> {
         { range: 'option_companies!A1', values: [[...HEADERS.option_companies]] },
         { range: 'option_grants!A1',    values: [[...HEADERS.option_grants]] },
         { range: 'option_fmv!A1',       values: [[...HEADERS.option_fmv]] },
+        { range: 'option_exercises!A1', values: [[...HEADERS.option_exercises]] },
       ],
     },
   });

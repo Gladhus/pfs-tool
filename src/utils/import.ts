@@ -1,10 +1,9 @@
-import { LS_KEY_IMPORT_MAP } from '../core/state.js';
-import { activeAccounts } from './balance.js';
+import type { Account } from '@/types/sheets';
 
-export function parseDelimited(text) {
+export function parseDelimited(text: string): string[][] {
   const sep = text.includes('\t') ? '\t' : ',';
-  const out = [];
-  let row = [];
+  const out: string[][] = [];
+  let row: string[] = [];
   let cur = '';
   let inQuotes = false;
   let i = 0;
@@ -25,14 +24,14 @@ export function parseDelimited(text) {
   return out.filter(r => r.some(c => c.trim() !== ''));
 }
 
-export function normalizeName(s) {
+export function normalizeName(s: string): string {
   return String(s || '').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9 ]+/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
 
-export function similarity(a, b) {
+export function similarity(a: string, b: string): number {
   const setA = new Set(normalizeName(a).split(' ').filter(Boolean));
   const setB = new Set(normalizeName(b).split(' ').filter(Boolean));
   if (!setA.size && !setB.size) return 0;
@@ -41,30 +40,33 @@ export function similarity(a, b) {
   return inter / (setA.size + setB.size - inter);
 }
 
-export function suggestAccount(sourceName) {
-  const remembered = (() => {
-    try { return JSON.parse(localStorage.getItem(LS_KEY_IMPORT_MAP) || '{}'); }
-    catch { return {}; }
-  })();
+/** mappings: caller reads from localStorage once and passes in. */
+export function suggestAccount(
+  sourceName: string,
+  accounts: Account[],
+  mappings: Record<string, string>,
+): string | null {
   const key = normalizeName(sourceName);
-  if (remembered[key]) return remembered[key];
-  let best = null, bestScore = 0;
-  for (const a of activeAccounts()) {
+  if (mappings[key]) return mappings[key];
+  let best: Account | null = null;
+  let bestScore = 0;
+  for (const a of accounts.filter(acc => acc.active)) {
     const score = Math.max(similarity(sourceName, a.name_fr), similarity(sourceName, a.name_en));
     if (score > bestScore) { bestScore = score; best = a; }
   }
-  return bestScore >= 0.5 ? best.id : null;
+  return bestScore >= 0.5 && best ? best.id : null;
 }
 
-export function rememberMapping(sourceName, accountId) {
-  try {
-    const m = JSON.parse(localStorage.getItem(LS_KEY_IMPORT_MAP) || '{}');
-    m[normalizeName(sourceName)] = accountId;
-    localStorage.setItem(LS_KEY_IMPORT_MAP, JSON.stringify(m));
-  } catch { /* ignore */ }
+/** Returns updated mappings object; caller persists to localStorage. */
+export function rememberMapping(
+  sourceName: string,
+  accountId: string,
+  mappings: Record<string, string>,
+): Record<string, string> {
+  return { ...mappings, [normalizeName(sourceName)]: accountId };
 }
 
-export function slugify(s) {
+export function slugify(s: string): string {
   return String(s || '')
     .toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')

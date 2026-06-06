@@ -1,19 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { computeVestedShares, exercisableShares } from '@/utils/options';
+import type { OptionGrant, OptionExercise } from '@/types/sheets';
 
-const mockState = {
-  optionExercises: [],
-  optionGrants: [],
-  optionFmv: [],
-  optionCompanies: [],
-};
-vi.mock('../core/state.js', () => ({ state: mockState }));
-
-const { computeVestedShares, exercisableShares } = await import('../utils/options.js');
-
-beforeEach(() => { mockState.optionExercises = []; });
-
-const GRANT = {
+const GRANT: OptionGrant = {
   id: 'g1',
+  company_id: 'c1',
+  label: 'Test Grant',
+  grant_type: 'iso',
   grant_date: '2023-01-01',
   vesting_start: '2023-01-01',
   cliff_months: 12,
@@ -21,6 +14,7 @@ const GRANT = {
   total_shares: 1000,
   vesting_interval: 'monthly',
   strike_price: 0,
+  expiry_date: '2033-01-01',
 };
 
 describe('computeVestedShares', () => {
@@ -32,9 +26,7 @@ describe('computeVestedShares', () => {
     expect(computeVestedShares(GRANT, '2023-12-01')).toBe(0);
   });
 
-  it('returns > 0 at cliff boundary (month 12)', () => {
-    expect(computeVestedShares(GRANT, '2024-01-01')).toBeGreaterThan(0);
-    // 12 completed intervals × (1000 / 48) = 250
+  it('returns 250 at cliff boundary (month 12)', () => {
     expect(computeVestedShares(GRANT, '2024-01-01')).toBe(250);
   });
 
@@ -52,13 +44,11 @@ describe('computeVestedShares', () => {
 
   it('quarterly interval vests every 3 months', () => {
     const g = { ...GRANT, vesting_interval: 'quarterly', cliff_months: 0 };
-    // month 3 → 1 completed quarterly interval → 1000/(48/3) = 62.5
     expect(computeVestedShares(g, '2023-04-01')).toBe(62.5);
   });
 
   it('annual interval vests every 12 months', () => {
     const g = { ...GRANT, vesting_interval: 'annual', cliff_months: 0 };
-    // month 12 → 1 completed annual interval → 1000/(48/12) = 250
     expect(computeVestedShares(g, '2024-01-01')).toBe(250);
   });
 
@@ -71,23 +61,28 @@ describe('computeVestedShares', () => {
   });
 
   it('null asOfDate returns 0', () => {
-    expect(computeVestedShares(GRANT, null)).toBe(0);
+    expect(computeVestedShares(GRANT, null as unknown as string)).toBe(0);
   });
 });
 
 describe('exercisableShares', () => {
+  const noExercises: OptionExercise[] = [];
+
   it('no exercises — equals vested', () => {
-    mockState.optionExercises = [];
-    expect(exercisableShares(GRANT, '2024-01-01')).toBe(250);
+    expect(exercisableShares(GRANT, noExercises, '2024-01-01')).toBe(250);
   });
 
   it('partial exercise subtracts correctly', () => {
-    mockState.optionExercises = [{ grant_id: 'g1', date: '2024-01-01', shares_exercised: 100 }];
-    expect(exercisableShares(GRANT, '2024-01-01')).toBe(150);
+    const exercises: OptionExercise[] = [
+      { id: 'e1', grant_id: 'g1', date: '2024-01-01', shares_exercised: 100, price_paid: 0 },
+    ];
+    expect(exercisableShares(GRANT, exercises, '2024-01-01')).toBe(150);
   });
 
   it('over-exercise clamps to 0', () => {
-    mockState.optionExercises = [{ grant_id: 'g1', date: '2024-01-01', shares_exercised: 9999 }];
-    expect(exercisableShares(GRANT, '2024-01-01')).toBe(0);
+    const exercises: OptionExercise[] = [
+      { id: 'e1', grant_id: 'g1', date: '2024-01-01', shares_exercised: 9999, price_paid: 0 },
+    ];
+    expect(exercisableShares(GRANT, exercises, '2024-01-01')).toBe(0);
   });
 });

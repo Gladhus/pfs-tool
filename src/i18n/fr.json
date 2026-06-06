@@ -52,5 +52,9 @@
   "err_quotaExceeded": "Quota Google Sheets dépassé — réessayez dans quelques minutes.",
   "err_serverError": "Erreur serveur Google — réessayez.",
   "err_offline": "Pas de connexion Internet.",
-  "err_unknown": "Une erreur inattendue s'est produite."
+  "err_unknown": "Une erreur inattendue s'est produite.",
+  "signed_out_p1": "Connectez-vous pour accéder à votre tableau de bord de valeur nette.",
+  "signed_out_p2": "Vos données restent dans votre propre feuille Google.",
+  "reset_link": "Choisir une autre feuille",
+  "bootstrap_failed": "Impossible de charger votre feuille. Veuillez réessayer."
 }

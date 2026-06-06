@@ -1,1 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&display=swap');
 @import "tailwindcss";
+
+/* dark: variant matches [data-theme="dark"] attribute on <html> (manual override).
+   Auto dark via prefers-color-scheme is handled by CSS variable overrides below. */
+@custom-variant dark (&:where([data-theme="dark"],[data-theme="dark"] *));
+
+/* ── Theme tokens — map Tailwind utilities to CSS variables ── */
+@theme inline {
+  /* Surfaces */
+  --color-bg:           var(--bg);
+  --color-surface-1:    var(--surface);
+  --color-surface-2:    var(--surface-2);
+  --color-surface-3:    var(--surface-3);
+
+  /* Text */
+  --color-fg:           var(--fg);
+  --color-fg-2:         var(--fg-2);
+  --color-muted:        var(--muted);
+  --color-subtle:       var(--subtle);
+
+  /* Accent */
+  --color-accent:       var(--accent);
+  --color-accent-dark:  var(--accent-dark);
+  --color-accent-light: var(--accent-light);
+  --color-accent-fg:    var(--accent-fg);
+
+  /* Semantic */
+  --color-ok:           var(--ok);
+  --color-ok-bg:        var(--ok-bg);
+  --color-warn:         var(--warn);
+  --color-warn-bg:      var(--warn-bg);
+  --color-red:          var(--red);
+  --color-red-light:    var(--red-light);
+
+  /* Borders */
+  --color-border:        var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Site header (dark navy, constant) */
+  --color-header:        #0c1424;
+
+  /* Category accents */
+  --color-cat-investments:    var(--cat-investments);
+  --color-cat-investments-bg: var(--cat-investments-bg);
+  --color-cat-real-estate:    var(--cat-real-estate);
+  --color-cat-real-estate-bg: var(--cat-real-estate-bg);
+  --color-cat-cash:           var(--cat-cash);
+  --color-cat-cash-bg:        var(--cat-cash-bg);
+  --color-cat-debts:          var(--cat-debts);
+  --color-cat-debts-bg:       var(--cat-debts-bg);
+  --color-cat-other:          var(--cat-other);
+  --color-cat-other-bg:       var(--cat-other-bg);
+  --color-cat-equity:         var(--cat-equity);
+  --color-cat-equity-bg:      var(--cat-equity-bg);
+
+  /* Shadows */
+  --shadow-xs: var(--tok-shadow-xs);
+  --shadow-sm: var(--tok-shadow-sm);
+  --shadow-md: var(--tok-shadow-md);
+  --shadow-lg: var(--tok-shadow-lg);
+
+  /* Radii (verbatim from style.css) */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  /* Font */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Light mode (default) ────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:            #f4f5f7;
+  --surface:       #ffffff;
+  --surface-2:     #f9fafb;
+  --surface-3:     #f4f5f7;
+
+  /* Text */
+  --fg:            #0b1220;
+  --fg-2:          #344054;
+  --muted:         #667085;
+  --subtle:        #98a2b3;
+
+  /* Accent */
+  --accent:        #10b981;
+  --accent-dark:   #059669;
+  --accent-light:  #d1fae5;
+  --accent-fg:     #ffffff;
+
+  /* Semantic */
+  --ok:            #065f46;
+  --ok-bg:         #d1fae5;
+  --warn:          #92400e;
+  --warn-bg:       #fef3c7;
+  --red:           #e11d48;
+  --red-light:     #ffe4e6;
+
+  /* Borders */
+  --border:        #e4e7ec;
+  --border-strong: #cfd4dc;
+
+  /* Category accents */
+  --cat-investments:    #3b82f6;
+  --cat-investments-bg: #dbeafe;
+  --cat-real-estate:    #f59e0b;
+  --cat-real-estate-bg: #fef3c7;
+  --cat-cash:           #10b981;
+  --cat-cash-bg:        #d1fae5;
+  --cat-debts:          #f43f5e;
+  --cat-debts-bg:       #ffe4e6;
+  --cat-other:          #8b5cf6;
+  --cat-other-bg:       #ede9fe;
+  --cat-equity:         #06b6d4;
+  --cat-equity-bg:      #cffafe;
+
+  /* Shadows */
+  --tok-shadow-xs: 0 1px 2px rgba(15,23,42,.04);
+  --tok-shadow-sm: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
+  --tok-shadow-md: 0 1px 3px rgba(15,23,42,.04), 0 8px 24px -8px rgba(15,23,42,.12);
+  --tok-shadow-lg: 0 4px 8px rgba(15,23,42,.06), 0 24px 48px -12px rgba(15,23,42,.18);
+
+  /* Motion */
+  --ease:   cubic-bezier(.2,.7,.3,1);
+  --t-fast: 120ms;
+  --t-med:  200ms;
+}
+
+/* ── Dark mode – manual override via data-theme="dark" on <html> ── */
+[data-theme="dark"] {
+  --bg:            #0b1220;
+  --surface:       #131a2a;
+  --surface-2:     #18203180;
+  --surface-3:     #1d2638;
+  --fg:            #e6e8ee;
+  --fg-2:          #c1c7d2;
+  --muted:         #8b94a6;
+  --subtle:        #5b6478;
+  --accent:        #34d399;
+  --accent-dark:   #10b981;
+  --accent-light:  #064e3b;
+  --ok:            #6ee7b7;
+  --ok-bg:         #064e3b;
+  --warn:          #fcd34d;
+  --warn-bg:       #422006;
+  --red:           #fb7185;
+  --red-light:     #4c0519;
+  --border:        #2a334a;
+  --border-strong: #3a455e;
+  --cat-investments-bg: #1e3a8a;
+  --cat-real-estate-bg: #422006;
+  --cat-cash-bg:        #064e3b;
+  --cat-debts-bg:       #4c0519;
+  --cat-other-bg:       #3b1d6b;
+  --cat-equity-bg:      #083344;
+  --tok-shadow-xs: 0 1px 2px rgba(0,0,0,.4);
+  --tok-shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+  --tok-shadow-md: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px -8px rgba(0,0,0,.5);
+  --tok-shadow-lg: 0 4px 8px rgba(0,0,0,.4), 0 24px 48px -12px rgba(0,0,0,.6);
+}
+
+/* ── Dark mode – auto (prefers-color-scheme) ─────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:            #0b1220;
+    --surface:       #131a2a;
+    --surface-2:     #18203180;
+    --surface-3:     #1d2638;
+    --fg:            #e6e8ee;
+    --fg-2:          #c1c7d2;
+    --muted:         #8b94a6;
+    --subtle:        #5b6478;
+    --accent:        #34d399;
+    --accent-dark:   #10b981;
+    --accent-light:  #064e3b;
+    --ok:            #6ee7b7;
+    --ok-bg:         #064e3b;
+    --warn:          #fcd34d;
+    --warn-bg:       #422006;
+    --red:           #fb7185;
+    --red-light:     #4c0519;
+    --border:        #2a334a;
+    --border-strong: #3a455e;
+    --cat-investments-bg: #1e3a8a;
+    --cat-real-estate-bg: #422006;
+    --cat-cash-bg:        #064e3b;
+    --cat-debts-bg:       #4c0519;
+    --cat-other-bg:       #3b1d6b;
+    --cat-equity-bg:      #083344;
+    --tok-shadow-xs: 0 1px 2px rgba(0,0,0,.4);
+    --tok-shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+    --tok-shadow-md: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px -8px rgba(0,0,0,.5);
+    --tok-shadow-lg: 0 4px 8px rgba(0,0,0,.4), 0 24px 48px -12px rgba(0,0,0,.6);
+  }
+}

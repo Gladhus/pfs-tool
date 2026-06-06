@@ -52,5 +52,9 @@
   "err_quotaExceeded": "Google Sheets quota exceeded — try again in a few minutes.",
   "err_serverError": "Google server error — please try again.",
   "err_offline": "No internet connection.",
-  "err_unknown": "An unexpected error occurred."
+  "err_unknown": "An unexpected error occurred.",
+  "signed_out_p1": "Sign in to access your net worth dashboard.",
+  "signed_out_p2": "Your data stays in your own Google Sheet.",
+  "reset_link": "Choose a different sheet",
+  "bootstrap_failed": "Could not load your sheet. Please try again."
 }

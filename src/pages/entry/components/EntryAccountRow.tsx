@@ -61,18 +61,22 @@ export function EntryAccountRow({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-2 py-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-      <div className="flex flex-col">
-        <span className="text-sm text-fg">{tr(account)}</span>
+    // Mobile: 2-col grid [name | amount] with comment spanning full width on row 2.
+    // Desktop (sm+): 3-col grid [name | amount | comment] all on row 1, top-aligned.
+    <div className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-1.5 py-2 sm:grid-cols-[1fr_auto_1fr] sm:items-start">
+      {/* Col 1: account name + owner */}
+      <div className="flex min-w-0 flex-col">
+        <span className="truncate text-sm text-fg">{tr(account)}</span>
         <span className="text-xs text-muted">{ownerLbl} · {sharePct}%</span>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Col 2: optional projected button + balance input + prev value */}
+      <div className="flex items-start gap-2">
         {projected !== null && (
           <button
             type="button"
             tabIndex={-1}
-            className="rounded bg-surface-2 px-2 py-1 text-xs text-fg-2 hover:bg-border"
+            className="mt-0.5 rounded bg-surface-2 px-2 py-1 text-xs text-fg-2 hover:bg-border"
             title={fmtMoney(projected, locale, currency)}
             onClick={() => onBalanceChange(fmtMoney(projected, locale, currency))}
           >
@@ -95,18 +99,20 @@ export function EntryAccountRow({
           />
           {prevValue !== null && (
             <span className="mt-0.5 text-xs text-muted">
-              <span className={arrowClass}>{arrow}</span> <Amount value={prevValue} currency={currency} className="text-muted" />
+              <span className={arrowClass}>{arrow}</span>{' '}
+              <Amount value={prevValue} currency={currency} className="text-muted" />
             </span>
           )}
         </div>
       </div>
 
+      {/* Mobile: full-width row 2. Desktop: col 3 row 1. */}
       <input
         type="text"
         tabIndex={-1}
         placeholder={t('comment_placeholder')}
         value={comment}
-        className="h-8 rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="col-span-2 h-8 rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:col-span-1"
         onChange={e => onCommentChange(e.target.value)}
       />
     </div>

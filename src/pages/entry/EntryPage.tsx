@@ -41,6 +41,7 @@ export default function EntryPage() {
   const { date: dateParam } = useParams();
   const lang = useUIStore(s => s.lang);
   const locale = lang === 'fr' ? 'fr' : 'en';
+  const privateMode = useUIStore(s => s.privateMode);
   const addToast = useToastStore(s => s.addToast);
 
   const accountsQ = useAccountsQuery();
@@ -80,8 +81,21 @@ export default function EntryPage() {
   const [form, setForm] = useState<Record<string, FormEntry>>({});
   const [dayComment, setDayComment] = useState('');
   const [pendingDelete, setPendingDelete] = useState<{ names: string[]; rows: Snapshot[] } | null>(null);
+  const [pendingReset, setPendingReset] = useState(false);
+  const [pendingCopyPrev, setPendingCopyPrev] = useState(false);
 
-  // Seed the form whenever the target month changes or the underlying data first loads.
+  // Measure sticky bar height so the sidebar knows where to stick.
+  const stickyBarRef = useRef<HTMLDivElement>(null);
+  const [stickyBarH, setStickyBarH] = useState(0);
+  useEffect(() => {
+    const bar = stickyBarRef.current;
+    if (!bar) return;
+    const obs = new ResizeObserver(() => setStickyBarH(bar.offsetHeight));
+    obs.observe(bar);
+    return () => obs.disconnect();
+  }, []);
+
+  // Seed form when the target date or underlying data changes.
   const seedKey = `${date}|${accountsQ.isSuccess}|${snapshotsQ.isSuccess}`;
   const seededRef = useRef('');
   useEffect(() => {
@@ -105,6 +119,11 @@ export default function EntryPage() {
   const setComment = (id: string, comment: string) =>
     setForm(f => ({ ...f, [id]: { balance: f[id]?.balance ?? '', comment } }));
 
+  const hasEnteredData = useMemo(
+    () => Object.values(form).some(e => e.balance !== '') || dayComment !== '',
+    [form, dayComment],
+  );
+
   // ── Derived totals ────────────────────────────────────────────────────
   const totals = useMemo(() => {
     const byCategory: Record<string, number> = {};
@@ -118,7 +137,6 @@ export default function EntryPage() {
       if (parsed !== null) { filled++; balance = parsed; }
       else if (prevBalances[a.id] !== undefined) { balance = prevBalances[a.id]; usingFallback = true; }
       else continue;
-      // Entered amounts are in the account's native currency → convert to main.
       const signed = signedMain(a, balance, mainCurrency, usdCad);
       byCategory[a.category] = (byCategory[a.category] ?? 0) + signed;
       netWorth += signed;
@@ -130,6 +148,11 @@ export default function EntryPage() {
     () => (prevD ? computeNetWorthFromSnapshots(snapshots, accounts, prevD, mainCurrency, fxRateMap) : null),
     [prevD, snapshots, accounts, mainCurrency, fxRateMap],
   );
+
+  const daysSincePrev = useMemo(() => {
+    if (!prevD) return null;
+    return Math.round((new Date(date).getTime() - new Date(prevD).getTime()) / 86_400_000);
+  }, [date, prevD]);
 
   const balanceInputs = useRef<string[]>([]);
   balanceInputs.current = active.map(a => a.id);
@@ -161,13 +184,11 @@ export default function EntryPage() {
     const dc = dayComment.trim();
     if (dc) rows.push({ date, account_id: '__day__', balance_raw: 0, comment: dc, entered_at: enteredAt });
 
-    // Preserve rows on this date for accounts not in the active form (e.g. inactive).
     for (const s of snapshots) {
       if (s.date !== date || s.account_id === '__day__') continue;
       if (!activeIds.has(s.account_id)) rows.push(s);
     }
 
-    // Accounts that had a saved value on this date but are now cleared → deleted.
     const writtenIds = new Set(rows.map(r => r.account_id));
     const deletedNames = active
       .filter(a => existing.balances[a.id] !== undefined && !writtenIds.has(a.id))
@@ -193,7 +214,7 @@ export default function EntryPage() {
     doSave(rows);
   };
 
-  const onReset = () => {
+  const doReset = () => {
     setForm(f => {
       const next: Record<string, FormEntry> = {};
       for (const id of Object.keys(f)) next[id] = { balance: '', comment: f[id].comment };
@@ -202,8 +223,13 @@ export default function EntryPage() {
     setDayComment('');
   };
 
-  const onCopyPrev = () => {
-    if (!prevD) { addToast(t('no_prev_entry'), 'warn'); return; }
+  const onReset = () => {
+    if (hasEnteredData) { setPendingReset(true); return; }
+    doReset();
+  };
+
+  const doCopyPrev = () => {
+    if (!prevD) return;
     const pb = buildEffectiveBalances(snapshots, prevD);
     setForm(f => {
       const next = { ...f };
@@ -214,6 +240,12 @@ export default function EntryPage() {
       return next;
     });
     addToast(t('prefilled_from', { date: prevD }), 'ok');
+  };
+
+  const onCopyPrev = () => {
+    if (!prevD) { addToast(t('no_prev_entry'), 'warn'); return; }
+    if (hasEnteredData) { setPendingCopyPrev(true); return; }
+    doCopyPrev();
   };
 
   const onDateChange = (d: string) => navigate(`/entry/${d}`);
@@ -239,34 +271,86 @@ export default function EntryPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header: month picker + status + actions */}
-      <div className="flex flex-col gap-3 rounded-xl bg-surface-1 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-fg-2">{t('date_label')}</span>
-          <DateField value={date} onChange={onDateChange} />
-          <Badge variant={isEditing ? 'warn' : 'accent'}>{isEditing ? t('existing_date') : t('new_date')}</Badge>
+    <div>
+      {/* Sticky bar: action controls + progress — sticks just below the global header (top-14 = 3.5rem) */}
+      <div
+        ref={stickyBarRef}
+        className="sticky top-14 z-30 -mx-4 mb-4 bg-bg px-4 pb-3 pt-2"
+      >
+        <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-surface-1 px-3 py-2 shadow-sm sm:px-4">
+          {/* Left: date picker + status badge */}
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="hidden shrink-0 text-sm font-medium text-fg-2 sm:block">{t('date_label')}</span>
+            <DateField value={date} onChange={onDateChange} />
+            {isEditing ? (
+              /* Editing: icon-only on small screens, full text on md+ */
+              <Badge variant="warn" className="shrink-0 gap-1">
+                <Icon name="edit" size={10} className="md:hidden" />
+                <span className="hidden md:inline">{t('existing_date')}</span>
+              </Badge>
+            ) : (
+              /* New entry: always show full green text */
+              <Badge variant="accent" className="shrink-0">{t('new_date')}</Badge>
+            )}
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Right: action buttons — icon-only on mobile, icon+label on desktop */}
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              variant="default"
+              size="sm"
+              className="max-md:w-7 max-md:px-0"
+              onClick={onCopyPrev}
+              disabled={!prevD}
+              title={t('copy_prev_entry')}
+              aria-label={t('copy_prev_entry')}
+            >
+              <Icon name="copy" size={14} />
+              <span className="hidden md:inline">{t('copy_prev_entry')}</span>
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="max-md:w-7 max-md:px-0"
+              onClick={onReset}
+              title={t('reset_entry')}
+              aria-label={t('reset_entry')}
+            >
+              <Icon name="eraser" size={14} />
+              <span className="hidden md:inline">{t('reset_entry')}</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="max-md:w-7 max-md:px-0"
+              onClick={onSave}
+              disabled={saveMonth.isPending}
+              title={t('save_snapshot')}
+              aria-label={t('save_snapshot')}
+            >
+              <Icon name="save" size={14} />
+              <span className="hidden md:inline">{t('save_snapshot')}</span>
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="default" size="sm" onClick={onCopyPrev} disabled={!prevD}>
-            <Icon name="copy" size={14} />
-            {t('copy_prev_entry')}
-          </Button>
-          <Button variant="default" size="sm" onClick={onReset}>{t('reset_entry')}</Button>
-          <Button variant="primary" size="sm" onClick={onSave} disabled={saveMonth.isPending}>
-            <Icon name="save" size={14} />
-            {t('save_snapshot')}
-          </Button>
+
+        {/* Progress bar */}
+        <div className="flex items-center gap-3 px-1 pt-2">
+          <ProgressBar
+            value={totals.filled}
+            max={totals.total}
+            className="flex-1"
+            aria-label={t('entry_progress', { filled: totals.filled, total: totals.total })}
+          />
+          <span className="shrink-0 text-xs tabular-nums text-muted">
+            {t('entry_progress', { filled: totals.filled, total: totals.total })}
+          </span>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="flex items-center gap-3 px-1">
-        <ProgressBar value={totals.filled} max={totals.total} className="flex-1" aria-label={t('entry_progress', { filled: totals.filled, total: totals.total })} />
-        <span className="text-xs tabular-nums text-muted">{t('entry_progress', { filled: totals.filled, total: totals.total })}</span>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_18rem]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_18rem]">
         {/* Categories + accounts */}
         <div className="space-y-4">
           {categories.map(cat => {
@@ -305,7 +389,7 @@ export default function EntryPage() {
             );
           })}
 
-          {/* Month comment */}
+          {/* Day comment */}
           <section className="rounded-xl bg-surface-1 p-4 shadow-sm">
             <label className="mb-2 block text-sm font-medium text-fg-2" htmlFor="day-comment">
               {t('day_comment')}
@@ -321,8 +405,13 @@ export default function EntryPage() {
           </section>
         </div>
 
-        {/* Totals panel */}
-        <aside className="space-y-3 self-start rounded-xl bg-surface-1 p-4 shadow-sm lg:sticky lg:top-4">
+        {/* Net-worth summary sidebar.
+            On desktop: sticky below the global header + the measured sticky bar height.
+            On mobile: static, appears after the account list. */}
+        <aside
+          className="space-y-3 self-start rounded-xl bg-surface-1 p-4 shadow-sm md:sticky"
+          style={{ top: `calc(3.5rem + ${stickyBarH}px + 0.5rem)` }}
+        >
           <h3 className="text-sm font-medium text-fg-2">{t('net_worth')}</h3>
           <div className="flex items-center gap-2">
             {totals.usingFallback && (
@@ -338,9 +427,11 @@ export default function EntryPage() {
             <Delta
               value={totals.netWorth - prevNet}
               baseValue={prevNet}
-              periodLabel={`vs ${prevD}`}
+              layout="stacked"
+              periodLabel={`vs ${prevD}${daysSincePrev !== null ? ` ${t('days_ago', { count: daysSincePrev })}` : ''}`}
               locale={locale}
               currency={currency}
+              isPrivate={privateMode}
             />
           )}
           <div className="space-y-1 border-t border-border pt-3">
@@ -354,12 +445,33 @@ export default function EntryPage() {
         </aside>
       </div>
 
+      {/* Confirm: accounts that will be deleted on save */}
       <ConfirmDialog
         open={pendingDelete !== null}
         onClose={() => setPendingDelete(null)}
         onConfirm={() => { if (pendingDelete) doSave(pendingDelete.rows); }}
         message={`${t('confirm_delete_entries')} ${pendingDelete?.names.join(', ') ?? ''}`}
         confirmLabel={t('confirm_delete_ok')}
+      />
+
+      {/* Confirm: reset clears all balances */}
+      <ConfirmDialog
+        open={pendingReset}
+        onClose={() => setPendingReset(false)}
+        onConfirm={doReset}
+        message={t('confirm_reset_entry')}
+        confirmLabel={t('reset_entry')}
+        variant="primary"
+      />
+
+      {/* Confirm: copy previous overwrites current entries */}
+      <ConfirmDialog
+        open={pendingCopyPrev}
+        onClose={() => setPendingCopyPrev(false)}
+        onConfirm={doCopyPrev}
+        message={t('confirm_copy_prev_entry')}
+        confirmLabel={t('copy_prev_entry')}
+        variant="primary"
       />
     </div>
   );

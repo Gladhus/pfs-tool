@@ -56,5 +56,18 @@
   "signed_out_p1": "Connectez-vous pour accéder à votre tableau de bord de valeur nette.",
   "signed_out_p2": "Vos données restent dans votre propre feuille Google.",
   "reset_link": "Choisir une autre feuille",
-  "bootstrap_failed": "Impossible de charger votre feuille. Veuillez réessayer."
+  "bootstrap_failed": "Impossible de charger votre feuille. Veuillez réessayer.",
+  "empty_overview_title": "Aucune donnée pour le moment",
+  "empty_overview_body": "Enregistrez votre premier bilan dans l'onglet Saisie pour voir vos statistiques apparaître ici.",
+  "empty_overview_cta": "Aller à la saisie",
+  "data_as_of": "Données au {{date}}",
+  "allocation_title": "Répartition",
+  "series_net": "Valeur nette",
+  "net_worth_chart": "Valeur nette",
+  "equity_label": "Options sur actions",
+  "view_by_category": "Par catégorie",
+  "view_by_group": "Par groupe",
+  "no_groups_title": "Aucun groupe",
+  "no_groups_body": "Créez des groupes dans Paramètres pour filtrer vos comptes par combinaison d'étiquettes.",
+  "manage_groups": "Gérer les groupes"
 }

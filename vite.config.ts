@@ -11,7 +11,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-  base: '/pfs-tool-react/',
+  base: '/pfs-tool/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

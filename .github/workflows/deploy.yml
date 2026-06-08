@@ -3,10 +3,19 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'index.html'
+      - 'package.json'
+      - 'vite.config.ts'
+      - 'tsconfig*.json'
+      - 'public/**'
+      - 'seed/**'
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -15,7 +24,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Fail if UX files changed without a version bump
+        run: |
+          UX_CHANGED=$(git diff --name-only HEAD~1 HEAD -- src/ index.html public/ seed/ vite.config.ts tsconfig.json package.json)
+          if [ -z "$UX_CHANGED" ]; then
+            echo "No UX changes — version bump not required."
+            exit 0
+          fi
+          git fetch --tags --quiet
+          VERSION="v$(node -p "require('./package.json').version")"
+          VERSION_NO_V="${VERSION#v}"
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "❌ Tag $VERSION already exists — bump the version in package.json before pushing UX changes to main."
+            exit 1
+          fi
+          if ! grep -q "^## \[${VERSION_NO_V}\]" CHANGELOG.md; then
+            echo "❌ No CHANGELOG entry found for $VERSION — add one before pushing."
+            exit 1
+          fi
+          echo "✅ $VERSION is new and has a CHANGELOG entry, proceeding."
+
   build:
+    needs: check-version
+    if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,3 +78,46 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create tag, GitHub release, and update CHANGELOG
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="v$(node -p "require('./package.json').version")"
+          VERSION_NO_V="${VERSION#v}"
+
+          git fetch --tags --quiet
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists — skipping release."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+          awk "/^## \[${VERSION_NO_V}\]/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md \
+            | sed '/^[[:space:]]*$/d' > release_notes.md
+
+          RELEASE_URL=$(gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes-file release_notes.md \
+            --repo ${{ github.repository }})
+
+          echo "Release: $RELEASE_URL"
+
+          sed -i "s|## \[${VERSION_NO_V}\] — |## [${VERSION_NO_V}](${RELEASE_URL}) — |" CHANGELOG.md
+          sed -i "s|/badge/version-[0-9][0-9.]*-|/badge/version-${VERSION_NO_V}-|" README.md
+
+          git add CHANGELOG.md README.md
+          git commit -m "chore: link v${VERSION_NO_V} in CHANGELOG and update README badge"
+          git push origin main

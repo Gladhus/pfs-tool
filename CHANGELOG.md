@@ -5,6 +5,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.0.0] — 2026-06-08
+
+Complete rewrite of the application in **React 19 + TypeScript**. The data model, Google Sheet schema, and all end-user features are fully preserved — this is an engineering overhaul, not a product change.
+
+### Added
+- **XLSX datasource** — upload any `.xlsx` file exported from your Google Sheet and use the full app without signing in; all edits are kept in memory and the modified file can be downloaded at any time via the persistent banner
+- **New XLSX file** — "New XLSX File" button on the sign-in screen creates a blank workbook with all tabs pre-structured; useful for starting fresh without a Google account
+- **Datasource abstraction layer** — clean interface (`Datasource`) decouples all queries and mutations from the underlying storage; Google Sheets and XLSX are the first two implementations; a database backend can be added without touching the UI layer
+- **Sticky entry bar** — totals bar in the Entry form sticks to the bottom of the viewport on scroll
+- **Confirm guards** — unsaved changes in the Entry form prompt a confirmation before navigating away
+- **Responsive layout** — bottom tab bar on mobile, inline header tabs on desktop; breakpoint-aware components throughout
+
+### Changed
+- **Framework**: vanilla JS → React 19 with concurrent features and the new JSX transform
+- **Language**: plain JS → TypeScript with strict mode throughout
+- **State management**: ad-hoc module state → TanStack Query v5 (server state) + Zustand (client/UI state)
+- **Styling**: hand-rolled CSS → Tailwind CSS v4 (via Vite plugin); design system tokens for color, spacing, and radius
+- **Routing**: hash-based tab switching → React Router v7 with proper URL structure
+- **i18n**: manual translation registry → react-i18next with JSON catalogs
+- **Build**: Vite config updated to TypeScript (`vite.config.ts`); path aliases via `@/`
+- **Testing**: plain Jest → Vitest; all 181 tests ported and passing
+- **Settings**: preferences, accounts, groups, and import reorganised into a multi-section settings area with sub-navigation
+- **Sign-in screen**: Google sign-in alongside XLSX upload and new-file options
+
+### Removed
+- CSV export — superseded by XLSX download which preserves the full data model across all tabs
+
+---
+
+## [1.9.9](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.9) — 2026-06-05
+
+### Fixed
+- **#12 `parseMoney` accounting-format negatives**: `(1,234.56)`, `($6,500)` etc. now correctly parse as negative values. The sign is detected before stripping non-numeric characters, then applied to the result. Four new test cases added.
+
+### Refactored
+- **#37 Split `options/index.js`**: the 1220-line file is split into `charts.js`, `components/CompanyCard.js`, `ManagePanel.js`, `dialogs.js`; `index.js` reduced to ~90 lines. Circular dependency between dialogs and render functions resolved via `setRenderCallbacks` in `dialogs.js`.
+- **#42 Deferred (won't fix)**: `onload=` attribute on `<script>` tags is blocked by the app's Content Security Policy; `setInterval` polling is intentionally retained.
+
+---
+
+## [1.9.8](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.8) — 2026-06-05
+
+### Refactored
+- **#36 Extract `core/router.js`**: tab routing moved out of `features/auth/index.js` into `src/core/router.js`; auth no longer imports any feature render functions.
+- **#38 Extract CSV serializer + shortcut dispatcher**: snapshot-to-CSV logic moved to `src/utils/csv.js`; keyboard key→action mapping extracted to `src/core/shortcuts.js`.
+- **#39 `setCurrentDate` setter**: added to `src/core/state.js`; replaces 4 duplicated `state.currentDate = …; datePicker.selectDate(…)` blocks.
+- **#40 Remove `registerWriteConfig` indirection**: `i18n/index.js` now imports `writeConfig` directly from `api/config.js`.
+
+
 ## [1.9.9](https://github.com/Gladhus/pfs-tool/releases/tag/v1.9.9) — 2026-06-05
 
 ### Fixed

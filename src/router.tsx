@@ -113,5 +113,5 @@ export const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: '/pfs-tool-react/' },
+  { basename: '/pfs-tool/' },
 );

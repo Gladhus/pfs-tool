@@ -91,7 +91,7 @@ export function EntryAccountRow({
             placeholder="—"
             data-balance={account.id}
             value={balance}
-            className="h-8 w-32 rounded border border-border bg-surface-1 px-2 text-right text-sm tabular-nums text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="h-8 w-32 rounded border border-border bg-surface-1 px-2 text-right text-base md:text-sm tabular-nums text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             onChange={e => onBalanceChange(e.target.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
@@ -112,7 +112,7 @@ export function EntryAccountRow({
         tabIndex={-1}
         placeholder={t('comment_placeholder')}
         value={comment}
-        className="col-span-2 h-8 rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:col-span-1"
+        className="col-span-2 h-8 rounded border border-border bg-surface-1 px-2 text-base md:text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:col-span-1"
         onChange={e => onCommentChange(e.target.value)}
       />
     </div>

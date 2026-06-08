@@ -55,7 +55,7 @@ export function TagChipInput({ value, onChange, available = [], placeholder }: P
         onChange={e => setText(e.target.value)}
         onKeyDown={onKeyDown}
         onBlur={() => add(text)}
-        className="min-w-[6rem] flex-1 bg-transparent px-1 text-sm text-fg outline-none"
+        className="min-w-[6rem] flex-1 bg-transparent px-1 text-base md:text-sm text-fg outline-none"
       />
       <datalist id={listId}>
         {suggestions.map(t => <option key={t} value={t} />)}

@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:8080",
+      "localStorage": [
+        {
+          "name": "pfs_ui",
+          "value": "{\"state\":{\"lang\":\"en\",\"theme\":\"system\",\"privateMode\":false,\"ovView\":\"category\",\"ovSeriesVisible\":{}},\"version\":0}"
+        }
+      ]
+    }
+  ]
+}

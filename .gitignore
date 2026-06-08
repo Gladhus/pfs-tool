@@ -64,6 +64,9 @@ logs
 node_modules
 bower_components
 dist
+playwright-report/
+test-results/
+e2e/fixtures/sample.xlsx
 
 *.sublime*
 

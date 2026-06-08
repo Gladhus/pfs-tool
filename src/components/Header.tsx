@@ -19,7 +19,7 @@ export default function Header() {
   const togglePrivateMode = useUIStore((s) => s.togglePrivateMode);
 
   return (
-    <header className="sticky top-0 z-40 bg-surface-1 border-b border-border px-4 h-14 flex items-center gap-6">
+    <header className="sticky top-0 z-40 bg-surface-1 border-b border-border px-4 h-16 md:h-14 flex items-center gap-6">
       {/* Brand */}
       <div className="flex items-center gap-2.5 text-fg shrink-0">
         <Icon name="logo" size={24} strokeWidth={2.5} className="text-accent" />

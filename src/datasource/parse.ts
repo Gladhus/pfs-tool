@@ -73,7 +73,7 @@ export function parseConfigRows(rows: unknown[][]): Partial<AppConfig> {
   const map = Object.fromEntries((rows.slice(1) as string[][]).map(r => [r[0], r[1] ?? '']));
   const theme = map.theme as 'system' | 'light' | 'dark' | undefined;
   return {
-    language: (map.language as 'en' | 'fr') || 'fr',
+    language: (map.language as 'en' | 'fr') || 'en',
     currency: map.currency || 'CAD',
     schema_version: map.schema_version || '1',
     last_imported_at: map.last_imported_at || undefined,

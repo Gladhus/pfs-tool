@@ -28,7 +28,7 @@ export default function BottomTabBar() {
   return (
     <nav
       aria-label="Main navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-surface-1 border-t border-border flex items-stretch h-[60px] pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-surface-1 border-t border-border flex items-stretch h-[calc(60px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]"
     >
       <TabItem to="/overview" label="Overview" icon="dashboard" />
       <TabItem to="/accounts" label="Accounts" icon="wallet" />

@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.0.1] — 2026-06-08
+
+### Added
+- **Close-file confirmation modal** — clicking "Close file" in the XLSX banner now opens a dialog with a warning and an inline "Download XLSX" button before clearing the file from memory
+- **Empty state smart routing** — the overview empty state links to `/accounts/manage` when no accounts exist, and to `/entry` once accounts are set up
+
+### Fixed
+- **Default language** — new blank XLSX files now default to English instead of French
+- **XLSX session persistence** — open file is restored from `sessionStorage` on page refresh
+- **Mobile input zoom** — all inputs now use 16 px font on mobile to prevent iOS auto-zoom on focus
+- **Modal edge clipping** — dialogs now have 1 rem horizontal margin on small screens so content is never flush with the viewport edge
+- **Mobile bottom nav safe-area** — nav bar height now expands by `env(safe-area-inset-bottom)` so tab icons sit above the home indicator on notched iPhones
+- **Mobile header height** — header is 64 px on mobile (up from 56 px) for a more comfortable tap target
+
+---
+
 ## [2.0.0] — 2026-06-08
 
 Complete rewrite of the application in **React 19 + TypeScript**. The data model, Google Sheet schema, and all end-user features are fully preserved — this is an engineering overhaul, not a product change.

@@ -118,7 +118,7 @@ export default function OverviewPage() {
   }
 
   if (!datesSorted.length) {
-    return <EmptyOverviewState />;
+    return <EmptyOverviewState hasAccounts={accounts.length > 0} />;
   }
 
   return (

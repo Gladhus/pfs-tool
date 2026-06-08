@@ -21,6 +21,8 @@ function aoaToSheet(rows: unknown[][]): XLSX.WorkSheet {
   return XLSX.utils.aoa_to_sheet(rows);
 }
 
+const SESSION_KEY = 'pfs_xlsx_session';
+
 export class XlsxDatasource implements Datasource {
   readonly kind = 'xlsx';
   readonly id = '__xlsx__';
@@ -29,6 +31,27 @@ export class XlsxDatasource implements Datasource {
     private wb: XLSX.WorkBook,
     readonly filename: string,
   ) {}
+
+  saveToSession(): void {
+    const data = XLSX.write(this.wb, { type: 'base64', bookType: 'xlsx' }) as string;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ filename: this.filename, data }));
+  }
+
+  static restoreSession(): XlsxDatasource | null {
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      const { filename, data } = JSON.parse(raw) as { filename: string; data: string };
+      const wb = XLSX.read(data, { type: 'base64', cellDates: false });
+      return new XlsxDatasource(wb, filename);
+    } catch {
+      return null;
+    }
+  }
+
+  static clearSession(): void {
+    sessionStorage.removeItem(SESSION_KEY);
+  }
 
   static async fromFile(file: File): Promise<XlsxDatasource> {
     const buf = await file.arrayBuffer();
@@ -63,6 +86,7 @@ export class XlsxDatasource implements Datasource {
   private write(tab: string, rows: unknown[][]): void {
     this.wb.Sheets[tab] = aoaToSheet(rows);
     if (!this.wb.SheetNames.includes(tab)) this.wb.SheetNames.push(tab);
+    this.saveToSession();
   }
 
   loadAccounts()        { return Promise.resolve(parseAccountRows(this.read('accounts'))); }

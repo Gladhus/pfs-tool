@@ -27,7 +27,7 @@ export function DateField({ value, onChange }: Props) {
         type="date"
         value={value}
         onChange={e => { if (e.target.value) onChange(e.target.value); }}
-        className="h-8 rounded border border-border bg-surface-1 px-2 text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="h-8 rounded border border-border bg-surface-1 px-2 text-base md:text-sm text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       />
       <button
         type="button"

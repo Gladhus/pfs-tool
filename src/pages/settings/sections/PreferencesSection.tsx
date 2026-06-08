@@ -4,14 +4,13 @@ import { useUIStore } from '@/stores/ui.store';
 import { useAppLang } from '@/hooks/useAppLang';
 import { useAuth } from '@/auth/AuthProvider';
 import { useAuthStore } from '@/stores/auth.store';
-import { useConfigQuery, useAccountsQuery, useSnapshotsQuery } from '@/queries/sheetQueries';
+import { useConfigQuery } from '@/queries/sheetQueries';
 import { useWriteConfigMutation } from '@/queries/sheetMutations';
 import { SegmentControl } from '@/ui/SegmentControl';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
 import { Checkbox } from '@/ui/Checkbox';
 import SheetPickerDialog from '@/components/SheetPickerDialog';
-import { snapshotsToCsv } from '@/utils/csv';
 import type { Theme, Lang } from '@/stores/ui.store';
 import type { Currency } from '@/types/sheets';
 
@@ -36,8 +35,6 @@ export function PreferencesSection() {
   const userEmail = useAuthStore(s => s.userEmail);
 
   const configQ = useConfigQuery();
-  const accountsQ = useAccountsQuery();
-  const snapshotsQ = useSnapshotsQuery();
   const writeConfig = useWriteConfigMutation();
 
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -59,17 +56,6 @@ export function PreferencesSection() {
   const onLangChange = (next: Lang) => {
     setLang(next);
     if (sheetId) writeConfig.mutate({ key: 'language', value: next });
-  };
-
-  const onExportCsv = () => {
-    const csv = snapshotsToCsv(snapshotsQ.data ?? [], accountsQ.data ?? []);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'snapshots.csv';
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -140,13 +126,6 @@ export function PreferencesSection() {
               {t('choose_different_sheet')}
             </Button>
           </div>
-        </Row>
-
-        <Row label={t('export_csv')}>
-          <Button variant="default" size="sm" onClick={onExportCsv}>
-            <Icon name="download" size={14} />
-            {t('export_csv')}
-          </Button>
         </Row>
 
         <Row label={t('account_label')}>

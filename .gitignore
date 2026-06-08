@@ -52,6 +52,7 @@ Temporary Items
 # Claude Code local config
 .claude/
 .github/skills/
+CLAUDE.md
 
 ### react ###
 .DS_*

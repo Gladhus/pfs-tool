@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.0.1] — 2026-06-08
+## [2.0.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.0.1) — 2026-06-08
 
 ### Added
 - **Close-file confirmation modal** — clicking "Close file" in the XLSX banner now opens a dialog with a warning and an inline "Download XLSX" button before clearing the file from memory

@@ -1,10 +1,15 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore, selectIsSignedIn } from '@/stores/auth.store';
+import { useDatasourceStore } from '@/stores/datasource.store';
 
 export default function ProtectedLayout() {
   const isSignedIn = useAuthStore(selectIsSignedIn);
   const isBootstrapping = useAuthStore((s) => s.isBootstrapping);
   const isDataLoaded = useAuthStore((s) => s.isDataLoaded);
+  const datasource = useDatasourceStore(s => s.datasource);
+
+  // XLSX mode: datasource is set but user is not signed in to Google
+  if (datasource?.kind === 'xlsx') return <Outlet />;
 
   if (!isSignedIn) return <Navigate to="/" replace />;
 

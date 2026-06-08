@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuthStore, selectIsSignedIn } from '@/stores/auth.store';
+import { useDatasourceStore } from '@/stores/datasource.store';
 import RootLayout from '@/app/RootLayout';
 import ProtectedLayout from '@/app/ProtectedLayout';
 import AppShell from '@/app/AppShell';
@@ -38,7 +39,9 @@ const OPTIONS_LINKS: SubNavLink[] = [
 
 function RootIndex() {
   const isSignedIn = useAuthStore(selectIsSignedIn);
-  return isSignedIn ? <Navigate to="/overview" replace /> : <SignedOutScreen />;
+  const datasource = useDatasourceStore(s => s.datasource);
+  if (isSignedIn || datasource) return <Navigate to="/overview" replace />;
+  return <SignedOutScreen />;
 }
 
 export const router = createBrowserRouter(

@@ -49,6 +49,10 @@ Temporary Items
 # iCloud generated files
 *.icloud
 
+# Claude Code local config
+.claude/
+.github/skills/
+
 ### react ###
 .DS_*
 *.log
@@ -58,6 +62,7 @@ logs
 
 node_modules
 bower_components
+dist
 
 *.sublime*
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/stores/ui.store';
 import { useAppLang } from '@/hooks/useAppLang';
 import { useAuth } from '@/auth/AuthProvider';
 import { useAuthStore } from '@/stores/auth.store';
+import { useDatasourceStore } from '@/stores/datasource.store';
 import { useConfigQuery } from '@/queries/sheetQueries';
 import { useWriteConfigMutation } from '@/queries/sheetMutations';
 import { SegmentControl } from '@/ui/SegmentControl';
@@ -11,6 +13,7 @@ import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
 import { Checkbox } from '@/ui/Checkbox';
 import SheetPickerDialog from '@/components/SheetPickerDialog';
+import { XlsxDatasource } from '@/datasource/xlsx';
 import type { Theme, Lang } from '@/stores/ui.store';
 import type { Currency } from '@/types/sheets';
 
@@ -33,11 +36,17 @@ export function PreferencesSection() {
   const { signOut } = useAuth();
   const sheetId = useAuthStore(s => s.sheetId);
   const userEmail = useAuthStore(s => s.userEmail);
+  const datasource = useDatasourceStore(s => s.datasource);
+  const setDatasource = useDatasourceStore(s => s.setDatasource);
+  const navigate = useNavigate();
 
   const configQ = useConfigQuery();
   const writeConfig = useWriteConfigMutation();
 
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const isXlsx = datasource?.kind === 'xlsx';
+  const xlsxDs = isXlsx ? (datasource as XlsxDatasource) : null;
 
   const stockOptionsEnabled = configQ.data?.stock_options_enabled === true;
   const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
@@ -48,14 +57,18 @@ export function PreferencesSection() {
   const onCurrencyChange = (next: Currency) =>
     writeConfig.mutate({ key: 'currency', value: next });
 
-  // Persist to the sheet (cross-device) and update the local store for instant feedback.
   const onThemeChange = (next: Theme) => {
     setTheme(next);
-    if (sheetId) writeConfig.mutate({ key: 'theme', value: next });
+    writeConfig.mutate({ key: 'theme', value: next });
   };
   const onLangChange = (next: Lang) => {
     setLang(next);
-    if (sheetId) writeConfig.mutate({ key: 'language', value: next });
+    writeConfig.mutate({ key: 'language', value: next });
+  };
+
+  const onCloseFile = () => {
+    setDatasource(null);
+    navigate('/', { replace: true });
   };
 
   return (
@@ -109,31 +122,50 @@ export function PreferencesSection() {
       <section className="rounded-xl bg-surface-1 p-4 shadow-sm">
         <h3 className="mb-2 text-sm font-semibold text-fg">{t('data_settings')}</h3>
 
-        <Row label={t('data_sheet')}>
-          <div className="flex flex-wrap items-center gap-2">
-            {sheetId && (
-              <a
-                href={`https://docs.google.com/spreadsheets/d/${sheetId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
-              >
-                <Icon name="externalLink" size={14} />
-                {t('open_in_sheets')}
-              </a>
-            )}
-            <Button variant="default" size="sm" onClick={() => setPickerOpen(true)}>
-              {t('choose_different_sheet')}
-            </Button>
-          </div>
-        </Row>
+        {isXlsx ? (
+          <>
+            <Row label={t('download_xlsx')}>
+              <Button variant="default" size="sm" onClick={() => xlsxDs?.downloadXlsx()}>
+                <Icon name="download" size={14} />
+                {t('download_xlsx')}
+              </Button>
+            </Row>
 
-        <Row label={t('account_label')}>
-          <div className="flex flex-wrap items-center gap-3">
-            {userEmail && <span className="text-xs text-muted">{userEmail}</span>}
-            <Button variant="default" size="sm" onClick={signOut}>{t('sign_out')}</Button>
-          </div>
-        </Row>
+            <Row label={t('account_label')}>
+              <Button variant="default" size="sm" onClick={onCloseFile}>
+                {t('close_file')}
+              </Button>
+            </Row>
+          </>
+        ) : (
+          <>
+            <Row label={t('data_sheet')}>
+              <div className="flex flex-wrap items-center gap-2">
+                {sheetId && (
+                  <a
+                    href={`https://docs.google.com/spreadsheets/d/${sheetId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+                  >
+                    <Icon name="externalLink" size={14} />
+                    {t('open_in_sheets')}
+                  </a>
+                )}
+                <Button variant="default" size="sm" onClick={() => setPickerOpen(true)}>
+                  {t('choose_different_sheet')}
+                </Button>
+              </div>
+            </Row>
+
+            <Row label={t('account_label')}>
+              <div className="flex flex-wrap items-center gap-3">
+                {userEmail && <span className="text-xs text-muted">{userEmail}</span>}
+                <Button variant="default" size="sm" onClick={signOut}>{t('sign_out')}</Button>
+              </div>
+            </Row>
+          </>
+        )}
       </section>
 
       <SheetPickerDialog open={pickerOpen} onClose={() => setPickerOpen(false)} />

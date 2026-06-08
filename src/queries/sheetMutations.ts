@@ -1,44 +1,30 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth.store';
+import { useDatasourceStore } from '@/stores/datasource.store';
 import { qk } from './keys';
 import type { Account, Snapshot, Tag, Group, AppConfig, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
-import { safeWriteTab } from '@/api/sheets';
-import { HEADERS } from '@/constants';
-import { writeTagsCatalog } from '@/api/tags';
-import { writeGroupsCatalog } from '@/api/groups';
-import { writeConfig } from '@/api/config';
-import { writeOptionCompanies, writeOptionGrants, writeOptionFmv, writeOptionExercises } from '@/api/options';
 
-function useSheetId() {
-  return useAuthStore(s => s.sheetId)!;
-}
-
-function prevCount<T>(data: T[] | undefined): number {
-  return data?.length ?? 0;
+function useDatasource() {
+  return useDatasourceStore(s => s.datasource)!;
 }
 
 // ── Snapshot save (optimistic upsert) ──────────────────────────────────
 export function useSaveSnapshotMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
 
   return useMutation({
     mutationFn: async (snapshot: Snapshot) => {
-      const cached = qc.getQueryData<Snapshot[]>(qk.snapshots(sheetId)) ?? [];
+      const cached = qc.getQueryData<Snapshot[]>(qk.snapshots(ds.id)) ?? [];
       const key = `${snapshot.date}|${snapshot.account_id}`;
       const rows = cached.map(s => `${s.date}|${s.account_id}` === key ? snapshot : s);
       if (!rows.some(s => `${s.date}|${s.account_id}` === key)) rows.push(snapshot);
-      const allRows: unknown[][] = [
-        HEADERS.snapshots as unknown as string[],
-        ...rows.map(s => [s.date, s.account_id, s.balance_raw, s.comment ?? '', s.entered_at ?? '']),
-      ];
-      await safeWriteTab(sheetId, 'snapshots', allRows, cached.length);
+      await ds.writeSnapshots(rows);
       return rows;
     },
     onMutate: async (snapshot: Snapshot) => {
-      await qc.cancelQueries({ queryKey: qk.snapshots(sheetId) });
-      const prev = qc.getQueryData<Snapshot[]>(qk.snapshots(sheetId));
-      qc.setQueryData<Snapshot[]>(qk.snapshots(sheetId), old => {
+      await qc.cancelQueries({ queryKey: qk.snapshots(ds.id) });
+      const prev = qc.getQueryData<Snapshot[]>(qk.snapshots(ds.id));
+      qc.setQueryData<Snapshot[]>(qk.snapshots(ds.id), old => {
         if (!old) return [snapshot];
         const key = `${snapshot.date}|${snapshot.account_id}`;
         const updated = old.map(s => `${s.date}|${s.account_id}` === key ? snapshot : s);
@@ -48,27 +34,23 @@ export function useSaveSnapshotMutation() {
       return { prev };
     },
     onError: (_err, _snap, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.snapshots(sheetId), ctx.prev);
+      if (ctx?.prev) qc.setQueryData(qk.snapshots(ds.id), ctx.prev);
     },
     onSuccess: (rows) => {
-      qc.setQueryData(qk.snapshots(sheetId), rows);
+      qc.setQueryData(qk.snapshots(ds.id), rows);
     },
   });
 }
 
 // ── Month save (replace all rows for one date) ──────────────────────────
-// Mirrors vanilla saveSnapshot: every active account is represented in the
-// Entry form, so saving rewrites the full set of rows for `date` — entered
-// rows are kept, cleared rows are dropped (deleted), and the day comment row
-// is upserted. Rows for other dates are untouched.
 export interface SaveMonthInput {
   date: string;
-  rows: Snapshot[]; // complete desired set of rows for `date` (incl. __day__ if any)
+  rows: Snapshot[];
 }
 
 export function useSaveMonthMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
 
   const replaceForDate = (cached: Snapshot[], { date, rows }: SaveMonthInput): Snapshot[] => {
     const kept = cached.filter(s => s.date !== date);
@@ -77,26 +59,22 @@ export function useSaveMonthMutation() {
 
   return useMutation({
     mutationFn: async (input: SaveMonthInput) => {
-      const cached = qc.getQueryData<Snapshot[]>(qk.snapshots(sheetId)) ?? [];
+      const cached = qc.getQueryData<Snapshot[]>(qk.snapshots(ds.id)) ?? [];
       const next = replaceForDate(cached, input);
-      const allRows: unknown[][] = [
-        HEADERS.snapshots as unknown as string[],
-        ...next.map(s => [s.date, s.account_id, s.balance_raw, s.comment ?? '', s.entered_at ?? '']),
-      ];
-      await safeWriteTab(sheetId, 'snapshots', allRows, cached.length);
+      await ds.writeSnapshots(next);
       return next;
     },
     onMutate: async (input: SaveMonthInput) => {
-      await qc.cancelQueries({ queryKey: qk.snapshots(sheetId) });
-      const prev = qc.getQueryData<Snapshot[]>(qk.snapshots(sheetId));
-      qc.setQueryData<Snapshot[]>(qk.snapshots(sheetId), old => replaceForDate(old ?? [], input));
+      await qc.cancelQueries({ queryKey: qk.snapshots(ds.id) });
+      const prev = qc.getQueryData<Snapshot[]>(qk.snapshots(ds.id));
+      qc.setQueryData<Snapshot[]>(qk.snapshots(ds.id), old => replaceForDate(old ?? [], input));
       return { prev };
     },
     onError: (_err, _input, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.snapshots(sheetId), ctx.prev);
+      if (ctx?.prev) qc.setQueryData(qk.snapshots(ds.id), ctx.prev);
     },
     onSuccess: (next) => {
-      qc.setQueryData(qk.snapshots(sheetId), next);
+      qc.setQueryData(qk.snapshots(ds.id), next);
     },
   });
 }
@@ -104,24 +82,12 @@ export function useSaveMonthMutation() {
 // ── Accounts ────────────────────────────────────────────────────────────
 export function useWriteAccountsMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: async (accounts: Account[]) => {
-      const prev = prevCount(qc.getQueryData<Account[]>(qk.accounts(sheetId)));
-      const rows: unknown[][] = [
-        HEADERS.accounts as unknown as string[],
-        ...accounts.map(a => HEADERS.accounts.map(h => {
-          const v = (a as unknown as Record<string, unknown>)[h];
-          if (h === 'active') return a.active ? 'TRUE' : 'FALSE';
-          if (h === 'tags') return Array.isArray(a.tags) ? a.tags.join(', ') : '';
-          return v ?? '';
-        })),
-      ];
-      await safeWriteTab(sheetId, 'accounts', rows, prev);
-    },
+    mutationFn: (accounts: Account[]) => ds.writeAccounts(accounts),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.accounts(sheetId) });
-      void qc.invalidateQueries({ queryKey: qk.snapshots(sheetId) });
+      void qc.invalidateQueries({ queryKey: qk.accounts(ds.id) });
+      void qc.invalidateQueries({ queryKey: qk.snapshots(ds.id) });
     },
   });
 }
@@ -133,13 +99,10 @@ export function useDeleteAccountMutation() {
 // ── Tags ────────────────────────────────────────────────────────────────
 export function useWriteTagsMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: (tags: Tag[]) => {
-      const prev = prevCount(qc.getQueryData<Tag[]>(qk.tags(sheetId)));
-      return writeTagsCatalog(sheetId, tags, prev);
-    },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.tags(sheetId) }),
+    mutationFn: (tags: Tag[]) => ds.writeTags(tags),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.tags(ds.id) }),
   });
 }
 
@@ -150,81 +113,67 @@ export function useMergeTagsMutation() {
 // ── Groups ──────────────────────────────────────────────────────────────
 export function useWriteGroupsMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: (groups: Group[]) => {
-      const prev = prevCount(qc.getQueryData<Group[]>(qk.groups(sheetId)));
-      return writeGroupsCatalog(sheetId, groups, prev);
-    },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.groups(sheetId) }),
+    mutationFn: (groups: Group[]) => ds.writeGroups(groups),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.groups(ds.id) }),
   });
 }
 
 // ── Config ──────────────────────────────────────────────────────────────
 export function useWriteConfigMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
     mutationFn: ({ key, value }: { key: keyof AppConfig; value: string }) =>
-      writeConfig(sheetId, key, value),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.config(sheetId) }),
+      ds.writeConfig(key, value),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.config(ds.id) }),
   });
 }
 
 // ── Options ─────────────────────────────────────────────────────────────
 export function useWriteOptionCompaniesMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: (items: OptionCompany[]) =>
-      writeOptionCompanies(sheetId, items, prevCount(qc.getQueryData<OptionCompany[]>(qk.optCompanies(sheetId)))),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optCompanies(sheetId) }),
+    mutationFn: (items: OptionCompany[]) => ds.writeOptionCompanies(items),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optCompanies(ds.id) }),
   });
 }
 
 export function useWriteOptionGrantsMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: (items: OptionGrant[]) =>
-      writeOptionGrants(sheetId, items, prevCount(qc.getQueryData<OptionGrant[]>(qk.optGrants(sheetId)))),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optGrants(sheetId) }),
+    mutationFn: (items: OptionGrant[]) => ds.writeOptionGrants(items),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optGrants(ds.id) }),
   });
 }
 
 export function useWriteOptionFmvMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: (items: OptionFmv[]) =>
-      writeOptionFmv(sheetId, items, prevCount(qc.getQueryData<OptionFmv[]>(qk.optFmv(sheetId)))),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optFmv(sheetId) }),
+    mutationFn: (items: OptionFmv[]) => ds.writeOptionFmv(items),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optFmv(ds.id) }),
   });
 }
 
 export function useWriteOptionExercisesMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: (items: OptionExercise[]) =>
-      writeOptionExercises(sheetId, items, prevCount(qc.getQueryData<OptionExercise[]>(qk.optExercises(sheetId)))),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optExercises(sheetId) }),
+    mutationFn: (items: OptionExercise[]) => ds.writeOptionExercises(items),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optExercises(ds.id) }),
   });
 }
 
 // ── Import (full snapshot overwrite) ────────────────────────────────────
 export function useImportMutation() {
   const qc = useQueryClient();
-  const sheetId = useSheetId();
+  const ds = useDatasource();
   return useMutation({
-    mutationFn: async (snapshots: Snapshot[]) => {
-      const prev = prevCount(qc.getQueryData<Snapshot[]>(qk.snapshots(sheetId)));
-      const rows: unknown[][] = [
-        HEADERS.snapshots as unknown as string[],
-        ...snapshots.map(s => [s.date, s.account_id, s.balance_raw, s.comment ?? '', s.entered_at ?? '']),
-      ];
-      await safeWriteTab(sheetId, 'snapshots', rows, prev);
-    },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.snapshots(sheetId) }),
+    mutationFn: (snapshots: Snapshot[]) => ds.writeSnapshots(snapshots),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.snapshots(ds.id) }),
   });
 }

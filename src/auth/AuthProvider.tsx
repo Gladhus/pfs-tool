@@ -6,6 +6,7 @@ import { bootstrapSheet } from './bootstrap';
 import { LS_KEY_USER_HINT } from '@/constants';
 import { classifyApiError } from '@/core/errors';
 import i18n from '@/i18n/index';
+import { useDatasourceStore } from '@/stores/datasource.store';
 
 // Module-level guard: prevents initTokenClient from being called a second time
 // under React StrictMode's double-effect invocation.
@@ -299,6 +300,7 @@ function useGoogleAuth(): AuthContextValue {
     gapi.client.setToken(null);
     clearToken();
     setUserEmail(null);
+    useDatasourceStore.getState().setDatasource(null);
     setStatus('Signed out.');
   }, [clearToken, setUserEmail]);
 

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { useAuthStore, selectIsSignedIn } from '@/stores/auth.store';
+import { useDatasourceStore } from '@/stores/datasource.store';
 import { useUIStore } from '@/stores/ui.store';
 import { Icon } from '@/ui/Icon';
 import { todayISO } from '@/utils/dates';
@@ -13,6 +14,7 @@ export default function Header() {
   const { t } = useTranslation();
   const { signIn, canSignIn } = useAuth();
   const isSignedIn = useAuthStore(selectIsSignedIn);
+  const hasDatasource = useDatasourceStore(s => s.datasource !== null);
   const privateMode = useUIStore((s) => s.privateMode);
   const togglePrivateMode = useUIStore((s) => s.togglePrivateMode);
 
@@ -25,7 +27,7 @@ export default function Header() {
       </div>
 
       {/* Inline nav tabs (desktop) */}
-      {isSignedIn && (
+      {hasDatasource && (
         <div className="hidden md:flex h-full">
           <NavTabs />
         </div>
@@ -35,7 +37,7 @@ export default function Header() {
 
       {/* Right-side icon buttons */}
       <div className="flex items-center gap-2">
-        {isSignedIn ? (
+        {hasDatasource ? (
           <>
             <Link
               to={`/entry/${todayISO()}`}

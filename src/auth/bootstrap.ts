@@ -3,6 +3,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { setStatus } from '@/stores/status.store';
 import { queryClient } from '@/lib/queryClient';
 import { SHEET_TITLE, LS_KEY_SHEET_ID } from '@/constants';
+import { SheetsDatasource } from '@/datasource/sheets';
+import { useDatasourceStore } from '@/stores/datasource.store';
 
 let _bootstrapping = false;
 
@@ -42,6 +44,7 @@ export async function bootstrapSheet(): Promise<void> {
     }
 
     setSheetId(sheetId);
+    useDatasourceStore.getState().setDatasource(new SheetsDatasource(sheetId, queryClient));
     queryClient.invalidateQueries({ queryKey: ['sheet', sheetId] });
     setIsDataLoaded(true);
     setStatus(created ? 'Sheet created.' : 'Sheet linked.', 'ok');

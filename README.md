@@ -3,12 +3,6 @@
 ![Version](https://img.shields.io/badge/version-2.0.0-6366f1?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
 ![Deploy](https://img.shields.io/github/actions/workflow/status/Gladhus/pfs-tool/deploy.yml?style=flat-square&label=deploy)
-![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-181%20passing-22c55e?style=flat-square)
-![Bilingual](https://img.shields.io/badge/i18n-EN%20%7C%20FR-f59e0b?style=flat-square)
-![XLSX](https://img.shields.io/badge/works%20offline-XLSX%20mode-8b5cf6?style=flat-square)
 
 A privacy-first net worth tracker that stores your data in **your own Google Sheet** — or entirely offline as an XLSX file. Nothing passes through any server you don't control.
 

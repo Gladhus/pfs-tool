@@ -134,4 +134,5 @@ jobs:
 
           git add CHANGELOG.md README.md
           git commit -m "chore: link v${VERSION_NO_V} in CHANGELOG and update README badge"
+          git pull origin main --rebase
           git push origin main

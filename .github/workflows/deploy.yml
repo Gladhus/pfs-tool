@@ -3,15 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'index.html'
-      - 'package.json'
-      - 'vite.config.ts'
-      - 'tsconfig*.json'
-      - 'public/**'
-      - 'seed/**'
-    tags: ['v*']
+  tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -24,9 +16,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  check-version:
+  detect:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    outputs:
+      needs_deploy: ${{ steps.check.outputs.needs_deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "needs_deploy=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- \
+            src/ index.html public/ seed/ vite.config.ts tsconfig.json package.json)
+          echo "needs_deploy=$([ -n "$CHANGED" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+  check-version:
+    needs: detect
+    if: needs.detect.outputs.needs_deploy == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,8 +63,10 @@ jobs:
           echo "✅ $VERSION is new and has a CHANGELOG entry, proceeding."
 
   build:
-    needs: check-version
-    if: always() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
+    needs: [detect, check-version]
+    if: |
+      needs.detect.outputs.needs_deploy == 'true' &&
+      (needs.check-version.result == 'success' || needs.check-version.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -70,7 +83,8 @@ jobs:
           path: dist
 
   deploy:
-    needs: build
+    needs: [detect, build]
+    if: needs.detect.outputs.needs_deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -80,9 +94,9 @@ jobs:
         uses: actions/deploy-pages@v4
 
   release:
-    needs: deploy
+    needs: [detect, deploy]
+    if: needs.detect.outputs.needs_deploy == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
         with:

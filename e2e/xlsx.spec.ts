@@ -33,9 +33,9 @@ test.describe('XLSX file upload', () => {
     await expect(page.getByText('Investments').first()).toBeVisible();
   });
 
-  test('navigates to accounts history', async ({ page }) => {
-    await page.locator('a[href*="/pfs-tool/accounts"]').first().click();
-    await expect(page).toHaveURL(/\/accounts/);
+  test('navigates to portfolio history', async ({ page }) => {
+    await page.locator('a[href*="/pfs-tool/portfolio"]').first().click();
+    await expect(page).toHaveURL(/\/portfolio/);
   });
 
   test('stays on overview after page refresh', async ({ page }) => {

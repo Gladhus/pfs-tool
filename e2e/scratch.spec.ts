@@ -15,18 +15,18 @@ test.describe('Start from scratch', () => {
     await expect(page.getByText(/net-worth\.xlsx/i)).toBeVisible();
   });
 
-  test('shows empty state CTA linking to accounts/manage (no accounts yet)', async ({ page }) => {
-    await expect(page.locator('a[href="/pfs-tool/accounts/manage"]')).toBeVisible();
+  test('shows empty state CTA linking to portfolio/manage (no accounts yet)', async ({ page }) => {
+    await expect(page.locator('a[href="/pfs-tool/portfolio/manage"]')).toBeVisible();
   });
 
-  test('nav links render for overview and accounts', async ({ page }) => {
+  test('nav links render for overview and portfolio', async ({ page }) => {
     await expect(page.locator('a[href="/pfs-tool/overview"]').first()).toBeVisible();
-    await expect(page.locator('a[href*="/pfs-tool/accounts"]').first()).toBeVisible();
+    await expect(page.locator('a[href*="/pfs-tool/portfolio"]').first()).toBeVisible();
   });
 
-  test('navigates to accounts/manage from empty state CTA', async ({ page }) => {
-    await page.locator('a[href="/pfs-tool/accounts/manage"]').click();
-    await expect(page).toHaveURL(/\/accounts\/manage/);
+  test('navigates to portfolio/manage from empty state CTA', async ({ page }) => {
+    await page.locator('a[href="/pfs-tool/portfolio/manage"]').click();
+    await expect(page).toHaveURL(/\/portfolio\/manage/);
   });
 
   test('close-file confirmation modal returns to sign-in', async ({ page }) => {

@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.1.0] — 2026-06-09
+## [2.1.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.1.0) — 2026-06-09
 
 ### Added
 - **Dark forest header** — site header now uses the `forest-deep` token (`#182c12`) permanently; logo, nav tabs, and icon buttons are recoloured for the dark surface

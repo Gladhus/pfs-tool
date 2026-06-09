@@ -29,8 +29,7 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <div
-      className={`rounded-xl border-l-4 bg-surface-1 shadow-sm p-4 ${className}`}
-      style={{ borderLeftColor: accentColor ?? 'transparent' }}
+      className={`rounded-xl bg-surface-1 shadow-sm p-4 ${className}`}
     >
       {head?.label && (
         <div className="mb-1 flex items-center gap-2">
@@ -40,7 +39,7 @@ export function StatCard({
               style={{ backgroundColor: accentColor }}
             />
           )}
-          <div className="truncate text-xs font-semibold uppercase tracking-wide text-muted">
+          <div className="truncate text-xs font-medium text-muted">
             {head.label}
           </div>
         </div>

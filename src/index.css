@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Inconsolata:wght@400;500&display=swap');
 @import "tailwindcss";
 
 /* dark: variant matches [data-theme="dark"] attribute on <html> (manual override).
@@ -8,6 +8,8 @@
 /* Page background + base text follow the active theme so areas outside the
    app shell (signed-out screen, overscroll) flip with light/dark too. */
 @layer base {
+  h1, h2, h3 { font-family: var(--font-heading); }
+
   html, body {
     background-color: var(--bg);
     color: var(--fg);
@@ -66,8 +68,8 @@
   --color-border:        var(--border);
   --color-border-strong: var(--border-strong);
 
-  /* Site header (dark navy, constant) */
-  --color-header:        #0c1424;
+  /* Site header (dark forest, constant) */
+  --color-header:        #182c12;
 
   /* Category accents */
   --color-cat-investments:    var(--cat-investments);
@@ -96,61 +98,64 @@
   --radius-lg: 14px;
   --radius-xl: 18px;
 
-  /* Font */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Fonts */
+  --font-sans:    'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:         'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+  --font-mono-compact: 'Inconsolata', ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
 }
 
 /* ── Light mode (default) ────────────────────────────────── */
 :root {
   /* Surfaces */
-  --bg:            #f4f5f7;
+  --bg:            #e9ece4;
   --surface:       #ffffff;
-  --surface-2:     #f9fafb;
-  --surface-3:     #f4f5f7;
+  --surface-2:     #f3f5ef;
+  --surface-3:     #eceee8;
 
   /* Text */
-  --fg:            #0b1220;
-  --fg-2:          #344054;
-  --muted:         #667085;
-  --subtle:        #98a2b3;
+  --fg:            #141a0f;
+  --fg-2:          #3b4a36;
+  --muted:         #52634a;
+  --subtle:        #6a7c62;
 
   /* Accent */
-  --accent:        #10b981;
-  --accent-dark:   #059669;
-  --accent-light:  #d1fae5;
+  --accent:        #427a24;
+  --accent-dark:   #2e5a18;
+  --accent-light:  #d8eecb;
   --accent-fg:     #ffffff;
 
   /* Semantic */
-  --ok:            #065f46;
-  --ok-bg:         #d1fae5;
-  --warn:          #92400e;
-  --warn-bg:       #fef3c7;
-  --red:           #e11d48;
-  --red-light:     #ffe4e6;
+  --ok:            #2e5a18;
+  --ok-bg:         #d8eecb;
+  --warn:          #7a4f18;
+  --warn-bg:       #f5e6c8;
+  --red:           #c23838;
+  --red-light:     #f5d6d6;
 
   /* Borders */
-  --border:        #e4e7ec;
-  --border-strong: #cfd4dc;
+  --border:        #dce0d5;
+  --border-strong: #c4c9bc;
 
   /* Category accents */
-  --cat-investments:    #3b82f6;
-  --cat-investments-bg: #dbeafe;
-  --cat-real-estate:    #f59e0b;
-  --cat-real-estate-bg: #fef3c7;
-  --cat-cash:           #10b981;
-  --cat-cash-bg:        #d1fae5;
-  --cat-debts:          #f43f5e;
-  --cat-debts-bg:       #ffe4e6;
-  --cat-other:          #8b5cf6;
-  --cat-other-bg:       #ede9fe;
-  --cat-equity:         #06b6d4;
-  --cat-equity-bg:      #cffafe;
+  --cat-investments:    #4878b0;
+  --cat-investments-bg: #dce8f5;
+  --cat-real-estate:    #c47a24;
+  --cat-real-estate-bg: #f5e8d0;
+  --cat-cash:           #4d8f2c;
+  --cat-cash-bg:        #d8eecb;
+  --cat-debts:          #c23838;
+  --cat-debts-bg:       #f5d6d6;
+  --cat-other:          #7b5aaa;
+  --cat-other-bg:       #ecdff5;
+  --cat-equity:         #2a8a7a;
+  --cat-equity-bg:      #ceeee8;
 
   /* Shadows */
-  --tok-shadow-xs: 0 1px 2px rgba(15,23,42,.04);
-  --tok-shadow-sm: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
-  --tok-shadow-md: 0 1px 3px rgba(15,23,42,.04), 0 8px 24px -8px rgba(15,23,42,.12);
-  --tok-shadow-lg: 0 4px 8px rgba(15,23,42,.06), 0 24px 48px -12px rgba(15,23,42,.18);
+  --tok-shadow-xs: 0 1px 2px rgba(20,40,10,.04);
+  --tok-shadow-sm: 0 1px 2px rgba(20,40,10,.04), 0 1px 3px rgba(20,40,10,.06);
+  --tok-shadow-md: 0 1px 3px rgba(20,40,10,.04), 0 8px 24px -8px rgba(20,40,10,.10);
+  --tok-shadow-lg: 0 4px 8px rgba(20,40,10,.06), 0 24px 48px -12px rgba(20,40,10,.16);
 
   /* Motion */
   --ease:   cubic-bezier(.2,.7,.3,1);
@@ -160,31 +165,38 @@
 
 /* ── Dark mode – manual override via data-theme="dark" on <html> ── */
 [data-theme="dark"] {
-  --bg:            #0b1220;
-  --surface:       #131a2a;
-  --surface-2:     #18203180;
-  --surface-3:     #1d2638;
-  --fg:            #e6e8ee;
-  --fg-2:          #c1c7d2;
-  --muted:         #8b94a6;
-  --subtle:        #5b6478;
-  --accent:        #34d399;
-  --accent-dark:   #10b981;
-  --accent-light:  #064e3b;
-  --ok:            #6ee7b7;
-  --ok-bg:         #064e3b;
-  --warn:          #fcd34d;
-  --warn-bg:       #422006;
-  --red:           #fb7185;
-  --red-light:     #4c0519;
-  --border:        #2a334a;
-  --border-strong: #3a455e;
-  --cat-investments-bg: #1e3a8a;
-  --cat-real-estate-bg: #422006;
-  --cat-cash-bg:        #064e3b;
-  --cat-debts-bg:       #4c0519;
-  --cat-other-bg:       #3b1d6b;
-  --cat-equity-bg:      #083344;
+  --bg:            #0d1509;
+  --surface:       #14200f;
+  --surface-2:     #131f10;
+  --surface-3:     #1f3019;
+  --fg:            #dce8d4;
+  --fg-2:          #a5b89a;
+  --muted:         #8aaa7a;
+  --subtle:        #60785a;
+  --accent:        #72bf48;
+  --accent-dark:   #4d8f2c;
+  --accent-light:  #1a3e12;
+  --accent-fg:     #0c1e09;
+  --ok:            #7fcf58;
+  --ok-bg:         #183512;
+  --warn:          #d4a44a;
+  --warn-bg:       #3a2810;
+  --red:           #e06060;
+  --red-light:     #3a1414;
+  --border:        #243018;
+  --border-strong: #304020;
+  --cat-investments:    #6e9fd4;
+  --cat-investments-bg: #1a2e4a;
+  --cat-real-estate:    #d4944a;
+  --cat-real-estate-bg: #3a2a10;
+  --cat-cash:           #72bf48;
+  --cat-cash-bg:        #183512;
+  --cat-debts:          #e06060;
+  --cat-debts-bg:       #3a1414;
+  --cat-other:          #a880d4;
+  --cat-other-bg:       #2a1a3a;
+  --cat-equity:         #4abfb0;
+  --cat-equity-bg:      #103028;
   --tok-shadow-xs: 0 1px 2px rgba(0,0,0,.4);
   --tok-shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
   --tok-shadow-md: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px -8px rgba(0,0,0,.5);
@@ -194,31 +206,38 @@
 /* ── Dark mode – auto (prefers-color-scheme) ─────────────── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:            #0b1220;
-    --surface:       #131a2a;
-    --surface-2:     #18203180;
-    --surface-3:     #1d2638;
-    --fg:            #e6e8ee;
-    --fg-2:          #c1c7d2;
-    --muted:         #8b94a6;
-    --subtle:        #5b6478;
-    --accent:        #34d399;
-    --accent-dark:   #10b981;
-    --accent-light:  #064e3b;
-    --ok:            #6ee7b7;
-    --ok-bg:         #064e3b;
-    --warn:          #fcd34d;
-    --warn-bg:       #422006;
-    --red:           #fb7185;
-    --red-light:     #4c0519;
-    --border:        #2a334a;
-    --border-strong: #3a455e;
-    --cat-investments-bg: #1e3a8a;
-    --cat-real-estate-bg: #422006;
-    --cat-cash-bg:        #064e3b;
-    --cat-debts-bg:       #4c0519;
-    --cat-other-bg:       #3b1d6b;
-    --cat-equity-bg:      #083344;
+    --bg:            #0d1509;
+    --surface:       #14200f;
+    --surface-2:     #131f10;
+    --surface-3:     #1f3019;
+    --fg:            #dce8d4;
+    --fg-2:          #a5b89a;
+    --muted:         #8aaa7a;
+    --subtle:        #60785a;
+    --accent:        #72bf48;
+    --accent-dark:   #4d8f2c;
+    --accent-light:  #1a3e12;
+    --accent-fg:     #0c1e09;
+    --ok:            #7fcf58;
+    --ok-bg:         #183512;
+    --warn:          #d4a44a;
+    --warn-bg:       #3a2810;
+    --red:           #e06060;
+    --red-light:     #3a1414;
+    --border:        #243018;
+    --border-strong: #304020;
+    --cat-investments:    #6e9fd4;
+    --cat-investments-bg: #1a2e4a;
+    --cat-real-estate:    #d4944a;
+    --cat-real-estate-bg: #3a2a10;
+    --cat-cash:           #72bf48;
+    --cat-cash-bg:        #183512;
+    --cat-debts:          #e06060;
+    --cat-debts-bg:       #3a1414;
+    --cat-other:          #a880d4;
+    --cat-other-bg:       #2a1a3a;
+    --cat-equity:         #4abfb0;
+    --cat-equity-bg:      #103028;
     --tok-shadow-xs: 0 1px 2px rgba(0,0,0,.4);
     --tok-shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
     --tok-shadow-md: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px -8px rgba(0,0,0,.5);

@@ -143,7 +143,7 @@ export function AccountDialog({
 
   return (
     <Dialog open={open} onClose={onClose} title={isNew ? t('add_account') : t('edit_account')} className="max-w-lg">
-      <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="space-y-3 max-h-[70vh] overflow-y-auto px-1">
         {isNew && (
           <Field label={t('account_type_label')}>
             <Select value={form.type} onValueChange={onTypeChange}>

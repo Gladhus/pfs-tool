@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/ui.store';
 import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery } from '@/queries/sheetQueries';
@@ -10,6 +10,7 @@ import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
+import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
 import { AccountSelect } from './components/AccountSelect';
 import { SeriesToggleBar, type SeriesState } from './components/SeriesToggleBar';
@@ -108,7 +109,7 @@ export default function HistoryPage() {
   );
 
   const hasOtherData = useMemo(
-    () => overviewSeries.other.some(v => v !== null && v !== 0),
+    () => overviewSeries.other.some(v => v !== null && Math.abs(v) > 0.005),
     [overviewSeries.other],
   );
 
@@ -230,6 +231,11 @@ export default function HistoryPage() {
         icon={<Icon name="database" size={28} />}
         title={t('empty_history_title')}
         description={t('empty_history_body')}
+        action={
+          <Button variant="primary" size="sm" asChild>
+            <Link to="/portfolio/manage">{t('empty_overview_no_accounts_cta')}</Link>
+          </Button>
+        }
       />
     );
   }
@@ -242,7 +248,8 @@ export default function HistoryPage() {
     <div className="space-y-4">
       {/* Chart section */}
       <div className="rounded-xl bg-surface-1 shadow-sm p-4 space-y-3">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-xs text-muted">{t('filter_account')}</span>
           <AccountSelect
             accounts={accounts}
             categoryMeta={categoryMeta}

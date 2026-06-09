@@ -22,7 +22,7 @@ interface Props {
   isPrivate: boolean;
 }
 
-const TT = { background: '#0f172a', border: 'none', borderRadius: 10, padding: '10px 12px' };
+const TT = { background: '#0f1a0c', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
 export function CompanyValueChart({
   company, grants, fmv, exercises, color, now, locale, currency, isPrivate,
@@ -76,17 +76,19 @@ export function CompanyValueChart({
     const unvestedVal = (totalPt?.value ?? 0) - vestedVal;
     return (
       <div style={TT}>
-        <p style={{ color: '#94a3b8', fontSize: 11, margin: '0 0 4px' }}>
+        <p style={{ color: '#8aaa7a', fontSize: 11, margin: '0 0 4px' }}>
           {fmtMonth(dateStr.slice(0, 7), { locale, style: 'short' })}
         </p>
         {vestedPt?.value != null && (
-          <p style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
-            vested: {privMoney(vestedVal, isPrivate, locale, currency)}
+          <p style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 500, margin: '2px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: vestedPt.color, flexShrink: 0 }} />
+            vested: <span style={{ fontFamily: 'DM Mono, ui-monospace, monospace', fontWeight: 600 }}>{privMoney(vestedVal, isPrivate, locale, currency)}</span>
           </p>
         )}
         {totalPt?.value != null && unvestedVal > 0 && (
-          <p style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
-            unvested: {privMoney(unvestedVal, isPrivate, locale, currency)}
+          <p style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 500, margin: '2px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#8aaa7a', flexShrink: 0 }} />
+            unvested: <span style={{ fontFamily: 'DM Mono, ui-monospace, monospace', fontWeight: 600 }}>{privMoney(unvestedVal, isPrivate, locale, currency)}</span>
           </p>
         )}
       </div>

@@ -1,8 +1,8 @@
 import type { Account, Group } from '@/types/sheets';
 
 export const TAG_PALETTE = [
-  '#3b82f6', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6',
-  '#06b6d4', '#ec4899', '#eab308', '#22c55e', '#6366f1',
+  '#4878b0', '#c47a24', '#4d8f2c', '#c23838', '#7b5aaa',
+  '#2a8a7a', '#a5604a', '#8a7a2a', '#5a8a5a', '#5a6a8a',
 ];
 
 function hashColor(name: string): string {

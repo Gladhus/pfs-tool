@@ -26,8 +26,8 @@ export function Delta({
   const numText = privDelta(value, isPrivate, locale, currency) + (pct ? ` (${pct})` : '');
 
   const dirClass = dir === 'up'
-    ? 'text-ok tabular-nums'
-    : 'text-red tabular-nums';
+    ? 'font-mono tabular-nums text-ok'
+    : 'font-mono tabular-nums text-red';
 
   if (layout === 'stacked') {
     return (

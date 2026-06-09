@@ -8,6 +8,7 @@ import NotFound from '@/app/NotFound';
 import OptionsGuard from '@/app/OptionsGuard';
 import SignedOutScreen from '@/components/SignedOutScreen';
 import SectionLayout from '@/components/SectionLayout';
+import SettingsSectionLayout from '@/components/SettingsSectionLayout';
 import type { SubNavLink } from '@/components/SubNav';
 import OverviewPage from '@/pages/overview/OverviewPage';
 import HistoryPage from '@/pages/history/HistoryPage';
@@ -21,16 +22,11 @@ import OptionsPage from '@/pages/options/OptionsPage';
 import OptionsManagePage from '@/pages/options/OptionsManagePage';
 
 const ACCOUNTS_LINKS: SubNavLink[] = [
-  { to: '/accounts/history', label: 'History', icon: 'calendar' },
-  { to: '/accounts/detail', label: 'Detail', icon: 'table' },
-  { to: '/accounts/manage', label: 'Manage', icon: 'wallet' },
+  { to: '/portfolio/history', label: 'History', icon: 'calendar' },
+  { to: '/portfolio/detail', label: 'Detail', icon: 'table' },
+  { to: '/portfolio/manage', label: 'Manage', icon: 'wallet' },
 ];
 
-const SETTINGS_LINKS: SubNavLink[] = [
-  { to: '/settings', label: 'Preferences', icon: 'settings', end: true },
-  { to: '/settings/groups', label: 'Groups', icon: 'users' },
-  { to: '/settings/import', label: 'Import', icon: 'upload' },
-];
 
 const OPTIONS_LINKS: SubNavLink[] = [
   { to: '/options', label: 'Overview', icon: 'dashboard', end: true },
@@ -61,10 +57,10 @@ export const router = createBrowserRouter(
 
                 // Accounts section
                 {
-                  path: 'accounts',
+                  path: 'portfolio',
                   element: <SectionLayout links={ACCOUNTS_LINKS} />,
                   children: [
-                    { index: true, element: <Navigate to="/accounts/history" replace /> },
+                    { index: true, element: <Navigate to="/portfolio/history" replace /> },
                     { path: 'history', element: <HistoryPage /> },
                     { path: 'detail', element: <DetailPage /> },
                     { path: 'manage', element: <AccountsSection /> },
@@ -78,7 +74,7 @@ export const router = createBrowserRouter(
                 // Settings section
                 {
                   path: 'settings',
-                  element: <SectionLayout links={SETTINGS_LINKS} />,
+                  element: <SettingsSectionLayout />,
                   children: [
                     { index: true, element: <PreferencesSection /> },
                     { path: 'groups', element: <GroupsSection /> },
@@ -102,9 +98,9 @@ export const router = createBrowserRouter(
                 },
 
                 // Redirects from the pre-restructure URLs
-                { path: 'history', element: <Navigate to="/accounts/history" replace /> },
-                { path: 'detail', element: <Navigate to="/accounts/detail" replace /> },
-                { path: 'settings/accounts', element: <Navigate to="/accounts/manage" replace /> },
+                { path: 'history', element: <Navigate to="/portfolio/history" replace /> },
+                { path: 'detail', element: <Navigate to="/portfolio/detail" replace /> },
+                { path: 'settings/accounts', element: <Navigate to="/portfolio/manage" replace /> },
               ],
             },
           ],

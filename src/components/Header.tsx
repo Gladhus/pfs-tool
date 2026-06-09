@@ -8,7 +8,7 @@ import { Icon } from '@/ui/Icon';
 import { todayISO } from '@/utils/dates';
 import NavTabs from './NavTabs';
 
-const ICON_BTN = 'flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-fg-2 transition-colors hover:bg-surface-3 hover:text-fg';
+const ICON_BTN = 'flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white/70 transition-colors hover:bg-white/15 hover:text-white';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -19,10 +19,10 @@ export default function Header() {
   const togglePrivateMode = useUIStore((s) => s.togglePrivateMode);
 
   return (
-    <header className="sticky top-0 z-40 bg-surface-1 border-b border-border px-4 h-16 md:h-14 flex items-center gap-6">
+    <header className="sticky top-0 z-40 bg-header border-b border-white/10 px-4 h-16 md:h-14 flex items-center gap-6">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 text-fg shrink-0">
-        <Icon name="logo" size={24} strokeWidth={2.5} className="text-accent" />
+      <div className="flex items-center gap-2.5 text-white shrink-0">
+        <Icon name="logo" size={24} strokeWidth={2.5} className="text-[#72bf48]" />
         <span className="font-semibold text-sm tracking-tight">Net Worth Tracker</span>
       </div>
 
@@ -60,7 +60,7 @@ export default function Header() {
               to="/settings"
               aria-label={t('tab_settings')}
               title={t('tab_settings')}
-              className={({ isActive }) => `hidden md:flex ${ICON_BTN} ${isActive ? 'bg-surface-3 text-fg' : ''}`}
+              className={({ isActive }) => `hidden md:flex ${ICON_BTN} ${isActive ? 'bg-white/20 text-white' : ''}`}
             >
               <Icon name="settings" size={19} strokeWidth={2.25} />
             </NavLink>
@@ -69,7 +69,7 @@ export default function Header() {
           <button
             onClick={signIn}
             disabled={!canSignIn}
-            className="text-xs px-3 py-1.5 rounded bg-accent hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed text-accent-fg transition-colors"
+            className="text-xs px-3 py-1.5 rounded bg-[#72bf48] hover:bg-[#64ac3e] disabled:opacity-50 disabled:cursor-not-allowed text-[#0c1e09] font-medium transition-colors"
           >
             {t('sign_in')}
           </button>

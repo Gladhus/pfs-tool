@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/ui.store';
-import { useToastStore } from '@/stores/toast.store';
 import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery } from '@/queries/sheetQueries';
 import { tr } from '@/i18n';
 import { deriveDatesSorted } from '@/utils/dates';
@@ -13,7 +12,6 @@ import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
 import { Icon } from '@/ui/Icon';
-import { Button } from '@/ui/Button';
 import { DetailTable, type DetailModel, type DetailRow } from './components/DetailTable';
 import type { Account, CategoryMeta, Snapshot, Currency } from '@/types/sheets';
 
@@ -109,24 +107,11 @@ function buildDetailModel(
   return { years, rows };
 }
 
-function modelToCsv(model: DetailModel, accountHeader: string): string {
-  const lines = [[accountHeader, ...model.years].join(',')];
-  for (const row of model.rows) {
-    if (row.kind === 'category-header') {
-      lines.push([row.label, ...model.years.map(() => '')].join(','));
-    } else {
-      lines.push([row.label, ...row.values.map(v => (v === null ? '' : String(Math.round(v))))].join(','));
-    }
-  }
-  return lines.join('\n');
-}
-
 export default function DetailPage() {
   const { t } = useTranslation();
   const lang = useUIStore(s => s.lang);
   const privateMode = useUIStore(s => s.privateMode);
-  const addToast = useToastStore(s => s.addToast);
-  const locale = lang === 'fr' ? 'fr' : 'en';
+const locale = lang === 'fr' ? 'fr' : 'en';
 
   const [searchParams, setSearchParams] = useSearchParams();
   const period = (searchParams.get('period') as Period) ?? 'all';
@@ -160,16 +145,6 @@ export default function DetailPage() {
   const onPeriodChange = (p: Period) =>
     setSearchParams(prev => { prev.set('period', p); return prev; });
 
-  const onCopy = async () => {
-    if (!model) return;
-    try {
-      await navigator.clipboard.writeText(modelToCsv(model, t('detail_account')));
-      addToast(t('copied'), 'ok');
-    } catch {
-      addToast(t('err_unknown'), 'error');
-    }
-  };
-
   if (isPending) {
     return (
       <div className="space-y-4">
@@ -185,19 +160,18 @@ export default function DetailPage() {
         icon={<Icon name="database" size={28} />}
         title={t('empty_detail_title')}
         description={t('empty_detail_body')}
+        action={
+          <Button variant="primary" size="sm" asChild>
+            <Link to="/portfolio/manage">{t('empty_overview_no_accounts_cta')}</Link>
+          </Button>
+        }
       />
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <PeriodPills value={period} onChange={onPeriodChange} options={DETAIL_PERIODS} />
-        <Button variant="default" size="sm" onClick={onCopy}>
-          <Icon name="copy" size={14} />
-          {t('copy_table')}
-        </Button>
-      </div>
+      <PeriodPills value={period} onChange={onPeriodChange} options={DETAIL_PERIODS} />
 
       <DetailTable
         model={model}

@@ -18,7 +18,7 @@ interface Props {
   isPrivate: boolean;
 }
 
-const TT = { background: '#0f172a', border: 'none', borderRadius: 10, padding: '10px 12px' };
+const TT = { background: '#0f1a0c', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
 export function CompanyVestingChart({ grants, now, locale, isPrivate }: Props) {
   const [containerRef, width] = useContainerWidth();
@@ -74,12 +74,13 @@ export function CompanyVestingChart({ grants, now, locale, isPrivate }: Props) {
     if (di < 0) return null;
     return (
       <div style={TT}>
-        <p style={{ color: '#94a3b8', fontSize: 11, margin: '0 0 4px' }}>
+        <p style={{ color: '#8aaa7a', fontSize: 11, margin: '0 0 4px' }}>
           {fmtMonth(dateStr.slice(0, 7), { locale, style: 'short' })}
         </p>
         {grants.map((grant, gi) => (
-          <p key={gi} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
-            {grant.label || grant.grant_type || `Grant ${gi + 1}`}: {privShares(grantValues[gi][di], isPrivate)}
+          <p key={gi} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 500, margin: '2px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: GRANT_COLORS[gi % GRANT_COLORS.length], flexShrink: 0 }} />
+            {grant.label || grant.grant_type || `Grant ${gi + 1}`}: <span style={{ fontFamily: 'DM Mono, ui-monospace, monospace', fontWeight: 600 }}>{privShares(grantValues[gi][di], isPrivate)}</span>
           </p>
         ))}
       </div>

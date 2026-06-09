@@ -18,12 +18,15 @@ interface SegmentControlProps<T extends string> {
 
 const baseTrackCls = 'rounded bg-surface-2 p-0.5 gap-0.5';
 
-const itemCls = [
-  'px-3 py-1 text-sm rounded transition-colors whitespace-nowrap',
+const itemBase = [
+  'rounded transition-colors whitespace-nowrap',
   'text-muted hover:text-fg',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
   'data-[state=on]:bg-surface-1 data-[state=on]:text-fg data-[state=on]:font-medium data-[state=on]:shadow-xs',
 ].join(' ');
+
+const itemSize = 'px-3 py-1 text-sm';
+const itemSizeResponsive = 'px-1 py-0.5 text-xs md:px-3 md:py-1 md:text-sm';
 
 export function SegmentControl<T extends string>({
   options,
@@ -34,11 +37,9 @@ export function SegmentControl<T extends string>({
   responsive = false,
   'aria-label': label,
 }: SegmentControlProps<T>) {
-  const trackFlex = block
+  const trackFlex = block || responsive
     ? 'flex w-full'
-    : responsive
-      ? 'flex w-full md:inline-flex md:w-auto'
-      : 'inline-flex';
+    : 'inline-flex';
 
   return (
     <ToggleGroup.Root
@@ -52,7 +53,7 @@ export function SegmentControl<T extends string>({
         <ToggleGroup.Item
           key={opt.value}
           value={opt.value}
-          className={`${itemCls} ${block || responsive ? 'flex-1 text-center md:flex-none' : ''}`}
+          className={`${itemBase} ${responsive ? itemSizeResponsive : itemSize} ${block || responsive ? 'flex-1 text-center' : ''}`}
         >
           {opt.label}
         </ToggleGroup.Item>

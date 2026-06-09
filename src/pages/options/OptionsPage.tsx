@@ -187,7 +187,7 @@ export default function OptionsPage() {
 
         {/* Mobile: period pills at the bottom of the card */}
         <div className="md:hidden">
-          <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} block />
+          <PeriodPills value={period} onChange={onPeriodChange} options={APP_PERIODS} responsive />
         </div>
       </div>
 

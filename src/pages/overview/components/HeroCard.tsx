@@ -28,7 +28,7 @@ export function HeroCard({ netWorth, prevNetWorth, latestDate, period, locale, c
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted">{t('net_worth')}</p>
+      <p className="text-xs font-medium text-muted">{t('net_worth')}</p>
       <div className="mt-1 text-4xl md:text-5xl font-bold text-fg tabular-nums leading-tight">
         <Amount value={netWorth} />
       </div>

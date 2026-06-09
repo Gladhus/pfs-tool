@@ -19,7 +19,7 @@ export function EmptyOverviewState({ hasAccounts }: Props) {
         <Button asChild variant="primary" size="sm">
           {hasAccounts
             ? <Link to="/entry">{t('empty_overview_cta')}</Link>
-            : <Link to="/accounts/manage">{t('empty_overview_no_accounts_cta')}</Link>
+            : <Link to="/portfolio/manage">{t('empty_overview_no_accounts_cta')}</Link>
           }
         </Button>
       }

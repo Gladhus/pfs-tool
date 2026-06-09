@@ -22,7 +22,7 @@ interface Props {
   view: string;
 }
 
-const TT = { background: '#0f172a', border: 'none', borderRadius: 10, padding: '10px 12px' };
+const TT = { background: '#0f1a0c', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
 export function OverviewChart({
   dates, netData, buckets, seriesVisible, locale, currency, isPrivate, netLabel,
@@ -61,8 +61,9 @@ export function OverviewChart({
     return (
       <div style={TT}>
         {items.map(p => (
-          <p key={p.dataKey as string} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 600, margin: '2px 0' }}>
-            {p.name}: {isPrivate ? '••••••' : fmtMoney(p.value!, locale, currency)}
+          <p key={p.dataKey as string} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 500, margin: '2px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+            {p.name}: <span style={{ fontFamily: 'DM Mono, ui-monospace, monospace', fontWeight: 600 }}>{isPrivate ? '••••••' : fmtMoney(p.value!, locale, currency)}</span>
           </p>
         ))}
       </div>

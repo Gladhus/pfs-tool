@@ -275,11 +275,11 @@ export default function EntryPage() {
       {/* Sticky bar: action controls + progress — sticks just below the global header (top-14 = 3.5rem) */}
       <div
         ref={stickyBarRef}
-        className="sticky top-14 z-30 -mx-4 mb-4 bg-bg px-4 pb-3 pt-2"
+        className="sticky top-16 md:top-14 z-30 -mx-4 mb-4 bg-bg px-4 pb-3 pt-2"
       >
-        <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-surface-1 px-3 py-2 shadow-sm sm:px-4">
-          {/* Left: date picker + status badge */}
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border border-border/50 bg-surface-1 px-3 py-2 shadow-sm sm:px-4">
+          {/* Row 1 on mobile / Left on desktop: date picker + status badge */}
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
             <span className="hidden shrink-0 text-sm font-medium text-fg-2 sm:block">{t('date_label')}</span>
             <DateField value={date} onChange={onDateChange} />
             {isEditing ? (
@@ -294,44 +294,39 @@ export default function EntryPage() {
             )}
           </div>
 
-          <div className="flex-1" />
+          {/* Spacer — desktop only */}
+          <div className="hidden flex-1 sm:block" />
 
-          {/* Right: action buttons — icon-only on mobile, icon+label on desktop */}
-          <div className="flex shrink-0 items-center gap-1.5">
+          {/* Row 2 on mobile / Right on desktop: action buttons */}
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-1.5 sm:w-auto">
             <Button
               variant="default"
               size="sm"
-              className="max-md:w-7 max-md:px-0"
               onClick={onCopyPrev}
               disabled={!prevD}
-              title={t('copy_prev_entry')}
               aria-label={t('copy_prev_entry')}
             >
               <Icon name="copy" size={14} />
-              <span className="hidden md:inline">{t('copy_prev_entry')}</span>
+              {t('copy_prev_entry')}
             </Button>
             <Button
               variant="default"
               size="sm"
-              className="max-md:w-7 max-md:px-0"
               onClick={onReset}
-              title={t('reset_entry')}
               aria-label={t('reset_entry')}
             >
               <Icon name="eraser" size={14} />
-              <span className="hidden md:inline">{t('reset_entry')}</span>
+              {t('reset_entry')}
             </Button>
             <Button
               variant="primary"
               size="sm"
-              className="max-md:w-7 max-md:px-0"
               onClick={onSave}
               disabled={saveMonth.isPending}
-              title={t('save_snapshot')}
               aria-label={t('save_snapshot')}
             >
               <Icon name="save" size={14} />
-              <span className="hidden md:inline">{t('save_snapshot')}</span>
+              {t('save_snapshot')}
             </Button>
           </div>
         </div>
@@ -413,16 +408,15 @@ export default function EntryPage() {
           style={{ top: `calc(3.5rem + ${stickyBarH}px + 0.5rem)` }}
         >
           <h3 className="text-sm font-medium text-fg-2">{t('net_worth')}</h3>
-          <div className="flex items-center gap-2">
-            {totals.usingFallback && (
-              <span title={t('net_worth_fallback')}>
-                <Icon name="alert" size={18} className="text-warn" />
-              </span>
-            )}
-            <span className="text-2xl font-semibold tabular-nums text-fg">
-              <Amount value={totals.netWorth} />
-            </span>
-          </div>
+          <span className="text-2xl font-semibold tabular-nums text-fg">
+            <Amount value={totals.netWorth} />
+          </span>
+          {totals.usingFallback && (
+            <div className="flex items-start gap-1.5 text-xs text-warn">
+              <Icon name="alert" size={12} className="mt-0.5 shrink-0" />
+              <span>{t('net_worth_fallback')}</span>
+            </div>
+          )}
           {prevNet !== null && (
             <Delta
               value={totals.netWorth - prevNet}

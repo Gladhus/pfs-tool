@@ -40,20 +40,20 @@ function ValueCell({
   isPrivate: boolean;
   className?: string;
 }) {
-  if (curr === null) {
-    return <td className={`px-3 py-2 text-right tabular-nums text-muted ${className}`}>—</td>;
-  }
-  const delta = prev !== null ? curr - prev : null;
-  const pct = delta !== null ? privPct(delta, Math.abs(prev as number)) : '';
+  const delta = curr !== null && prev !== null ? curr - prev : null;
+  const pct = delta !== null ? privPct(delta, Math.abs(prev as number)) : null;
+  const deltaColor = delta !== null ? (delta >= 0 ? 'text-ok' : 'text-red') : '';
   return (
-    <td className={`px-3 py-2 text-right tabular-nums ${curr < 0 ? 'text-red' : 'text-fg'} ${className}`}>
-      <div><Amount value={curr} /></div>
-      {delta !== null && (
-        <div className={`text-xs ${delta >= 0 ? 'text-ok' : 'text-red'}`}>
-          {privDelta(delta, isPrivate, locale, currency)}
-          {pct ? ` (${pct})` : ''}
-        </div>
-      )}
+    <td className={`px-3 py-2 text-right align-top ${curr === null ? 'text-muted' : curr < 0 ? 'text-red' : 'text-fg'} ${className}`}>
+      <div className="font-mono-compact tabular-nums">
+        {curr === null ? '—' : <Amount value={curr} compact />}
+      </div>
+      <div className={`h-4 text-xs font-mono-compact tabular-nums ${deltaColor}`}>
+        {delta !== null ? privDelta(delta, isPrivate, locale, currency) : null}
+      </div>
+      <div className={`h-4 text-xs font-mono-compact tabular-nums ${deltaColor}`}>
+        {pct ?? null}
+      </div>
     </td>
   );
 }

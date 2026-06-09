@@ -73,7 +73,7 @@ export function GrantDialog({ open, onClose, grant, companyId, onSave, onDelete 
 
   return (
     <Dialog open={open} onClose={onClose} title={isNew ? t('opt_new_grant') : t('opt_edit_grant')} className="max-w-lg">
-      <div className="grid grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="grid grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto px-1">
         <Field label={t('opt_grant_label')}>
           <Input value={d.label} onChange={e => set('label', e.target.value)} />
         </Field>

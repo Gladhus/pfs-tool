@@ -5,6 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.1.0] — 2026-06-09
+
+### Added
+- **Dark forest header** — site header now uses the `forest-deep` token (`#182c12`) permanently; logo, nav tabs, and icon buttons are recoloured for the dark surface
+- **Settings sidebar shortcuts** — "Manage accounts" and "Manage stock options" (when enabled) appear in the Settings sub-nav with an external-link indicator, navigating directly to the respective manage pages
+- **Empty state actions** — History and Detail pages now show an "Add accounts" button when no data exists, matching the Overview empty state
+
+### Changed
+- **"Accounts" renamed to "Portfolio"** — nav tab, bottom bar, and all routes (`/accounts/*` → `/portfolio/*`); legacy redirects updated
+- **NavTabs labels are i18n-translated** — "Overview", "Portfolio", and "Stock Options" now use the i18n system (French: "Aperçu", "Portefeuille", "Options sur actions")
+- **Entry action buttons always labelled** — Copy, Reset, and Save buttons in the Entry sticky bar show their text at all screen widths; icon-only on mobile removed
+- **Fallback balance warning always visible** — the estimated-balance indicator in the Entry sidebar is now an inline text row; no longer requires hover to read
+- **History account filter labelled** — "Account" label added to the filter dropdown in the History chart header
+- **Settings manage links moved to sidebar** — Manage accounts and Manage stock options links are now in the Settings sub-nav rather than inline rows in Preferences
+
+### Fixed
+- **Side-stripe border removed from StatCard** — `border-l-4` coloured accent strip removed; the dot colour indicator carries the category identity on its own
+- **Uppercase eyebrow labels removed** — `text-xs uppercase tracking-wide` pattern removed from StatCard and HeroCard; plain sentence-case labels used instead
+- **External nav links no longer show active state** — Settings sidebar links that navigate outside the section (`/portfolio/manage`, `/options/manage`) now use `Link` instead of `NavLink`, preventing false active highlighting
+- **`--color-header` token applied** — dead CSS token is now used; DESIGN.md updated to reflect the dark header
+
+### Removed
+- **Detail page copy-to-clipboard button** — removed; the period picker is the only control above the table
+
+---
+
 ## [2.0.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.0.1) — 2026-06-08
 
 ### Added

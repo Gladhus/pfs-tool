@@ -7,9 +7,10 @@ import { Select, SelectItem } from '@/ui/Select';
 import { Checkbox } from '@/ui/Checkbox';
 import { Label } from '@/ui/Label';
 import { tr } from '@/i18n';
-import { OWNERS, KINDS } from '@/constants';
+import { KINDS } from '@/constants';
+import { migrateLegacyOwnership, shareFor } from '@/utils/ownership';
 import { TagChipInput } from './TagChipInput';
-import type { Account, AccountType, CategoryMeta, Currency } from '@/types/sheets';
+import type { Account, AccountType, CategoryMeta, Currency, OwnershipEntry, Person } from '@/types/sheets';
 
 const CURRENCIES: Currency[] = ['CAD', 'USD'];
 
@@ -19,6 +20,7 @@ interface Props {
   account: Account | null;
   accounts: Account[];
   accountTypes: AccountType[];
+  people: Person[];
   categoryMeta: CategoryMeta[];
   availableTags: string[];
   mainCurrency: Currency;
@@ -34,15 +36,14 @@ interface FormState {
   category: string;
   kind: 'asset' | 'debt';
   owner: string;
-  sharePct: number;
+  split: boolean;
+  shares: Record<string, number>;
   sort_order: number;
   growthPct: string;
   active: boolean;
   tags: string[];
   currency: Currency;
 }
-
-const OWNER_KEYS: Record<string, string> = { self: 'owner_self', partner: 'owner_partner', joint: 'owner_joint' };
 
 function nextId(prefix: string, accounts: Account[]): string {
   const ids = new Set(accounts.map(a => a.id));
@@ -51,15 +52,28 @@ function nextId(prefix: string, accounts: Account[]): string {
   return `${prefix}_${n}`;
 }
 
+/** Maps an ownership array onto the dialog's owner/split/shares fields. */
+function ownershipToForm(ownership: OwnershipEntry[], people: Person[]): { owner: string; split: boolean; shares: Record<string, number> } {
+  const isSingle = ownership.length === 1 && Math.round(ownership[0].share * 100) === 100;
+  const shares: Record<string, number> = {};
+  for (const p of people) shares[p.id] = Math.round(shareFor(ownership, p.id) * 100);
+  return {
+    owner: isSingle ? ownership[0].person_id : (people[0]?.id ?? ''),
+    split: !isSingle,
+    shares,
+  };
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><Label>{label}</Label>{children}</div>;
 }
 
 export function AccountDialog({
-  open, onClose, account, accounts, accountTypes, categoryMeta, availableTags, mainCurrency, hasHistory, onSave, onDelete,
+  open, onClose, account, accounts, accountTypes, people, categoryMeta, availableTags, mainCurrency, hasHistory, onSave, onDelete,
 }: Props) {
   const { t } = useTranslation();
   const isNew = account === null;
+  const activePeople = people.filter(p => p.active);
   const [form, setForm] = useState<FormState>(() => buildInitial());
 
   function buildInitial(): FormState {
@@ -70,8 +84,7 @@ export function AccountDialog({
         name_en: account.name_en,
         category: account.category,
         kind: account.kind,
-        owner: account.owner,
-        sharePct: Math.round((account.ownership_share ?? 1) * 100),
+        ...ownershipToForm(account.ownership, activePeople),
         sort_order: account.sort_order ?? 0,
         growthPct: account.annual_rate ? String(+(account.annual_rate * 100).toFixed(4)) : '',
         active: account.active,
@@ -85,8 +98,7 @@ export function AccountDialog({
       name_fr: '', name_en: '',
       category: first?.category ?? categoryMeta[0]?.id ?? '',
       kind: first?.kind ?? 'asset',
-      owner: first?.default_owner ?? 'self',
-      sharePct: Math.round((first?.default_ownership_share ?? 1) * 100),
+      ...ownershipToForm(migrateLegacyOwnership(first?.default_owner, first?.default_ownership_share), activePeople),
       sort_order: 0,
       growthPct: '',
       active: true,
@@ -101,6 +113,7 @@ export function AccountDialog({
   }, [open, account]);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
+  const setShare = (personId: string, pct: number) => setForm(f => ({ ...f, shares: { ...f.shares, [personId]: pct } }));
 
   const onTypeChange = (prefix: string) => {
     const type = accountTypes.find(at => at.id_prefix === prefix);
@@ -111,18 +124,24 @@ export function AccountDialog({
       type: prefix,
       category: type.category,
       kind: type.kind,
-      owner: type.default_owner || 'self',
-      sharePct: Math.round((type.default_ownership_share ?? 1) * 100),
+      ...ownershipToForm(migrateLegacyOwnership(type.default_owner, type.default_ownership_share), activePeople),
       sort_order: (orderInCat.length ? Math.max(...orderInCat) : 0) + 10,
       name_fr: f.name_fr || type.name_fr,
       name_en: f.name_en || type.name_en,
     }));
   };
 
+  const sharesTotal = activePeople.reduce((sum, p) => sum + (form.shares[p.id] ?? 0), 0);
+  const splitInvalid = form.split && sharesTotal !== 100;
+
   const handleSave = () => {
     const nameFr = form.name_fr.trim();
     const nameEn = form.name_en.trim();
     if (!nameFr && !nameEn) return;
+    if (splitInvalid) return;
+    const ownership: OwnershipEntry[] = form.split
+      ? activePeople.filter(p => (form.shares[p.id] ?? 0) > 0).map(p => ({ person_id: p.id, share: (form.shares[p.id] ?? 0) / 100 }))
+      : (form.owner ? [{ person_id: form.owner, share: 1 }] : []);
     const id = isNew ? nextId(form.type, accounts) : account!.id;
     onSave({
       id,
@@ -131,8 +150,7 @@ export function AccountDialog({
       name_en: nameEn || nameFr,
       category: form.category,
       kind: form.kind,
-      owner: form.owner,
-      ownership_share: Math.max(0, Math.min(100, Number(form.sharePct) || 0)) / 100,
+      ownership,
       active: form.active,
       sort_order: Number(form.sort_order) || 0,
       tags: form.tags,
@@ -178,16 +196,31 @@ export function AccountDialog({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <Checkbox checked={form.split} onCheckedChange={v => set('split', v)} label={t('split_ownership_label')} />
+
+        {!form.split ? (
           <Field label={t('owner_label_field')}>
             <Select value={form.owner} onValueChange={v => set('owner', v)}>
-              {OWNERS.map(o => <SelectItem key={o} value={o}>{t(OWNER_KEYS[o] ?? o)}</SelectItem>)}
+              {activePeople.map(p => <SelectItem key={p.id} value={p.id}>{p.name || p.id}</SelectItem>)}
             </Select>
           </Field>
-          <Field label={t('share_label')}>
-            <Input type="number" min={0} max={100} value={form.sharePct} onChange={e => set('sharePct', Number(e.target.value))} />
-          </Field>
-        </div>
+        ) : (
+          <div className="space-y-2 rounded-lg bg-surface-2 p-3">
+            {activePeople.map(p => (
+              <div key={p.id} className="flex items-center justify-between gap-3">
+                <Label>{p.name || p.id}</Label>
+                <Input
+                  type="number" min={0} max={100} className="w-20"
+                  value={form.shares[p.id] ?? 0}
+                  onChange={e => setShare(p.id, Number(e.target.value))}
+                />
+              </div>
+            ))}
+            <p className={`text-xs ${splitInvalid ? 'text-red' : 'text-muted'}`}>
+              {t('share_total_label', { pct: sharesTotal })}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('order_label')}>
@@ -219,7 +252,7 @@ export function AccountDialog({
           : <span />}
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" size="sm" onClick={handleSave}>{t('save_changes')}</Button>
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={splitInvalid}>{t('save_changes')}</Button>
         </div>
       </div>
     </Dialog>

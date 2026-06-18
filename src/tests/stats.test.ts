@@ -3,8 +3,8 @@ import { computeNetWorthFromSnapshots, buildBalanceSweep } from '@/utils/stats';
 import type { Account, Snapshot } from '@/types/sheets';
 
 const mkAccount = (partial: Partial<Account> & { id: string; kind: 'asset' | 'debt' }): Account => ({
-  type: '', name_fr: '', name_en: '', category: '', owner: '',
-  ownership_share: 1, active: true, sort_order: 0, tags: [], annual_rate: 0,
+  type: '', name_fr: '', name_en: '', category: '',
+  ownership: [{ person_id: 'self', share: 1 }], active: true, sort_order: 0, tags: [], annual_rate: 0,
   ...partial,
 });
 
@@ -14,21 +14,21 @@ const mkSnap = (date: string, account_id: string, balance_raw: number): Snapshot
 
 describe('computeNetWorthFromSnapshots — asset/debt sign handling', () => {
   it('sums pure assets positively', () => {
-    const accounts = [mkAccount({ id: 'a1', kind: 'asset', ownership_share: 1 })];
+    const accounts = [mkAccount({ id: 'a1', kind: 'asset', ownership: [{ person_id: 'self', share: 1 }] })];
     const snapshots = [mkSnap('2024-01-01', 'a1', 1000)];
     expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01')).toBe(1000);
   });
 
   it('subtracts debt accounts', () => {
-    const accounts = [mkAccount({ id: 'd1', kind: 'debt', ownership_share: 1 })];
+    const accounts = [mkAccount({ id: 'd1', kind: 'debt', ownership: [{ person_id: 'self', share: 1 }] })];
     const snapshots = [mkSnap('2024-01-01', 'd1', 500)];
     expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01')).toBe(-500);
   });
 
   it('nets asset and debt correctly', () => {
     const accounts = [
-      mkAccount({ id: 'a1', kind: 'asset', ownership_share: 1 }),
-      mkAccount({ id: 'd1', kind: 'debt',  ownership_share: 1 }),
+      mkAccount({ id: 'a1', kind: 'asset', ownership: [{ person_id: 'self', share: 1 }] }),
+      mkAccount({ id: 'd1', kind: 'debt',  ownership: [{ person_id: 'self', share: 1 }] }),
     ];
     const snapshots = [mkSnap('2024-01-01', 'a1', 1000), mkSnap('2024-01-01', 'd1', 500)];
     expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01')).toBe(500);
@@ -36,15 +36,15 @@ describe('computeNetWorthFromSnapshots — asset/debt sign handling', () => {
 
   it('scales by ownership_share', () => {
     const accounts = [
-      mkAccount({ id: 'a1', kind: 'asset', ownership_share: 0.5 }),
-      mkAccount({ id: 'd1', kind: 'debt',  ownership_share: 0.5 }),
+      mkAccount({ id: 'a1', kind: 'asset', ownership: [{ person_id: 'self', share: 0.5 }] }),
+      mkAccount({ id: 'd1', kind: 'debt',  ownership: [{ person_id: 'self', share: 0.5 }] }),
     ];
     const snapshots = [mkSnap('2024-01-01', 'a1', 1000), mkSnap('2024-01-01', 'd1', 400)];
     expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01')).toBe(300);
   });
 
   it('skips snapshot whose account_id is not in accounts', () => {
-    const accounts = [mkAccount({ id: 'a1', kind: 'asset', ownership_share: 1 })];
+    const accounts = [mkAccount({ id: 'a1', kind: 'asset', ownership: [{ person_id: 'self', share: 1 }] })];
     const snapshots = [mkSnap('2024-01-01', 'a1', 1000), mkSnap('2024-01-01', 'unknown', 9999)];
     expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01')).toBe(1000);
   });

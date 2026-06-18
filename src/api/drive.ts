@@ -1,5 +1,6 @@
 import seedData from '../../seed/default-accounts.json';
-import { HEADERS, SHEET_TITLE } from '@/constants';
+import { HEADERS, SHEET_TITLE, DEFAULT_PEOPLE } from '@/constants';
+import { migrateLegacyOwnership, serializeOwnership } from '@/utils/ownership';
 import cfg from '@/config';
 
 export async function verifySheet(id: string): Promise<boolean> {
@@ -35,6 +36,7 @@ export async function createSheet(): Promise<string> {
         { properties: { title: 'config' } },
         { properties: { title: 'tags' } },
         { properties: { title: 'groups' } },
+        { properties: { title: 'people' } },
         { properties: { title: 'option_companies' } },
         { properties: { title: 'option_grants' } },
         { properties: { title: 'option_fmv' } },
@@ -49,14 +51,21 @@ export async function createSheet(): Promise<string> {
 type SeedData = {
   schema_version?: number;
   accounts: Record<string, unknown>[];
+  people?: Record<string, unknown>[];
 };
 
 export async function seedNewSheet(sheetId: string): Promise<void> {
   const seed = seedData as SeedData;
   const accountRows = [
     [...HEADERS.accounts],
-    ...seed.accounts.map((a) => HEADERS.accounts.map((h) => (a[h] as string | number | boolean) ?? '')),
+    ...seed.accounts.map((a) => HEADERS.accounts.map((h) => {
+      if (h === 'ownership') return serializeOwnership(migrateLegacyOwnership(a.owner, a.ownership_share));
+      return (a[h] as string | number | boolean) ?? '';
+    })),
   ];
+  const people = seed.people?.length
+    ? seed.people.map(p => ({ ...p, sort_order: Number(p.sort_order) || 0, active: p.active !== false, primary: p.primary === true }))
+    : DEFAULT_PEOPLE;
 
   await gapi.client.sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: sheetId,
@@ -74,6 +83,10 @@ export async function seedNewSheet(sheetId: string): Promise<void> {
           ]},
         { range: 'tags!A1',             values: [[...HEADERS.tags]] },
         { range: 'groups!A1',           values: [[...HEADERS.groups]] },
+        { range: 'people!A1',           values: [
+            [...HEADERS.people],
+            ...people.map(p => [p.id as string, p.name as string, (p.email as string) ?? '', (p.color as string) ?? '', p.sort_order as number, p.active ? 'TRUE' : 'FALSE', p.primary ? 'TRUE' : 'FALSE']),
+          ]},
         { range: 'option_companies!A1', values: [[...HEADERS.option_companies]] },
         { range: 'option_grants!A1',    values: [[...HEADERS.option_grants]] },
         { range: 'option_fmv!A1',       values: [[...HEADERS.option_fmv]] },

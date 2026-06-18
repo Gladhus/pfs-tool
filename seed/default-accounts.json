@@ -2,6 +2,12 @@
   "_comment": "Default seed for new PFS sheets. The `accounts` array is the iteration-1 starter list mirroring the user's existing Historique 2020-2025 sheet (Quebec resident, dual condo + house ownership). The `categories` and `account_types` arrays drive the UI and the new-account picker.",
   "schema_version": 2,
 
+  "_people_doc": "Default household members seeded into the `people` tab on a brand-new sheet. Existing 'self'/'partner'/'joint' owner values on accounts reference these ids directly, so renaming a person here (via Settings > People) doesn't require touching any account.",
+  "people": [
+    { "id": "self",    "name": "Me",      "sort_order": 10, "active": true, "primary": true },
+    { "id": "partner", "name": "Partner", "sort_order": 20, "active": true, "primary": false }
+  ],
+
   "_categories_doc": "Each category has id, name_fr, name_en, sort_order, kind, and an optional `group` + `group_sort` for future custom grouping (e.g., 'Liquid Assets' grouping cash+investments). Today the group fields are unused at runtime but persisted so future versions can render group headers without a data migration.",
   "categories": [
     { "id": "cash",              "name_fr": "Liquidités",          "name_en": "Cash",               "kind": "asset", "sort_order": 10, "group": "liquid",     "group_sort": 10 },

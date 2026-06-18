@@ -6,6 +6,12 @@ export interface FxRate {
   usd_cad: number;
 }
 
+/** One person's claim on an account. Shares across an account's `ownership` array sum to 1. */
+export interface OwnershipEntry {
+  person_id: string;
+  share: number;
+}
+
 export interface Account {
   id: string;
   type: string;
@@ -13,14 +19,25 @@ export interface Account {
   name_en: string;
   category: string;
   kind: 'asset' | 'debt';
-  owner: string;
-  ownership_share: number;
+  ownership: OwnershipEntry[];
   active: boolean;
   sort_order: number;
   tags: string[];
   annual_rate: number;
   /** Account's native currency. Absent on legacy rows → treated as the main currency. */
   currency?: Currency;
+}
+
+/** A household member who can own (a share of) an account. Referenced by Account.ownership entries. */
+export interface Person {
+  id: string;
+  name: string;
+  email?: string;
+  color?: string;
+  sort_order: number;
+  active: boolean;
+  /** The sheet's primary owner (seeded as 'self'). Can't be archived. */
+  primary: boolean;
 }
 
 export interface Snapshot {

@@ -2,10 +2,12 @@ import { useTranslation } from 'react-i18next';
 import { tr } from '@/i18n';
 import { fmtMoney, parseMoney } from '@/utils/format';
 import { Amount } from '@/ui/Amount';
-import type { Account, Currency } from '@/types/sheets';
+import { ownershipLabel } from '@/utils/ownership';
+import type { Account, Currency, Person } from '@/types/sheets';
 
 interface Props {
   account: Account;
+  people: Person[];
   balance: string;
   comment: string;
   prevValue: number | null;
@@ -17,14 +19,9 @@ interface Props {
   onEnter: () => void;
 }
 
-const OWNER_KEYS: Record<string, string> = {
-  self: 'owner_self',
-  partner: 'owner_partner',
-  joint: 'owner_joint',
-};
-
 export function EntryAccountRow({
   account,
+  people,
   balance,
   comment,
   prevValue,
@@ -37,8 +34,7 @@ export function EntryAccountRow({
 }: Props) {
   const { t } = useTranslation();
 
-  const ownerLbl = OWNER_KEYS[account.owner] ? t(OWNER_KEYS[account.owner]) : account.owner;
-  const sharePct = Math.round((account.ownership_share ?? 1) * 100);
+  const ownerLbl = ownershipLabel(account.ownership, people, t('owner_joint'));
 
   const current = parseMoney(balance);
   let arrow = '';
@@ -67,7 +63,7 @@ export function EntryAccountRow({
       {/* Col 1: account name + owner */}
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-sm text-fg">{tr(account)}</span>
-        <span className="text-xs text-muted">{ownerLbl} · {sharePct}%</span>
+        <span className="text-xs text-muted">{ownerLbl}</span>
       </div>
 
       {/* Col 2: optional projected button + balance input + prev value */}

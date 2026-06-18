@@ -17,6 +17,7 @@ import EntryPage from '@/pages/entry/EntryPage';
 import { AccountsSection } from '@/pages/settings/sections/AccountsSection';
 import { PreferencesSection } from '@/pages/settings/sections/PreferencesSection';
 import { GroupsSection } from '@/pages/settings/sections/GroupsSection';
+import { PeopleSection } from '@/pages/settings/sections/PeopleSection';
 import { ImportSection } from '@/pages/settings/sections/ImportSection';
 import OptionsPage from '@/pages/options/OptionsPage';
 import OptionsManagePage from '@/pages/options/OptionsManagePage';
@@ -78,6 +79,7 @@ export const router = createBrowserRouter(
                   children: [
                     { index: true, element: <PreferencesSection /> },
                     { path: 'groups', element: <GroupsSection /> },
+                    { path: 'people', element: <PeopleSection /> },
                     { path: 'import', element: <ImportSection /> },
                   ],
                 },

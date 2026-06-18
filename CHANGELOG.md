@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.0) — 2026-06-18
+
+### Added
+- **Person model** — accounts and the sheet/XLSX schema now reference a `people` entity (`Person`), with a dedicated `people` tab/sheet and lazy migration seeding `self`/`partner` defaults on first load
+- **Multi-owner ownership array** — `Account.ownership` is now `{ person_id, share }[]`, replacing the single `owner`/`ownership_share` fields and the `'joint'` sentinel; legacy sheets and XLSX files are migrated and written back automatically on load
+- **Split ownership editor** — the account dialog keeps its single-owner picker by default, with a "split between multiple people" toggle that reveals a per-person share editor (validated to total 100%)
+- **Primary owner flag** — `Person.primary` marks the sheet's primary owner (seeded on `self`); enforced in the People settings UI, which now also shows a "Primary owner" badge
+- **Test backfill for the person/ownership feature** — 35 new unit tests across 3 new files: `ownership.test.ts` (`parseOwnership`, `migrateLegacyOwnership`, `ownershipFromRow`, `shareFor`/`totalShare`, `ensurePrimaryPerson`, `ownershipLabel`), `parsePeople.test.ts` (people/account row round-trips, legacy column fallback), and `loadPeopleCatalog.test.ts` (seeds defaults on a missing/empty people tab, but rethrows transient 5xx/429 errors instead of overwriting real data)
+- **Playwright e2e coverage** — `e2e/people.spec.ts` covers the People settings UI (primary badge, archive guard, archive/reactivate, add person) via the offline XLSX flow; `e2e/migration.spec.ts` uploads an old-schema XLSX fixture (no `people` tab, legacy `owner`/`ownership_share` columns) and confirms it migrates to seeded defaults and per-person ownership labels, surviving a reload
+- **PR CI workflow** — `.github/workflows/pr-checks.yml` now runs lint, `tsc --noEmit`, unit tests, and the Playwright suite on every pull request to `main`; previously only `deploy.yml` ran checks, and only on pushes to `main`/tags
+
+### Changed
+- **Net worth math now reads `ownership`** — `signedMain` computes each account's contribution using the new ownership array (still scoped to the `self` viewer until per-person viewing is built)
+
+### Fixed
+- **People-tab data loss on transient API errors** — `loadPeopleCatalog` only seeds `self`/`partner` defaults on a confirmed 400 ("tab missing") response; a 5xx or 429 error is now rethrown instead of silently overwriting real people data
+- **Primary owner can't be archived** — archiving the primary person is blocked in the People settings dialog, with an explanatory message in place of the Archive button
+
 ## [2.1.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.1.0) — 2026-06-09
 
 ### Added

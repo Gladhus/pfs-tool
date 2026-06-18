@@ -1,4 +1,4 @@
-import type { Account, Snapshot, AppConfig, Tag, Group, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 
 export interface Datasource {
   readonly id: string;
@@ -9,6 +9,7 @@ export interface Datasource {
   loadConfig(): Promise<Partial<AppConfig>>;
   loadTags(): Promise<Tag[]>;
   loadGroups(): Promise<Group[]>;
+  loadPeople(): Promise<Person[]>;
   loadFxRates(): Promise<FxRate[]>;
   loadOptionCompanies(): Promise<OptionCompany[]>;
   loadOptionGrants(): Promise<OptionGrant[]>;
@@ -20,6 +21,7 @@ export interface Datasource {
   writeConfig(key: keyof AppConfig, value: string): Promise<void>;
   writeTags(tags: Tag[]): Promise<void>;
   writeGroups(groups: Group[]): Promise<void>;
+  writePeople(people: Person[]): Promise<void>;
   writeFxRates(rates: FxRate[]): Promise<void>;
   writeOptionCompanies(items: OptionCompany[]): Promise<void>;
   writeOptionGrants(items: OptionGrant[]): Promise<void>;

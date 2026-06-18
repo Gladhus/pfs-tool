@@ -6,6 +6,7 @@ export const qk = {
   config:        (s: string) => ['sheet', s, 'config'] as const,
   tags:          (s: string) => ['sheet', s, 'tags'] as const,
   groups:        (s: string) => ['sheet', s, 'groups'] as const,
+  people:        (s: string) => ['sheet', s, 'people'] as const,
   optCompanies:  (s: string) => ['sheet', s, 'option_companies'] as const,
   optGrants:     (s: string) => ['sheet', s, 'option_grants'] as const,
   optFmv:        (s: string) => ['sheet', s, 'option_fmv'] as const,

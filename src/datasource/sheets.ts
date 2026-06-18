@@ -1,10 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Datasource } from './types';
-import type { Account, Snapshot, AppConfig, Tag, Group, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 import { loadAccounts, loadSnapshots } from '@/api/accounts';
 import { loadConfig, writeConfig } from '@/api/config';
 import { loadTagsCatalog, writeTagsCatalog } from '@/api/tags';
 import { loadGroupsCatalog, writeGroupsCatalog } from '@/api/groups';
+import { loadPeopleCatalog, writePeopleCatalog } from '@/api/people';
 import { loadFxRates, writeFxRates } from '@/api/fx';
 import { loadOptionCompanies, loadOptionGrants, loadOptionFmv, loadOptionExercises, writeOptionCompanies, writeOptionGrants, writeOptionFmv, writeOptionExercises } from '@/api/options';
 import { safeWriteTab } from '@/api/sheets';
@@ -29,6 +30,7 @@ export class SheetsDatasource implements Datasource {
   loadConfig()          { return loadConfig(this.id); }
   loadTags()            { return loadTagsCatalog(this.id); }
   loadGroups()          { return loadGroupsCatalog(this.id); }
+  loadPeople()          { return loadPeopleCatalog(this.id); }
   loadFxRates()         { return loadFxRates(this.id); }
   loadOptionCompanies() { return loadOptionCompanies(this.id); }
   loadOptionGrants()    { return loadOptionGrants(this.id); }
@@ -55,6 +57,10 @@ export class SheetsDatasource implements Datasource {
 
   async writeGroups(groups: Group[]): Promise<void> {
     await writeGroupsCatalog(this.id, groups, this.prev(qk.groups(this.id)));
+  }
+
+  async writePeople(people: Person[]): Promise<void> {
+    await writePeopleCatalog(this.id, people, this.prev(qk.people(this.id)));
   }
 
   async writeFxRates(rates: FxRate[]): Promise<void> {

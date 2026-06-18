@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDatasourceStore } from '@/stores/datasource.store';
 import { qk } from './keys';
-import type { Account, Snapshot, Tag, Group, AppConfig, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, Tag, Group, Person, AppConfig, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 
 function useDatasource() {
   return useDatasourceStore(s => s.datasource)!;
@@ -117,6 +117,16 @@ export function useWriteGroupsMutation() {
   return useMutation({
     mutationFn: (groups: Group[]) => ds.writeGroups(groups),
     onSuccess: () => void qc.invalidateQueries({ queryKey: qk.groups(ds.id) }),
+  });
+}
+
+// ── People ──────────────────────────────────────────────────────────────
+export function useWritePeopleMutation() {
+  const qc = useQueryClient();
+  const ds = useDatasource();
+  return useMutation({
+    mutationFn: (people: Person[]) => ds.writePeople(people),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.people(ds.id) }),
   });
 }
 

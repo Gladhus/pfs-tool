@@ -1,13 +1,14 @@
 import * as XLSX from 'xlsx';
 import type { Datasource } from './types';
-import type { Account, Snapshot, AppConfig, Tag, Group, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
-import { HEADERS } from '@/constants';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import { HEADERS, DEFAULT_PEOPLE } from '@/constants';
+import { ensurePrimaryPerson } from '@/utils/ownership';
 import {
   parseAccountRows, parseSnapshotRows, parseConfigRows,
-  parseTagRows, parseGroupRows, parseFxRateRows,
+  parseTagRows, parseGroupRows, parsePeopleRows, parseFxRateRows,
   parseOptionCompanyRows, parseOptionGrantRows, parseOptionFmvRows, parseOptionExerciseRows,
   serializeAccounts, serializeSnapshots, serializeConfig,
-  serializeTags, serializeGroups, serializeFxRates,
+  serializeTags, serializeGroups, serializePeople, serializeFxRates,
   serializeOptionCompanies, serializeOptionGrants, serializeOptionFmv, serializeOptionExercises,
 } from './parse';
 
@@ -67,6 +68,7 @@ export class XlsxDatasource implements Datasource {
       ['config',           HEADERS.config],
       ['tags',             HEADERS.tags],
       ['groups',           HEADERS.groups],
+      ['people',           HEADERS.people],
       ['fx_rates',         HEADERS.fx_rates],
       ['option_companies', HEADERS.option_companies],
       ['option_grants',    HEADERS.option_grants],
@@ -76,7 +78,9 @@ export class XlsxDatasource implements Datasource {
     for (const [name, headers] of tabs) {
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[...headers]]), name);
     }
-    return new XlsxDatasource(wb, filename);
+    const ds = new XlsxDatasource(wb, filename);
+    ds.write('people', serializePeople(DEFAULT_PEOPLE));
+    return ds;
   }
 
   private read(tab: string): unknown[][] {
@@ -89,11 +93,25 @@ export class XlsxDatasource implements Datasource {
     this.saveToSession();
   }
 
-  loadAccounts()        { return Promise.resolve(parseAccountRows(this.read('accounts'))); }
+  loadAccounts() {
+    const rows = this.read('accounts');
+    const accounts = parseAccountRows(rows);
+    const headers = (rows[0] as string[] | undefined) ?? [];
+    if (rows.length >= 2 && !headers.includes('ownership')) {
+      this.write('accounts', serializeAccounts(accounts));
+    }
+    return Promise.resolve(accounts);
+  }
   loadSnapshots()       { return Promise.resolve(parseSnapshotRows(this.read('snapshots'))); }
   loadConfig()          { return Promise.resolve(parseConfigRows(this.read('config'))); }
   loadTags()            { return Promise.resolve(parseTagRows(this.read('tags'))); }
   loadGroups()          { return Promise.resolve(parseGroupRows(this.read('groups'))); }
+  loadPeople() {
+    const people = parsePeopleRows(this.read('people'));
+    if (people.length) return Promise.resolve(ensurePrimaryPerson(people));
+    this.write('people', serializePeople(DEFAULT_PEOPLE));
+    return Promise.resolve(DEFAULT_PEOPLE);
+  }
   loadFxRates()         { return Promise.resolve(parseFxRateRows(this.read('fx_rates'))); }
   loadOptionCompanies() { return Promise.resolve(parseOptionCompanyRows(this.read('option_companies'))); }
   loadOptionGrants()    { return Promise.resolve(parseOptionGrantRows(this.read('option_grants'))); }
@@ -104,6 +122,7 @@ export class XlsxDatasource implements Datasource {
   async writeSnapshots(snapshots: Snapshot[])     { this.write('snapshots', serializeSnapshots(snapshots)); }
   async writeTags(tags: Tag[])                    { this.write('tags', serializeTags(tags)); }
   async writeGroups(groups: Group[])              { this.write('groups', serializeGroups(groups)); }
+  async writePeople(people: Person[])             { this.write('people', serializePeople(people)); }
   async writeFxRates(rates: FxRate[])             { this.write('fx_rates', serializeFxRates(rates)); }
   async writeOptionCompanies(items: OptionCompany[]) { this.write('option_companies', serializeOptionCompanies(items)); }
   async writeOptionGrants(items: OptionGrant[])   { this.write('option_grants', serializeOptionGrants(items)); }

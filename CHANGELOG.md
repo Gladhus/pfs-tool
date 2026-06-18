@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.0) — 2026-06-18
+
+### Added
+- **Person model** — accounts and the sheet/XLSX schema now reference a `people` entity (`Person`), with a dedicated `people` tab/sheet and lazy migration seeding `self`/`partner` defaults on first load
+- **Multi-owner ownership array** — `Account.ownership` is now `{ person_id, share }[]`, replacing the single `owner`/`ownership_share` fields and the `'joint'` sentinel; legacy sheets and XLSX files are migrated and written back automatically on load
+- **Split ownership editor** — the account dialog keeps its single-owner picker by default, with a "split between multiple people" toggle that reveals a per-person share editor (validated to total 100%)
+
+### Changed
+- **Net worth math now reads `ownership`** — `signedMain` computes each account's contribution using the new ownership array (still scoped to the `self` viewer until per-person viewing is built)
+
 ## [2.1.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.1.0) — 2026-06-09
 
 ### Added

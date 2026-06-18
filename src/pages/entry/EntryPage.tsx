@@ -42,6 +42,7 @@ export default function EntryPage() {
   const lang = useUIStore(s => s.lang);
   const locale = lang === 'fr' ? 'fr' : 'en';
   const privateMode = useUIStore(s => s.privateMode);
+  const viewer = useUIStore(s => s.currentViewer);
   const addToast = useToastStore(s => s.addToast);
 
   const accountsQ = useAccountsQuery();
@@ -139,16 +140,16 @@ export default function EntryPage() {
       if (parsed !== null) { filled++; balance = parsed; }
       else if (prevBalances[a.id] !== undefined) { balance = prevBalances[a.id]; usingFallback = true; }
       else continue;
-      const signed = signedMain(a, balance, mainCurrency, usdCad);
+      const signed = signedMain(a, balance, mainCurrency, usdCad, viewer);
       byCategory[a.category] = (byCategory[a.category] ?? 0) + signed;
       netWorth += signed;
     }
     return { byCategory, netWorth, filled, total: active.length, usingFallback };
-  }, [active, form, prevBalances, date, mainCurrency, fxRateMap]);
+  }, [active, form, prevBalances, date, mainCurrency, fxRateMap, viewer]);
 
   const prevNet = useMemo(
-    () => (prevD ? computeNetWorthFromSnapshots(snapshots, accounts, prevD, mainCurrency, fxRateMap) : null),
-    [prevD, snapshots, accounts, mainCurrency, fxRateMap],
+    () => (prevD ? computeNetWorthFromSnapshots(snapshots, accounts, prevD, mainCurrency, fxRateMap, viewer) : null),
+    [prevD, snapshots, accounts, mainCurrency, fxRateMap, viewer],
   );
 
   const daysSincePrev = useMemo(() => {

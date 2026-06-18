@@ -197,6 +197,8 @@
   "reactivate_person": "Réactiver",
   "primary_person_label": "Propriétaire principal",
   "cannot_archive_primary": "Le propriétaire principal de la feuille ne peut pas être archivé.",
+  "viewer_select_label": "Afficher comme",
+  "viewer_household": "Foyer (combiné)",
   "person_saved": "Personne enregistrée.",
   "person_archived": "Personne archivée.",
   "person_reactivated": "Personne réactivée.",

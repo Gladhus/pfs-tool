@@ -9,6 +9,7 @@ import { foldCategoryId, accountMatchesGroup, groupColor } from '@/utils/colors'
 import { categoryKey } from '@/utils/icons';
 import { computeCompanyEquityValue } from '@/utils/options';
 import { signedMain, toMain, rateFor } from '@/utils/currency';
+import { LEGACY_SELF_ID } from '@/utils/ownership';
 import type { Currency } from '@/types/sheets';
 import { tr } from '@/i18n';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +32,7 @@ interface Props {
   optionData?: EquityData;
   main: Currency;
   fxMap: Map<string, number>;
+  viewer?: string;
   equityValue?: number;
   prevEquityValue?: number | null;
   period: string;
@@ -59,6 +61,7 @@ function buildCategorySpark(
   sparkDates: string[],
   main: Currency,
   fxMap: Map<string, number>,
+  viewer: string = LEGACY_SELF_ID,
 ): number[] {
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
   return trimLeading(sweepForSpark.map((balances, i) => {
@@ -68,7 +71,7 @@ function buildCategorySpark(
     for (const [id, balance_raw] of Object.entries(balances)) {
       const a = acctById[id];
       if (!a || foldCategoryId(a.category) !== catId) continue;
-      total += signedMain(a, balance_raw, main, usdCad);
+      total += signedMain(a, balance_raw, main, usdCad, viewer);
       has = true;
     }
     return { total, has };
@@ -83,6 +86,7 @@ function buildGroupSpark(
   main: Currency,
   fxMap: Map<string, number>,
   optionData?: EquityData,
+  viewer: string = LEGACY_SELF_ID,
 ): number[] {
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
   return trimLeading(sweepForSpark.map((balances, i) => {
@@ -92,7 +96,7 @@ function buildGroupSpark(
     for (const [id, balance_raw] of Object.entries(balances)) {
       const a = acctById[id];
       if (!a || !accountMatchesGroup(a, group)) continue;
-      total += signedMain(a, balance_raw, main, usdCad);
+      total += signedMain(a, balance_raw, main, usdCad, viewer);
       has = true;
     }
     if (optionData) {
@@ -120,6 +124,7 @@ export function StatCardGrid({
   optionData,
   main,
   fxMap,
+  viewer = LEGACY_SELF_ID,
   equityValue,
   prevEquityValue,
   period,
@@ -132,15 +137,15 @@ export function StatCardGrid({
 
   const catSparks = useMemo(() =>
     effectiveCats.reduce<Record<string, number[]>>((acc, cat) => {
-      acc[cat.id] = buildCategorySpark(cat.id, accounts, sweepForSpark, sparkDates, main, fxMap);
+      acc[cat.id] = buildCategorySpark(cat.id, accounts, sweepForSpark, sparkDates, main, fxMap, viewer);
       return acc;
     }, {}),
-    [effectiveCats, accounts, sweepForSpark, sparkDates, main, fxMap],
+    [effectiveCats, accounts, sweepForSpark, sparkDates, main, fxMap, viewer],
   );
 
   const groupSparks = useMemo(() =>
-    groupStats.map(({ group }) => buildGroupSpark(group, accounts, sweepForSpark, sparkDates, main, fxMap, optionData)),
-    [groupStats, accounts, sweepForSpark, sparkDates, main, fxMap, optionData],
+    groupStats.map(({ group }) => buildGroupSpark(group, accounts, sweepForSpark, sparkDates, main, fxMap, optionData, viewer)),
+    [groupStats, accounts, sweepForSpark, sparkDates, main, fxMap, optionData, viewer],
   );
 
   const equitySpark = useMemo(() => {

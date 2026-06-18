@@ -8,6 +8,15 @@ const triggerCls =
   'disabled:opacity-50 disabled:cursor-not-allowed ' +
   'data-[placeholder]:text-muted';
 
+/** Variant for placement on the always-dark site header, instead of the theme-aware surface colors. */
+const headerTriggerCls =
+  'h-8 rounded-lg border border-white/15 bg-white/10 px-2.5 text-sm text-white/90 ' +
+  'inline-flex items-center justify-between gap-1.5 ' +
+  'hover:bg-white/15 transition-colors ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed ' +
+  'data-[placeholder]:text-white/60';
+
 const contentCls =
   'z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg ' +
   'border border-border bg-surface-3 shadow-lg ' +
@@ -27,16 +36,22 @@ interface SelectProps {
   defaultValue?: string;
   disabled?: boolean;
   placeholder?: string;
+  variant?: 'default' | 'header';
+  'aria-label'?: string;
   children: React.ReactNode;
 }
 
-export function Select({ value, onValueChange, defaultValue, disabled, placeholder, children }: SelectProps) {
+export function Select({ value, onValueChange, defaultValue, disabled, placeholder, variant = 'default', children, ...rest }: SelectProps) {
   return (
     <RadixSelect.Root value={value} onValueChange={onValueChange} defaultValue={defaultValue}>
-      <RadixSelect.Trigger className={triggerCls} disabled={disabled}>
+      <RadixSelect.Trigger
+        className={variant === 'header' ? headerTriggerCls : triggerCls}
+        disabled={disabled}
+        aria-label={rest['aria-label']}
+      >
         <RadixSelect.Value placeholder={placeholder ?? '—'} />
         <RadixSelect.Icon asChild>
-          <ChevronDown size={14} className="text-muted shrink-0" />
+          <ChevronDown size={14} className={variant === 'header' ? 'text-white/60 shrink-0' : 'text-muted shrink-0'} />
         </RadixSelect.Icon>
       </RadixSelect.Trigger>
       <RadixSelect.Portal>

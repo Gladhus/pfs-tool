@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeNetWorthFromSnapshots, buildBalanceSweep } from '@/utils/stats';
+import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
 import type { Account, Snapshot } from '@/types/sheets';
 
 const mkAccount = (partial: Partial<Account> & { id: string; kind: 'asset' | 'debt' }): Account => ({
@@ -47,6 +48,25 @@ describe('computeNetWorthFromSnapshots — asset/debt sign handling', () => {
     const accounts = [mkAccount({ id: 'a1', kind: 'asset', ownership: [{ person_id: 'self', share: 1 }] })];
     const snapshots = [mkSnap('2024-01-01', 'a1', 1000), mkSnap('2024-01-01', 'unknown', 9999)];
     expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01')).toBe(1000);
+  });
+});
+
+describe('computeNetWorthFromSnapshots — viewer argument', () => {
+  const accounts = [
+    mkAccount({ id: 'a1', kind: 'asset', ownership: [{ person_id: 'self', share: 0.6 }, { person_id: 'partner', share: 0.4 }] }),
+  ];
+  const snapshots = [mkSnap('2024-01-01', 'a1', 1000)];
+
+  it('defaults to the legacy self-only view when no viewer is passed', () => {
+    expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01')).toBe(600);
+  });
+
+  it("scopes the total to the given person's share", () => {
+    expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01', 'CAD', undefined, 'partner')).toBe(400);
+  });
+
+  it('HOUSEHOLD_VIEWER combines every owner\'s share', () => {
+    expect(computeNetWorthFromSnapshots(snapshots, accounts, '2024-01-01', 'CAD', undefined, HOUSEHOLD_VIEWER)).toBe(1000);
   });
 });
 

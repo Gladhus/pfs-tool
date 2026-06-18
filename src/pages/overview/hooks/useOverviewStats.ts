@@ -5,6 +5,7 @@ import { todayISO } from '@/utils/dates';
 import { computeCompanyEquityValue } from '@/utils/options';
 import { foldCategoryId, accountMatchesGroup, groupColor } from '@/utils/colors';
 import { signedMain, toMain, rateFor } from '@/utils/currency';
+import { LEGACY_SELF_ID } from '@/utils/ownership';
 import { tr } from '@/i18n';
 
 export interface EquityData {
@@ -47,8 +48,9 @@ function foldedStatsFor(
   fxMap: Map<string, number>,
   optionData?: EquityData,
   equityDate: string = date,
+  viewer: string = LEGACY_SELF_ID,
 ): { netWorth: number; byCategory: Record<string, number> } {
-  const raw = computeDateStats(snapshots, accounts, date, main, fxMap, optionData, equityDate);
+  const raw = computeDateStats(snapshots, accounts, date, main, fxMap, optionData, equityDate, viewer);
   const byCategory: Record<string, number> = {};
   for (const [k, v] of Object.entries(raw.byCategory)) {
     const fk = foldCategoryId(k);
@@ -66,6 +68,7 @@ function groupStatsFor(
   fxMap: Map<string, number>,
   optionData?: EquityData,
   equityDate: string = date,
+  viewer: string = LEGACY_SELF_ID,
 ): number {
   const balances = buildEffectiveBalances(snapshots, date);
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
@@ -74,7 +77,7 @@ function groupStatsFor(
   for (const [id, balance_raw] of Object.entries(balances)) {
     const a = acctById[id];
     if (!a || !accountMatchesGroup(a, group)) continue;
-    total += signedMain(a, balance_raw, main, usdCad);
+    total += signedMain(a, balance_raw, main, usdCad, viewer);
   }
   // Roll in equity for any company whose tags match this group (valued at the equity
   // date, converted from its currency at that date's rate).
@@ -104,6 +107,7 @@ interface Params {
   stockOptEnabled: boolean;
   main: Currency;
   fxMap: Map<string, number>;
+  viewer?: string;
 }
 
 export function useOverviewStats({
@@ -119,6 +123,7 @@ export function useOverviewStats({
   stockOptEnabled,
   main,
   fxMap,
+  viewer = LEGACY_SELF_ID,
 }: Params): OverviewStats {
   return useMemo(() => {
     const latestDate = filteredDates.length
@@ -132,10 +137,10 @@ export function useOverviewStats({
     // date. Period baselines keep equity at the historical ref date so deltas reflect growth.
     const today = todayISO();
     const current = latestDate
-      ? foldedStatsFor(latestDate, snapshots, accounts, main, fxMap, optionData, today)
+      ? foldedStatsFor(latestDate, snapshots, accounts, main, fxMap, optionData, today, viewer)
       : { netWorth: 0, byCategory: {} as Record<string, number> };
     const periodRef = periodRefDate
-      ? foldedStatsFor(periodRefDate, snapshots, accounts, main, fxMap, optionData)
+      ? foldedStatsFor(periodRefDate, snapshots, accounts, main, fxMap, optionData, periodRefDate, viewer)
       : null;
 
     const effectiveCats = categoryMeta
@@ -153,8 +158,8 @@ export function useOverviewStats({
 
     const groupStats = groups.map(g => ({
       group: g,
-      value: latestDate ? groupStatsFor(latestDate, g, snapshots, accounts, main, fxMap, optionData, today) : 0,
-      prevValue: periodRefDate ? groupStatsFor(periodRefDate, g, snapshots, accounts, main, fxMap, optionData) : null,
+      value: latestDate ? groupStatsFor(latestDate, g, snapshots, accounts, main, fxMap, optionData, today, viewer) : 0,
+      prevValue: periodRefDate ? groupStatsFor(periodRefDate, g, snapshots, accounts, main, fxMap, optionData, periodRefDate, viewer) : null,
     }));
 
     // Sparklines follow the selected period; fall back to the last 24 entries
@@ -231,7 +236,7 @@ export function useOverviewStats({
         const a = acctById[acctId];
         if (!a) continue;
         dayHasAny = true;
-        const signed = signedMain(a, balance_raw, main, usdCad);
+        const signed = signedMain(a, balance_raw, main, usdCad, viewer);
         net[i] += signed;
         for (let b = 0; b < buckets.length; b++) {
           if (b === equityBucketIdx) continue;
@@ -324,6 +329,6 @@ export function useOverviewStats({
     };
   }, [
     snapshots, accounts, categoryMeta, groups, optionData,
-    filteredDates, datesSorted, view, seriesVisible, stockOptEnabled, main, fxMap,
+    filteredDates, datesSorted, view, seriesVisible, stockOptEnabled, main, fxMap, viewer,
   ]);
 }

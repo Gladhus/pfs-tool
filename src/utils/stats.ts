@@ -3,6 +3,7 @@ import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/ty
 import { buildXAxisTicks } from './dates';
 import { computeCompanyEquityValue } from './options';
 import { signedMain, toMain, rateFor } from './currency';
+import { LEGACY_SELF_ID } from './ownership';
 
 export { buildXAxisTicks };
 
@@ -63,6 +64,7 @@ export function computeNetWorthFromSnapshots(
   date: string,
   main: Currency = 'CAD',
   fxMap?: Map<string, number>,
+  viewer: string = LEGACY_SELF_ID,
 ): number {
   const balances = buildEffectiveBalances(snapshots, date);
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
@@ -71,7 +73,7 @@ export function computeNetWorthFromSnapshots(
   for (const [id, balance_raw] of Object.entries(balances)) {
     const a = acctById[id];
     if (!a) continue;
-    total += signedMain(a, balance_raw, main, usdCad);
+    total += signedMain(a, balance_raw, main, usdCad, viewer);
   }
   return total;
 }
@@ -96,6 +98,7 @@ export function computeDateStats(
    * while accounts stay at their snapshot `date`. Defaults to `date`.
    */
   equityDate: string = date,
+  viewer: string = LEGACY_SELF_ID,
 ): { netWorth: number; byCategory: Record<string, number> } {
   const balances = buildEffectiveBalances(snapshots, date);
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
@@ -105,7 +108,7 @@ export function computeDateStats(
   for (const [id, balance_raw] of Object.entries(balances)) {
     const a = acctById[id];
     if (!a) continue;
-    const signed = signedMain(a, balance_raw, main, usdCad);
+    const signed = signedMain(a, balance_raw, main, usdCad, viewer);
     netWorth += signed;
     byCategory[a.category] = (byCategory[a.category] ?? 0) + signed;
   }

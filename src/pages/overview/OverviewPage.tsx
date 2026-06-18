@@ -37,6 +37,7 @@ export default function OverviewPage() {
   const ovView = useUIStore(s => s.ovView);
   const seriesVisible = useUIStore(s => s.ovSeriesVisible);
   const setOvView = useUIStore(s => s.setOvView);
+  const viewer = useUIStore(s => s.currentViewer);
 
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
 
@@ -99,6 +100,7 @@ export default function OverviewPage() {
     stockOptEnabled,
     main: mainCurrency,
     fxMap: fxRateMap,
+    viewer,
   });
 
   const catColor = (id?: string): string =>
@@ -187,6 +189,7 @@ export default function OverviewPage() {
           optionData={optionData}
           main={mainCurrency}
           fxMap={fxRateMap}
+          viewer={viewer}
           equityValue={stats.byCategory['equity']}
           prevEquityValue={stats.prevByCategory?.['equity']}
           period={period}

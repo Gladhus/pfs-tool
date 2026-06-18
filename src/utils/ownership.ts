@@ -5,6 +5,9 @@ export const LEGACY_SELF_ID = 'self';
 export const LEGACY_PARTNER_ID = 'partner';
 export const LEGACY_JOINT_OWNER = 'joint';
 
+/** Sentinel "viewer" representing the whole household (every owner combined), rather than one person. */
+export const HOUSEHOLD_VIEWER = '__household__';
+
 export function parseOwnership(raw: unknown): OwnershipEntry[] {
   if (Array.isArray(raw)) {
     return raw
@@ -51,6 +54,11 @@ export function shareFor(ownership: OwnershipEntry[], personId: string): number 
 
 export function totalShare(ownership: OwnershipEntry[]): number {
   return ownership.reduce((sum, o) => sum + o.share, 0);
+}
+
+/** A viewer's share of an account: one person's share, or everyone's combined for HOUSEHOLD_VIEWER. */
+export function viewerShare(ownership: OwnershipEntry[], viewer: string): number {
+  return viewer === HOUSEHOLD_VIEWER ? totalShare(ownership) : shareFor(ownership, viewer);
 }
 
 /**

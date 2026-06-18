@@ -4,7 +4,10 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useAuthStore, selectIsSignedIn } from '@/stores/auth.store';
 import { useDatasourceStore } from '@/stores/datasource.store';
 import { useUIStore } from '@/stores/ui.store';
+import { usePeopleQuery } from '@/queries/sheetQueries';
+import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
 import { Icon } from '@/ui/Icon';
+import { Select, SelectItem } from '@/ui/Select';
 import { todayISO } from '@/utils/dates';
 import NavTabs from './NavTabs';
 
@@ -17,6 +20,10 @@ export default function Header() {
   const hasDatasource = useDatasourceStore(s => s.datasource !== null);
   const privateMode = useUIStore((s) => s.privateMode);
   const togglePrivateMode = useUIStore((s) => s.togglePrivateMode);
+  const currentViewer = useUIStore((s) => s.currentViewer);
+  const setCurrentViewer = useUIStore((s) => s.setCurrentViewer);
+  const peopleQ = usePeopleQuery();
+  const activePeople = (peopleQ.data ?? []).filter(p => p.active);
 
   return (
     <header className="sticky top-0 z-40 bg-header border-b border-white/10 px-4 h-16 md:h-14 flex items-center gap-6">
@@ -39,6 +46,21 @@ export default function Header() {
       <div className="flex items-center gap-2">
         {hasDatasource ? (
           <>
+            {activePeople.length > 1 && (
+              <div className="hidden sm:block w-40">
+                <Select
+                  variant="header"
+                  value={currentViewer}
+                  onValueChange={setCurrentViewer}
+                  aria-label={t('viewer_select_label')}
+                >
+                  {activePeople.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name || p.id}</SelectItem>
+                  ))}
+                  <SelectItem value={HOUSEHOLD_VIEWER}>{t('viewer_household')}</SelectItem>
+                </Select>
+              </div>
+            )}
             <Link
               to={`/entry/${todayISO()}`}
               aria-label="New entry"

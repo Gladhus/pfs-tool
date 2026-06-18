@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 import { useDialogStore } from '@/stores/dialog.store';
+import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/utils/ownership';
 
 beforeEach(() => {
   useAuthStore.setState({
@@ -9,7 +10,7 @@ beforeEach(() => {
     sheetId: null, userEmail: null, isBootstrapping: false,
     isDataLoaded: false, sessionRestoreAttempted: false, bootstrapError: null,
   });
-  useUIStore.setState({ privateMode: false, lang: 'en', theme: 'system', ovSeriesVisible: {}, ovView: 'category' });
+  useUIStore.setState({ privateMode: false, lang: 'en', theme: 'system', ovSeriesVisible: {}, ovView: 'category', currentViewer: LEGACY_SELF_ID });
   useDialogStore.setState({ activeDialog: null, onConfirm: null });
 });
 
@@ -58,6 +59,17 @@ describe('ui.store', () => {
   it('setTheme changes theme', () => {
     useUIStore.getState().setTheme('dark');
     expect(useUIStore.getState().theme).toBe('dark');
+  });
+
+  it('currentViewer defaults to the legacy self id', () => {
+    expect(useUIStore.getState().currentViewer).toBe(LEGACY_SELF_ID);
+  });
+
+  it('setCurrentViewer switches to another person or the household sentinel', () => {
+    useUIStore.getState().setCurrentViewer('partner');
+    expect(useUIStore.getState().currentViewer).toBe('partner');
+    useUIStore.getState().setCurrentViewer(HOUSEHOLD_VIEWER);
+    expect(useUIStore.getState().currentViewer).toBe(HOUSEHOLD_VIEWER);
   });
 });
 

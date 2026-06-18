@@ -11,24 +11,24 @@ test.describe('People settings', () => {
   });
 
   test('lists the default Me/Partner people, with Me flagged as primary', async ({ page }) => {
-    await expect(page.getByText('Me', { exact: true })).toBeVisible();
-    await expect(page.getByText('Partner', { exact: true })).toBeVisible();
+    await expect(page.locator('main').locator('button', { hasText: 'Me' })).toBeVisible();
+    await expect(page.locator('main').locator('button', { hasText: 'Partner' })).toBeVisible();
     await expect(page.getByText('Primary owner')).toBeVisible();
   });
 
   test('the primary owner cannot be archived', async ({ page }) => {
-    await page.getByText('Me', { exact: true }).click();
+    await page.locator('main').locator('button', { hasText: 'Me' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('button', { name: /^archive$/i })).not.toBeVisible();
     await expect(page.getByText(/can't be archived/i)).toBeVisible();
   });
 
   test('a non-primary person can be archived and reactivated', async ({ page }) => {
-    await page.getByText('Partner', { exact: true }).click();
+    await page.locator('main').locator('button', { hasText: 'Partner' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByRole('button', { name: /^archive$/i }).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    const partnerRow = page.locator('button', { hasText: 'Partner' });
+    const partnerRow = page.locator('main').locator('button', { hasText: 'Partner' });
     await expect(partnerRow).toContainText('Archived');
 
     await partnerRow.click();

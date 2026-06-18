@@ -1,6 +1,6 @@
 import type { Account, Currency, FxRate } from '@/types/sheets';
 import { MASK } from './privacy';
-import { LEGACY_SELF_ID, shareFor } from './ownership';
+import { LEGACY_SELF_ID, viewerShare } from './ownership';
 
 /** Build a date→(USD→CAD) lookup from persisted rows. */
 export function fxMap(rates: FxRate[]): Map<string, number> {
@@ -36,11 +36,11 @@ export function toMain(amount: number, from: Currency, main: Currency, usdCad: n
 /**
  * An account's balance converted to the main currency and signed for net-worth math:
  * convert (native→main using the date's rate) × the viewer's share × (debt ? -1 : 1).
- * Until per-person viewing exists, the viewer is always the LEGACY_SELF_ID person.
+ * `viewer` is a person id, or HOUSEHOLD_VIEWER for everyone combined; defaults to the legacy self-only view.
  */
-export function signedMain(account: Account, balanceRaw: number, main: Currency, usdCad: number | null): number {
+export function signedMain(account: Account, balanceRaw: number, main: Currency, usdCad: number | null, viewer: string = LEGACY_SELF_ID): number {
   const converted = toMain(balanceRaw, account.currency ?? main, main, usdCad);
-  return converted * shareFor(account.ownership, LEGACY_SELF_ID) * (account.kind === 'debt' ? -1 : 1);
+  return converted * viewerShare(account.ownership, viewer) * (account.kind === 'debt' ? -1 : 1);
 }
 
 /**

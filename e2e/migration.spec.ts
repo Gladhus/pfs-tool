@@ -21,8 +21,8 @@ test.describe('Legacy data migration', () => {
     await page.locator('a[href="/pfs-tool/settings/people"]').click();
     await page.waitForURL(/\/settings\/people/);
 
-    await expect(page.getByText('Me', { exact: true })).toBeVisible();
-    await expect(page.getByText('Partner', { exact: true })).toBeVisible();
+    await expect(page.locator('main').locator('button', { hasText: 'Me' })).toBeVisible();
+    await expect(page.locator('main').locator('button', { hasText: 'Partner' })).toBeVisible();
     await expect(page.getByText('Primary owner')).toBeVisible();
   });
 

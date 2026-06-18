@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseOwnership, serializeOwnership, migrateLegacyOwnership, ownershipFromRow,
-  shareFor, totalShare, ensurePrimaryPerson, ownershipLabel,
+  shareFor, totalShare, viewerShare, ensurePrimaryPerson, ownershipLabel, HOUSEHOLD_VIEWER,
 } from '@/utils/ownership';
 import type { Person } from '@/types/sheets';
 
@@ -96,6 +96,27 @@ describe('shareFor / totalShare', () => {
 
   it('sums every entry regardless of owner', () => {
     expect(totalShare(ownership)).toBe(1);
+  });
+});
+
+describe('viewerShare', () => {
+  const ownership = [{ person_id: 'self', share: 0.6 }, { person_id: 'partner', share: 0.4 }];
+
+  it('returns a single person\'s share when the viewer is a person id', () => {
+    expect(viewerShare(ownership, 'self')).toBe(0.6);
+    expect(viewerShare(ownership, 'partner')).toBe(0.4);
+  });
+
+  it('returns 0 for a person with no ownership entry', () => {
+    expect(viewerShare(ownership, 'nobody')).toBe(0);
+  });
+
+  it('returns the combined total for HOUSEHOLD_VIEWER', () => {
+    expect(viewerShare(ownership, HOUSEHOLD_VIEWER)).toBe(1);
+  });
+
+  it('HOUSEHOLD_VIEWER reflects partial combined ownership', () => {
+    expect(viewerShare([{ person_id: 'self', share: 0.5 }], HOUSEHOLD_VIEWER)).toBe(0.5);
   });
 });
 

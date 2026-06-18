@@ -7,6 +7,7 @@ import {
 } from '@/queries/sheetQueries';
 import type { Currency } from '@/types/sheets';
 import { useWriteAccountsMutation, useWriteTagsMutation } from '@/queries/sheetMutations';
+import { ownershipLabel } from '@/utils/ownership';
 import { tr } from '@/i18n';
 import { Amount } from '@/ui/Amount';
 import { allKnownTags } from '@/utils/tags';
@@ -47,7 +48,6 @@ export function AccountsSection() {
   const accountTypes = accountTypesQ.data ?? [];
   const tagsCatalog = tagsQ.data ?? [];
   const people = peopleQ.data ?? [];
-  const personName = (id: string) => people.find(p => p.id === id)?.name || (id === 'joint' ? t('owner_joint') : id);
 
   const [editing, setEditing] = useState<Account | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,9 +105,7 @@ export function AccountsSection() {
 
   const renderCard = (a: Account) => {
     const latest = latestBalanceFor(snapshots, a.id);
-    const sharePct = Math.round((a.ownership_share ?? 1) * 100);
-    const metaBits = [personName(a.owner)];
-    if (sharePct !== 100) metaBits.push(`${sharePct}%`);
+    const meta = ownershipLabel(a.ownership, people, t('owner_joint'));
     return (
       <button
         key={a.id}
@@ -118,7 +116,7 @@ export function AccountsSection() {
         <Icon name={categoryIcon(a.category)} size={16} className="text-fg-2" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-fg">{tr(a)}</div>
-          <div className="text-xs text-muted">{metaBits.join(' · ')}</div>
+          <div className="text-xs text-muted">{meta}</div>
         </div>
         <div className="text-right">
           {latest ? (

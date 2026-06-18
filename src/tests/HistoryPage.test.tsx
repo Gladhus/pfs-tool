@@ -50,7 +50,7 @@ const SNAPSHOTS = [
 ];
 
 const ACCOUNTS = [
-  { id: 'a1', name: 'TFSA', name_en: 'TFSA', name_fr: 'REER', category: 'investments', kind: 'asset', ownership_share: 1, tags: [], active: true, sort_order: 1 },
+  { id: 'a1', name: 'TFSA', name_en: 'TFSA', name_fr: 'REER', category: 'investments', kind: 'asset', ownership: [{ person_id: 'self', share: 1 }], tags: [], active: true, sort_order: 1 },
 ];
 
 const CATEGORY_META = [

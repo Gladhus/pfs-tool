@@ -1,6 +1,7 @@
 import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 import { HEADERS } from '@/constants';
 import { normalizeDate } from '@/utils/dates';
+import { ownershipFromRow, serializeOwnership } from '@/utils/ownership';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +31,7 @@ export function parseAccountRows(rows: unknown[][]): Account[] {
   const headers = rows[0] as string[];
   return (rows.slice(1) as unknown[][]).map(r => {
     const obj = toObj(headers, r);
-    obj.ownership_share = parseNum(obj.ownership_share, 1);
+    obj.ownership = ownershipFromRow(obj);
     obj.sort_order      = parseNum(obj.sort_order, 0);
     obj.annual_rate     = parseNum(obj.annual_rate, 0);
     obj.active = obj.active === true || String(obj.active).toUpperCase() === 'TRUE';
@@ -210,12 +211,13 @@ export function parseOptionExerciseRows(rows: unknown[][]): OptionExercise[] {
 // ── Serialize (typed → AOA) ───────────────────────────────────────────────────
 
 export function serializeAccounts(accounts: Account[]): unknown[][] {
-  const H = ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order', 'tags', 'annual_rate', 'currency'] as const;
+  const H = ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'ownership', 'active', 'sort_order', 'tags', 'annual_rate', 'currency'] as const;
   return [
     [...H],
     ...accounts.map(a => H.map(h => {
       if (h === 'active') return a.active ? 'TRUE' : 'FALSE';
       if (h === 'tags') return a.tags.join(', ');
+      if (h === 'ownership') return serializeOwnership(a.ownership);
       return (a as unknown as Record<string, unknown>)[h] ?? '';
     })),
   ];

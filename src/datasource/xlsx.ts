@@ -92,7 +92,15 @@ export class XlsxDatasource implements Datasource {
     this.saveToSession();
   }
 
-  loadAccounts()        { return Promise.resolve(parseAccountRows(this.read('accounts'))); }
+  loadAccounts() {
+    const rows = this.read('accounts');
+    const accounts = parseAccountRows(rows);
+    const headers = (rows[0] as string[] | undefined) ?? [];
+    if (rows.length >= 2 && !headers.includes('ownership')) {
+      this.write('accounts', serializeAccounts(accounts));
+    }
+    return Promise.resolve(accounts);
+  }
   loadSnapshots()       { return Promise.resolve(parseSnapshotRows(this.read('snapshots'))); }
   loadConfig()          { return Promise.resolve(parseConfigRows(this.read('config'))); }
   loadTags()            { return Promise.resolve(parseTagRows(this.read('tags'))); }

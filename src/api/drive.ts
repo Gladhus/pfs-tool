@@ -1,5 +1,6 @@
 import seedData from '../../seed/default-accounts.json';
 import { HEADERS, SHEET_TITLE, DEFAULT_PEOPLE } from '@/constants';
+import { migrateLegacyOwnership, serializeOwnership } from '@/utils/ownership';
 import cfg from '@/config';
 
 export async function verifySheet(id: string): Promise<boolean> {
@@ -57,7 +58,10 @@ export async function seedNewSheet(sheetId: string): Promise<void> {
   const seed = seedData as SeedData;
   const accountRows = [
     [...HEADERS.accounts],
-    ...seed.accounts.map((a) => HEADERS.accounts.map((h) => (a[h] as string | number | boolean) ?? '')),
+    ...seed.accounts.map((a) => HEADERS.accounts.map((h) => {
+      if (h === 'ownership') return serializeOwnership(migrateLegacyOwnership(a.owner, a.ownership_share));
+      return (a[h] as string | number | boolean) ?? '';
+    })),
   ];
   const people = seed.people?.length
     ? seed.people.map(p => ({ ...p, sort_order: Number(p.sort_order) || 0, active: p.active !== false }))

@@ -1,7 +1,9 @@
 import seedData from '../../seed/default-accounts.json';
 import type { Account, Snapshot, CategoryMeta, AccountType } from '@/types/sheets';
-import { gapiCall } from './sheets';
+import { gapiCall, safeWriteTab } from './sheets';
 import { normalizeDate } from '@/utils/dates';
+import { ownershipFromRow } from '@/utils/ownership';
+import { serializeAccounts } from '@/datasource/parse';
 
 function parseTags(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.map(t => String(t).trim()).filter(Boolean);
@@ -25,10 +27,11 @@ export async function loadAccounts(sheetId: string): Promise<Account[]> {
   const rows = resp.result.values ?? [];
   if (rows.length < 2) return [];
   const headers = rows[0] as string[];
-  return (rows.slice(1) as unknown[][]).map(r => {
+  const needsOwnershipMigration = !headers.includes('ownership');
+  const accounts = (rows.slice(1) as unknown[][]).map(r => {
     const obj: Record<string, unknown> = {};
     headers.forEach((h, i) => { obj[h] = r[i] ?? ''; });
-    obj.ownership_share = parseNum(obj.ownership_share, 1);
+    obj.ownership = ownershipFromRow(obj);
     obj.sort_order      = parseNum(obj.sort_order, 0);
     obj.annual_rate     = parseNum(obj.annual_rate, 0);
     obj.active = obj.active === true || String(obj.active).toUpperCase() === 'TRUE';
@@ -37,6 +40,13 @@ export async function loadAccounts(sheetId: string): Promise<Account[]> {
     obj.currency = cur === 'USD' || cur === 'CAD' ? cur : undefined;
     return obj as unknown as Account;
   }).filter(a => a.id);
+
+  // Legacy sheet (owner/ownership_share columns, no `ownership` column yet): write the
+  // migrated rows back immediately so the sheet's schema is upgraded on first open.
+  if (needsOwnershipMigration && accounts.length) {
+    try { await safeWriteTab(sheetId, 'accounts', serializeAccounts(accounts), accounts.length); } catch { /* will retry on next open/save */ }
+  }
+  return accounts;
 }
 
 export async function loadSnapshots(sheetId: string): Promise<Snapshot[]> {

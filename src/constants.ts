@@ -3,8 +3,6 @@ import cfg from './config';
 
 export const SHEET_TITLE = cfg.SHEET_TITLE || 'Net Worth Tracker';
 
-/** Legacy fixed owner value meaning "split between self and partner" (kept for backward compat). */
-export const JOINT_OWNER = 'joint';
 export const KINDS  = ['asset', 'debt'] as const;
 
 /** Seeded the first time a sheet (new or legacy, pre-people-tab) is loaded. */
@@ -14,7 +12,7 @@ export const DEFAULT_PEOPLE: Person[] = [
 ];
 
 export const HEADERS = {
-  accounts:         ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order', 'tags', 'annual_rate', 'currency'],
+  accounts:         ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'ownership', 'active', 'sort_order', 'tags', 'annual_rate', 'currency'],
   snapshots:        ['date', 'account_id', 'balance_raw', 'comment', 'entered_at'],
   config:           ['key', 'value'],
   tags:             ['name'],

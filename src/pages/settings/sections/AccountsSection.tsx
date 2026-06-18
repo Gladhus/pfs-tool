@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useToastStore } from '@/stores/toast.store';
 import {
   useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery,
-  useAccountTypesQuery, useTagsQuery, useConfigQuery,
+  useAccountTypesQuery, useTagsQuery, useConfigQuery, usePeopleQuery,
 } from '@/queries/sheetQueries';
 import type { Currency } from '@/types/sheets';
 import { useWriteAccountsMutation, useWriteTagsMutation } from '@/queries/sheetMutations';
@@ -16,8 +16,6 @@ import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { AccountDialog } from '../components/AccountDialog';
 import type { Account, Snapshot, Tag } from '@/types/sheets';
-
-const OWNER_KEYS: Record<string, string> = { self: 'owner_self', partner: 'owner_partner', joint: 'owner_joint' };
 
 function latestBalanceFor(snapshots: Snapshot[], id: string): Snapshot | null {
   let best: Snapshot | null = null;
@@ -37,6 +35,7 @@ export function AccountsSection() {
   const categoryMetaQ = useCategoryMetaQuery();
   const accountTypesQ = useAccountTypesQuery();
   const tagsQ = useTagsQuery();
+  const peopleQ = usePeopleQuery();
   const configQ = useConfigQuery();
   const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
   const writeAccounts = useWriteAccountsMutation();
@@ -47,6 +46,8 @@ export function AccountsSection() {
   const categoryMeta = useMemo(() => categoryMetaQ.data ?? [], [categoryMetaQ.data]);
   const accountTypes = accountTypesQ.data ?? [];
   const tagsCatalog = tagsQ.data ?? [];
+  const people = peopleQ.data ?? [];
+  const personName = (id: string) => people.find(p => p.id === id)?.name || (id === 'joint' ? t('owner_joint') : id);
 
   const [editing, setEditing] = useState<Account | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,7 +106,7 @@ export function AccountsSection() {
   const renderCard = (a: Account) => {
     const latest = latestBalanceFor(snapshots, a.id);
     const sharePct = Math.round((a.ownership_share ?? 1) * 100);
-    const metaBits = [t(OWNER_KEYS[a.owner] ?? a.owner)];
+    const metaBits = [personName(a.owner)];
     if (sharePct !== 100) metaBits.push(`${sharePct}%`);
     return (
       <button
@@ -189,6 +190,7 @@ export function AccountsSection() {
         account={creating ? null : editing}
         accounts={accounts}
         accountTypes={accountTypes}
+        people={people}
         categoryMeta={categoryMeta}
         availableTags={availableTags}
         mainCurrency={mainCurrency}

@@ -7,9 +7,9 @@ import { Select, SelectItem } from '@/ui/Select';
 import { Checkbox } from '@/ui/Checkbox';
 import { Label } from '@/ui/Label';
 import { tr } from '@/i18n';
-import { OWNERS, KINDS } from '@/constants';
+import { JOINT_OWNER, KINDS } from '@/constants';
 import { TagChipInput } from './TagChipInput';
-import type { Account, AccountType, CategoryMeta, Currency } from '@/types/sheets';
+import type { Account, AccountType, CategoryMeta, Currency, Person } from '@/types/sheets';
 
 const CURRENCIES: Currency[] = ['CAD', 'USD'];
 
@@ -19,6 +19,7 @@ interface Props {
   account: Account | null;
   accounts: Account[];
   accountTypes: AccountType[];
+  people: Person[];
   categoryMeta: CategoryMeta[];
   availableTags: string[];
   mainCurrency: Currency;
@@ -42,8 +43,6 @@ interface FormState {
   currency: Currency;
 }
 
-const OWNER_KEYS: Record<string, string> = { self: 'owner_self', partner: 'owner_partner', joint: 'owner_joint' };
-
 function nextId(prefix: string, accounts: Account[]): string {
   const ids = new Set(accounts.map(a => a.id));
   let n = 1;
@@ -56,11 +55,16 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 export function AccountDialog({
-  open, onClose, account, accounts, accountTypes, categoryMeta, availableTags, mainCurrency, hasHistory, onSave, onDelete,
+  open, onClose, account, accounts, accountTypes, people, categoryMeta, availableTags, mainCurrency, hasHistory, onSave, onDelete,
 }: Props) {
   const { t } = useTranslation();
   const isNew = account === null;
   const [form, setForm] = useState<FormState>(() => buildInitial());
+
+  const ownerOptions: { value: string; label: string }[] = [
+    ...people.filter(p => p.active).map(p => ({ value: p.id, label: p.name || p.id })),
+    { value: JOINT_OWNER, label: t('owner_joint') },
+  ];
 
   function buildInitial(): FormState {
     if (account) {
@@ -181,7 +185,7 @@ export function AccountDialog({
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('owner_label_field')}>
             <Select value={form.owner} onValueChange={v => set('owner', v)}>
-              {OWNERS.map(o => <SelectItem key={o} value={o}>{t(OWNER_KEYS[o] ?? o)}</SelectItem>)}
+              {ownerOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
             </Select>
           </Field>
           <Field label={t('share_label')}>

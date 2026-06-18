@@ -1,4 +1,5 @@
-import type { Account, Snapshot, AppConfig, Tag, Group, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import { HEADERS } from '@/constants';
 import { normalizeDate } from '@/utils/dates';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -127,6 +128,22 @@ export function parseGroupRows(rows: unknown[][]): Group[] {
   return result;
 }
 
+export function parsePeopleRows(rows: unknown[][]): Person[] {
+  if (rows.length < 2) return [];
+  const headers = rows[0] as string[];
+  return (rows.slice(1) as unknown[][]).map(r => {
+    const obj = toObj(headers, r);
+    return {
+      id: String(obj.id ?? '').trim(),
+      name: String(obj.name ?? '').trim(),
+      email: obj.email ? String(obj.email).trim() : undefined,
+      color: obj.color ? String(obj.color).trim() : undefined,
+      sort_order: parseNum(obj.sort_order, 0),
+      active: obj.active === true || String(obj.active).toUpperCase() === 'TRUE',
+    } as Person;
+  }).filter(p => p.id);
+}
+
 export function parseFxRateRows(rows: unknown[][]): FxRate[] {
   if (rows.length < 2) return [];
   const hs = rows[0] as string[];
@@ -231,6 +248,13 @@ export function serializeGroups(groups: Group[]): unknown[][] {
   return [
     ['name', 'color', 'all', 'any', 'exclude'],
     ...groups.map(g => [g.name, g.color, g.all.join(', '), g.any.join(', '), g.exclude.join(', ')]),
+  ];
+}
+
+export function serializePeople(people: Person[]): unknown[][] {
+  return [
+    [...HEADERS.people],
+    ...people.map(p => [p.id, p.name, p.email ?? '', p.color ?? '', p.sort_order, p.active ? 'TRUE' : 'FALSE']),
   ];
 }
 

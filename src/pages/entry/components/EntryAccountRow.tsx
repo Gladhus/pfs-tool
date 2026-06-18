@@ -2,10 +2,11 @@ import { useTranslation } from 'react-i18next';
 import { tr } from '@/i18n';
 import { fmtMoney, parseMoney } from '@/utils/format';
 import { Amount } from '@/ui/Amount';
-import type { Account, Currency } from '@/types/sheets';
+import type { Account, Currency, Person } from '@/types/sheets';
 
 interface Props {
   account: Account;
+  people: Person[];
   balance: string;
   comment: string;
   prevValue: number | null;
@@ -17,14 +18,9 @@ interface Props {
   onEnter: () => void;
 }
 
-const OWNER_KEYS: Record<string, string> = {
-  self: 'owner_self',
-  partner: 'owner_partner',
-  joint: 'owner_joint',
-};
-
 export function EntryAccountRow({
   account,
+  people,
   balance,
   comment,
   prevValue,
@@ -37,7 +33,8 @@ export function EntryAccountRow({
 }: Props) {
   const { t } = useTranslation();
 
-  const ownerLbl = OWNER_KEYS[account.owner] ? t(OWNER_KEYS[account.owner]) : account.owner;
+  const ownerLbl = people.find(p => p.id === account.owner)?.name
+    || (account.owner === 'joint' ? t('owner_joint') : account.owner);
   const sharePct = Math.round((account.ownership_share ?? 1) * 100);
 
   const current = parseMoney(balance);

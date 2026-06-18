@@ -82,6 +82,15 @@ export function useGroupsQuery() {
   });
 }
 
+export function usePeopleQuery() {
+  const ds = useDatasource();
+  return useQuery({
+    queryKey: qk.people(ds?.id ?? ''),
+    queryFn: () => ds!.loadPeople(),
+    enabled: !!ds,
+  });
+}
+
 function useOptionsEnabled() {
   const configQuery = useConfigQuery();
   return configQuery.isSuccess && configQuery.data?.stock_options_enabled === true;

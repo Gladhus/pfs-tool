@@ -1,15 +1,24 @@
+import type { Person } from './types/sheets';
 import cfg from './config';
 
 export const SHEET_TITLE = cfg.SHEET_TITLE || 'Net Worth Tracker';
 
-export const OWNERS = ['self', 'partner', 'joint'] as const;
+/** Legacy fixed owner value meaning "split between self and partner" (kept for backward compat). */
+export const JOINT_OWNER = 'joint';
 export const KINDS  = ['asset', 'debt'] as const;
+
+/** Seeded the first time a sheet (new or legacy, pre-people-tab) is loaded. */
+export const DEFAULT_PEOPLE: Person[] = [
+  { id: 'self',    name: 'Me',      sort_order: 10, active: true },
+  { id: 'partner', name: 'Partner', sort_order: 20, active: true },
+];
 
 export const HEADERS = {
   accounts:         ['id', 'type', 'name_fr', 'name_en', 'category', 'kind', 'owner', 'ownership_share', 'active', 'sort_order', 'tags', 'annual_rate', 'currency'],
   snapshots:        ['date', 'account_id', 'balance_raw', 'comment', 'entered_at'],
   config:           ['key', 'value'],
   tags:             ['name'],
+  people:           ['id', 'name', 'email', 'color', 'sort_order', 'active'],
   groups:           ['name', 'color', 'all', 'any', 'exclude'],
   option_companies: ['id', 'name', 'ticker', 'active', 'tags', 'currency'],
   option_grants:    ['id', 'company_id', 'label', 'grant_type', 'grant_date', 'total_shares', 'strike_price', 'vesting_start', 'cliff_months', 'vesting_months', 'vesting_interval', 'expiry_date'],

@@ -23,6 +23,16 @@ export interface Account {
   currency?: Currency;
 }
 
+/** A household member who can own (a share of) an account. Referenced by Account.owner. */
+export interface Person {
+  id: string;
+  name: string;
+  email?: string;
+  color?: string;
+  sort_order: number;
+  active: boolean;
+}
+
 export interface Snapshot {
   date: string;
   account_id: string;

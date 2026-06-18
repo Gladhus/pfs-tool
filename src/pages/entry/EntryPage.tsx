@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/ui.store';
 import { useToastStore } from '@/stores/toast.store';
-import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery } from '@/queries/sheetQueries';
+import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery, usePeopleQuery } from '@/queries/sheetQueries';
 import { useSaveMonthMutation } from '@/queries/sheetMutations';
 import { tr } from '@/i18n';
 import { fmtMoney, parseMoney } from '@/utils/format';
@@ -49,6 +49,8 @@ export default function EntryPage() {
   const categoryMetaQ = useCategoryMetaQuery();
   const configQ = useConfigQuery();
   const fxRatesQ = useFxRatesQuery();
+  const peopleQ = usePeopleQuery();
+  const people = peopleQ.data ?? [];
   const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
   const currency = mainCurrency;
   const fxRateMap = useMemo(() => buildFxMap(fxRatesQ.data ?? []), [fxRatesQ.data]);
@@ -367,6 +369,7 @@ export default function EntryPage() {
                     <div key={a.id} data-row={a.id}>
                       <EntryAccountRow
                         account={a}
+                        people={people}
                         balance={form[a.id]?.balance ?? ''}
                         comment={form[a.id]?.comment ?? ''}
                         prevValue={prevBalances[a.id] ?? null}

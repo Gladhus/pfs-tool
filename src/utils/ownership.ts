@@ -53,6 +53,17 @@ export function totalShare(ownership: OwnershipEntry[]): number {
   return ownership.reduce((sum, o) => sum + o.share, 0);
 }
 
+/**
+ * Ensures exactly one person is flagged `primary`. Sheets written before the `primary`
+ * column existed (or any row data that lost the flag) fall back to LEGACY_SELF_ID, or the
+ * first person if that id isn't present.
+ */
+export function ensurePrimaryPerson(people: Person[]): Person[] {
+  if (!people.length || people.some(p => p.primary)) return people;
+  const fallbackId = people.find(p => p.id === LEGACY_SELF_ID)?.id ?? people[0].id;
+  return people.map(p => p.id === fallbackId ? { ...p, primary: true } : p);
+}
+
 /** Human-readable "Name 50% · Partner 50%" (or just "Name" for a single full owner). */
 export function ownershipLabel(ownership: OwnershipEntry[], people: Person[], jointFallback: string): string {
   if (!ownership.length) return jointFallback;

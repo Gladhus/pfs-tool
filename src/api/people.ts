@@ -1,6 +1,7 @@
 import type { Person } from '@/types/sheets';
 import { HEADERS, DEFAULT_PEOPLE } from '@/constants';
-import { gapiCall, safeWriteTab } from './sheets';
+import { ensurePrimaryPerson } from '@/utils/ownership';
+import { gapiCall, gapiErrorStatus, safeWriteTab } from './sheets';
 
 async function ensurePeopleTab(sheetId: string): Promise<void> {
   try {
@@ -20,7 +21,7 @@ async function ensurePeopleTab(sheetId: string): Promise<void> {
 function serializeRows(people: Person[]): unknown[][] {
   return [
     HEADERS.people as unknown as string[],
-    ...people.map(p => [p.id, p.name, p.email ?? '', p.color ?? '', p.sort_order, p.active ? 'TRUE' : 'FALSE']),
+    ...people.map(p => [p.id, p.name, p.email ?? '', p.color ?? '', p.sort_order, p.active ? 'TRUE' : 'FALSE', p.primary ? 'TRUE' : 'FALSE']),
   ];
 }
 
@@ -43,7 +44,7 @@ export async function loadPeopleCatalog(sheetId: string): Promise<Person[]> {
       return DEFAULT_PEOPLE;
     }
     const headers = rows[0] as string[];
-    return (rows.slice(1) as unknown[][]).map(r => {
+    const people = (rows.slice(1) as unknown[][]).map(r => {
       const obj: Record<string, unknown> = {};
       headers.forEach((h, i) => { obj[h] = r[i] ?? ''; });
       return {
@@ -53,9 +54,16 @@ export async function loadPeopleCatalog(sheetId: string): Promise<Person[]> {
         color: obj.color ? String(obj.color).trim() : undefined,
         sort_order: Number(obj.sort_order) || 0,
         active: obj.active === true || String(obj.active).toUpperCase() === 'TRUE',
+        primary: obj.primary === true || String(obj.primary).toUpperCase() === 'TRUE',
       } as Person;
     }).filter(p => p.id);
-  } catch {
+    return ensurePrimaryPerson(people);
+  } catch (err) {
+    // A missing `people` tab (legacy/pre-people-tab sheet) surfaces as a 400 "Unable to
+    // parse range" error — that's the only case we seed defaults for. Any other failure
+    // (network blip, rate limit, transient 5xx, etc.) must NOT be treated as "no data
+    // yet", or we'd overwrite a real, populated people tab with the seeded defaults.
+    if (gapiErrorStatus(err) !== 400) throw err;
     try { await ensurePeopleTab(sheetId); } catch { /* ignore */ }
     await writePeopleCatalog(sheetId, DEFAULT_PEOPLE, 0);
     return DEFAULT_PEOPLE;

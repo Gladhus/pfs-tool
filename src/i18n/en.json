@@ -194,6 +194,8 @@
   "archived_label": "Archived",
   "archive_person": "Archive",
   "reactivate_person": "Reactivate",
+  "primary_person_label": "Primary owner",
+  "cannot_archive_primary": "The primary owner of the sheet can't be archived.",
   "person_saved": "Person saved.",
   "person_archived": "Person archived.",
   "person_reactivated": "Person reactivated.",

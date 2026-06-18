@@ -46,6 +46,7 @@ export function PersonDialog({ open, onClose, person, nextSortOrder, onSave, onT
       color,
       sort_order: person?.sort_order ?? nextSortOrder,
       active: person?.active ?? true,
+      primary: person?.primary ?? false,
     });
   };
 
@@ -62,16 +63,19 @@ export function PersonDialog({ open, onClose, person, nextSortOrder, onSave, onT
           <ColorSwatchPicker value={color} onChange={setColor} />
         </Field>
         {!isNew && <p className="text-xs text-muted">ID: <code>{person!.id}</code></p>}
+        {!isNew && person!.primary && <p className="text-xs text-muted">{t('primary_person_label')}</p>}
       </div>
 
       <div className="mt-5 flex items-center justify-between">
-        {!isNew
+        {!isNew && !person!.primary
           ? (
             <Button variant="danger" size="sm" onClick={onToggleActive}>
               {person!.active ? t('archive_person') : t('reactivate_person')}
             </Button>
           )
-          : <span />}
+          : !isNew && person!.primary
+            ? <p className="text-xs text-muted">{t('cannot_archive_primary')}</p>
+            : <span />}
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>{t('cancel')}</Button>
           <Button variant="primary" size="sm" onClick={handleSave}>{t('save_changes')}</Button>

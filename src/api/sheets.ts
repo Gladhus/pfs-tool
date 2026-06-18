@@ -7,14 +7,18 @@ export function setGapiTokenClient(tc: typeof _tokenClient): void {
   _tokenClient = tc;
 }
 
+/** Extracts the HTTP status code from a thrown gapi error, if any. */
+export function gapiErrorStatus(err: unknown): number | undefined {
+  return (err as { status?: number })?.status ??
+    (err as { result?: { error?: { code?: number } } })?.result?.error?.code;
+}
+
 /** Wraps a gapi request: on 401 silently refreshes the token once and retries. */
 export async function gapiCall<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (err) {
-    const status =
-      (err as { status?: number })?.status ??
-      (err as { result?: { error?: { code?: number } } })?.result?.error?.code;
+    const status = gapiErrorStatus(err);
     if (status !== 401) throw err;
     return await new Promise<T>((resolve, reject) => {
       if (!_tokenClient) { reject(err); return; }

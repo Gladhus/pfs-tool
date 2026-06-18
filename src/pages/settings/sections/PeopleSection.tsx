@@ -40,7 +40,7 @@ export function PeopleSection() {
   };
 
   const onToggleActive = () => {
-    if (!editing) return;
+    if (!editing || editing.primary) return;
     const next = people.map(p => p.id === editing.id ? { ...p, active: !p.active } : p);
     persist(next, editing.active ? 'person_archived' : 'person_reactivated');
   };
@@ -72,7 +72,7 @@ export function PeopleSection() {
             <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: p.color || 'var(--border)' }} />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm text-fg">{p.name}</div>
-              <div className="truncate text-xs text-muted">{p.email || t('person_no_email')}{!p.active ? ` · ${t('archived_label')}` : ''}</div>
+              <div className="truncate text-xs text-muted">{p.email || t('person_no_email')}{p.primary ? ` · ${t('primary_person_label')}` : ''}{!p.active ? ` · ${t('archived_label')}` : ''}</div>
             </div>
             <Icon name="chevronRight" size={16} className="text-muted" />
           </button>

@@ -4,8 +4,8 @@
 
   "_people_doc": "Default household members seeded into the `people` tab on a brand-new sheet. Existing 'self'/'partner'/'joint' owner values on accounts reference these ids directly, so renaming a person here (via Settings > People) doesn't require touching any account.",
   "people": [
-    { "id": "self",    "name": "Me",      "sort_order": 10, "active": true },
-    { "id": "partner", "name": "Partner", "sort_order": 20, "active": true }
+    { "id": "self",    "name": "Me",      "sort_order": 10, "active": true, "primary": true },
+    { "id": "partner", "name": "Partner", "sort_order": 20, "active": true, "primary": false }
   ],
 
   "_categories_doc": "Each category has id, name_fr, name_en, sort_order, kind, and an optional `group` + `group_sort` for future custom grouping (e.g., 'Liquid Assets' grouping cash+investments). Today the group fields are unused at runtime but persisted so future versions can render group headers without a data migration.",

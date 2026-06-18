@@ -141,6 +141,7 @@ export function parsePeopleRows(rows: unknown[][]): Person[] {
       color: obj.color ? String(obj.color).trim() : undefined,
       sort_order: parseNum(obj.sort_order, 0),
       active: obj.active === true || String(obj.active).toUpperCase() === 'TRUE',
+      primary: obj.primary === true || String(obj.primary).toUpperCase() === 'TRUE',
     } as Person;
   }).filter(p => p.id);
 }
@@ -256,7 +257,7 @@ export function serializeGroups(groups: Group[]): unknown[][] {
 export function serializePeople(people: Person[]): unknown[][] {
   return [
     [...HEADERS.people],
-    ...people.map(p => [p.id, p.name, p.email ?? '', p.color ?? '', p.sort_order, p.active ? 'TRUE' : 'FALSE']),
+    ...people.map(p => [p.id, p.name, p.email ?? '', p.color ?? '', p.sort_order, p.active ? 'TRUE' : 'FALSE', p.primary ? 'TRUE' : 'FALSE']),
   ];
 }
 

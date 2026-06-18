@@ -36,6 +36,8 @@ export interface Person {
   color?: string;
   sort_order: number;
   active: boolean;
+  /** The sheet's primary owner (seeded as 'self'). Can't be archived. */
+  primary: boolean;
 }
 
 export interface Snapshot {

@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import type { Datasource } from './types';
 import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 import { HEADERS, DEFAULT_PEOPLE } from '@/constants';
+import { ensurePrimaryPerson } from '@/utils/ownership';
 import {
   parseAccountRows, parseSnapshotRows, parseConfigRows,
   parseTagRows, parseGroupRows, parsePeopleRows, parseFxRateRows,
@@ -107,7 +108,7 @@ export class XlsxDatasource implements Datasource {
   loadGroups()          { return Promise.resolve(parseGroupRows(this.read('groups'))); }
   loadPeople() {
     const people = parsePeopleRows(this.read('people'));
-    if (people.length) return Promise.resolve(people);
+    if (people.length) return Promise.resolve(ensurePrimaryPerson(people));
     this.write('people', serializePeople(DEFAULT_PEOPLE));
     return Promise.resolve(DEFAULT_PEOPLE);
   }

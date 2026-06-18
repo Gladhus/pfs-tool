@@ -64,7 +64,7 @@ export async function seedNewSheet(sheetId: string): Promise<void> {
     })),
   ];
   const people = seed.people?.length
-    ? seed.people.map(p => ({ ...p, sort_order: Number(p.sort_order) || 0, active: p.active !== false }))
+    ? seed.people.map(p => ({ ...p, sort_order: Number(p.sort_order) || 0, active: p.active !== false, primary: p.primary === true }))
     : DEFAULT_PEOPLE;
 
   await gapi.client.sheets.spreadsheets.values.batchUpdate({
@@ -85,7 +85,7 @@ export async function seedNewSheet(sheetId: string): Promise<void> {
         { range: 'groups!A1',           values: [[...HEADERS.groups]] },
         { range: 'people!A1',           values: [
             [...HEADERS.people],
-            ...people.map(p => [p.id as string, p.name as string, (p.email as string) ?? '', (p.color as string) ?? '', p.sort_order as number, p.active ? 'TRUE' : 'FALSE']),
+            ...people.map(p => [p.id as string, p.name as string, (p.email as string) ?? '', (p.color as string) ?? '', p.sort_order as number, p.active ? 'TRUE' : 'FALSE', p.primary ? 'TRUE' : 'FALSE']),
           ]},
         { range: 'option_companies!A1', values: [[...HEADERS.option_companies]] },
         { range: 'option_grants!A1',    values: [[...HEADERS.option_grants]] },

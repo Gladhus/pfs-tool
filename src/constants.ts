@@ -7,8 +7,8 @@ export const KINDS  = ['asset', 'debt'] as const;
 
 /** Seeded the first time a sheet (new or legacy, pre-people-tab) is loaded. */
 export const DEFAULT_PEOPLE: Person[] = [
-  { id: 'self',    name: 'Me',      sort_order: 10, active: true },
-  { id: 'partner', name: 'Partner', sort_order: 20, active: true },
+  { id: 'self',    name: 'Me',      sort_order: 10, active: true, primary: true },
+  { id: 'partner', name: 'Partner', sort_order: 20, active: true, primary: false },
 ];
 
 export const HEADERS = {
@@ -16,7 +16,7 @@ export const HEADERS = {
   snapshots:        ['date', 'account_id', 'balance_raw', 'comment', 'entered_at'],
   config:           ['key', 'value'],
   tags:             ['name'],
-  people:           ['id', 'name', 'email', 'color', 'sort_order', 'active'],
+  people:           ['id', 'name', 'email', 'color', 'sort_order', 'active', 'primary'],
   groups:           ['name', 'color', 'all', 'any', 'exclude'],
   option_companies: ['id', 'name', 'ticker', 'active', 'tags', 'currency'],
   option_grants:    ['id', 'company_id', 'label', 'grant_type', 'grant_date', 'total_shares', 'strike_price', 'vesting_start', 'cliff_months', 'vesting_months', 'vesting_interval', 'expiry_date'],

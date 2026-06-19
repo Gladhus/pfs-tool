@@ -1,0 +1,244 @@
+# Data Architecture — How data flows through PFS Tool
+
+> Status: descriptive audit + target pattern. Nothing here changes behaviour;
+> it documents how data is handled today and proposes a distinct data layer so
+> new filters/views can be added in one place instead of five.
+
+PFS Tool is a privacy-first net-worth tracker with **no backend**. All data lives
+in either a Google Sheet or an in-memory XLSX workbook, and every derived number
+(net worth, allocation, history, year-over-year) is computed in the browser from
+the same handful of raw tables. So "how data is managed" is really one question:
+**how do raw rows become the numbers on screen, and where do viewer/filters/format
+get applied along the way?**
+
+Your mental model is correct: it *should* be a funnel — **load → scope to viewer →
+filter → aggregate → format**. Today that funnel exists, but it is hand-rolled
+per page rather than being a layer. That is the core finding of this audit.
+
+---
+
+## 1. The layers as they exist today
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ 0. PERSISTENCE / IO        src/datasource/*, src/api/*               │
+│    Datasource interface (sheets.ts | xlsx.ts) + parse.ts             │
+│    load*()/write*() return typed models; row↔model (de)serialization │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │  Account[] Snapshot[] FxRate[] …
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ 1. FETCH / CACHE           src/queries/sheetQueries.ts              │
+│    useDatasourceQuery() → React Query, keyed by datasource id        │
+│    useSheetData() aggregates the common tables                       │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │  cached, typed models
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ 2. DERIVE WORKING SETS     (inline, in every page component)        │
+│    datesSorted   = deriveDatesSorted(snapshots)                      │
+│    filteredDates = getDatesForPeriod(datesSorted, period)  ← TIME    │
+│    activeAccounts(accounts)                                ← ACTIVE  │
+│    accountsVisibleToViewer(accounts, viewer)              ← VIEWER   │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ 3. AGGREGATE  ← the heavy compute, RE-IMPLEMENTED PER PAGE          │
+│    buildBalanceSweep / buildEffectiveBalances → balances per date   │
+│    signedMain(acct, raw, main, usdCad, viewer)  (FX × share × sign)  │
+│    accumulate into category / group / person buckets + net          │
+│    + equity (options) bolted on separately                          │
+│    + trim leading viewer-empty dates                                 │
+│                                                                      │
+│    Lives in: useOverviewStats, HistoryPage.computeSeries,           │
+│              HistoryPage.cardData, DetailPage.getDetailYears,        │
+│              utils/stats.ts (computeDateStats, groupStatsFor)        │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │  numbers + series
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ 4. PRESENT                 utils/format.ts, utils/privacy.ts        │
+│    fmtMoney / fmtCur / fmtDelta + priv* (private-mode masking)       │
+│    ChartTooltip.seriesTooltip — single shared tooltip renderer      │
+└─────────────────────────────────────────────────────────────────────┘
+
+State that drives the funnel:
+  • viewer  → Zustand   (ui.store.currentViewer)
+  • view    → Zustand   (ui.store.ovView)
+  • period  → URL param (?period=)
+  • account → URL param (?account=)
+  • active  → implicit  (activeAccounts() called everywhere)
+```
+
+### The single most important primitive: `signedMain`
+
+```ts
+signedMain(account, balanceRaw, main, usdCad, viewer)
+  = toMain(balanceRaw, account.currency, main, usdCad)   // FX conversion
+  × viewerShare(account.ownership, viewer)                // viewer scoping
+  × (account.kind === 'debt' ? -1 : 1)                    // debt sign
+```
+
+This one call folds **three distinct funnel stages** (convert, scope-to-viewer,
+sign) into a single number. Convenient — but it means "viewer scoping" is not a
+stage you can see or reason about; it is buried inside the money math.
+
+---
+
+## 2. Does the flow make sense? — Audit findings
+
+**What is already right (keep it):**
+
+- **Layer 0/1 are clean.** The `Datasource` interface genuinely abstracts Sheets
+  vs XLSX; React Query keys by datasource id so switching sources invalidates
+  correctly. This is the strongest part of the codebase.
+- **Format is now centralized** (`format.ts`, `privacy.ts`, `ChartTooltip`). The
+  "present" stage is a real layer — formatting happens only at the edge.
+- **The primitives are the right ones.** `signedMain`, `viewerShare`,
+  `buildBalanceSweep`, `getDatesForPeriod`, `foldCategoryId` are well-factored,
+  pure, and tested.
+
+**Where the funnel breaks down:**
+
+1. **The pipeline is copy-pasted, not shared (the root issue).**
+   The exact sequence *sweep → convert → scope → bucket → trim* is hand-written in
+   at least five places: `useOverviewStats`, `computeSeries`, `cardData`,
+   `getDetailYears`, and `utils/stats.ts`. They reuse the *primitives* but not the
+   *pipeline*. This is why the recent "leading viewer-empty dates" bug had to be
+   fixed in **three separate files** — the trim step isn't a stage in a funnel,
+   it's duplicated logic. Any new rule (a new filter, a new exclusion) faces the
+   same three-to-five-site edit, and the sites can drift (e.g. `computeSeries`
+   trims on `viewerHasData`, `useOverviewStats` trims on `hasAny`+`bucketFirstSeen`
+   — same intent, two different implementations).
+
+2. **There is no single "what am I looking at" object.**
+   The four filter inputs live in three mechanisms (viewer/view in Zustand,
+   period/account in the URL, active implicitly). No page receives a `FilterSpec`;
+   each one re-reads and re-derives the same things in its body. Adding a filter
+   (by tag, by currency, by account-group) means editing every page.
+
+3. **Viewer scoping isn't a discrete stage.**
+   Because it lives inside `signedMain`, every aggregation must *separately*
+   re-derive `viewerShare(...) > 0` next to the money math to know whether a date
+   "counts" for the viewer. That parallel derivation is exactly the duplication
+   that produced the empty-dates bug.
+
+4. **Equity (stock options) flows outside the account pipeline.**
+   It is appended after the account loop in every aggregator, each re-doing its own
+   `ownerVisibleToViewer` check and per-currency conversion. `useOverviewStats`
+   alone handles it in three branches (category/group/person). It should be one
+   more "valued contributor" inside the same pipeline, not a parallel path.
+
+**Verdict:** the *order* of operations is correct and consistent (viewer/active →
+period → aggregate → format). The problem is purely **structural** — the funnel is
+an unwritten convention re-typed per page, so it can't be extended or fixed in one
+place. The fix is not new behaviour; it's giving the funnel a name and a home.
+
+---
+
+## 3. Target pattern — a distinct data layer (`src/core/`)
+
+Introduce one explicit selection pipeline between the query layer (1) and the
+view layer. Pages stop aggregating; they pass a **FilterSpec** in and read a
+**Dataset** out, then format it.
+
+```
+        raw models (accounts, snapshots, fx, options, people)
+                              │
+                              ▼
+   ┌──────────────────────────────────────────────────────────┐
+   │  buildDataset(models, spec): Dataset      (pure, memoized) │
+   │                                                            │
+   │  [1] resolveFilterSpec  FilterSpec { viewer, period,       │
+   │                          accountId?, view, includeInactive}│
+   │  [2] scope        accounts ∩ viewer ∩ active  → Scoped     │
+   │  [3] timebase     datesSorted → filteredDates (period)     │
+   │  [4] value        sweep + signedMain (+ equity)  per date  │
+   │  [5] bucketize    by category | group | person            │
+   │  [6] trim         drop leading viewer-empty dates  (ONCE)  │
+   └──────────────────────────────────────────────────────────┘
+                              │  Dataset
+                              ▼
+        page hook (thin adapter) → picks a slice → fmt*/priv*
+```
+
+**`FilterSpec`** — the single source of truth for "what am I looking at":
+
+```ts
+interface FilterSpec {
+  viewer: string;                 // person id | HOUSEHOLD_VIEWER
+  period: Period;                 // 'all' | 'ytd' | '1y' | …
+  view: 'category' | 'group' | 'person';
+  accountId?: string;             // drill-down (History/Detail)
+  includeInactive?: boolean;
+  // ← new filters land here: tag?, currency?, groupId? …
+}
+```
+
+Resolved once (`resolveFilterSpec(searchParams, uiStore)`), so the Zustand-vs-URL
+split becomes an implementation detail of one function instead of leaking into
+every page.
+
+**`Dataset`** — the normalized, viewer-scoped, filtered, time-aligned result every
+page consumes:
+
+```ts
+interface Dataset {
+  dates: string[];                       // already trimmed
+  net: (number | null)[];
+  buckets: BucketSeries[];               // category | group | person
+  byCategory: Record<string, number>;    // latest
+  prevByCategory: Record<string, number> | null;
+  latest: number; prev: number | null;
+  groupStats: …; personStats: …;
+}
+```
+
+**Suggested files** (primitives stay where they are; the pipeline composes them):
+
+| File | Responsibility |
+|------|----------------|
+| `src/core/filters.ts` | `FilterSpec` + `resolveFilterSpec()` |
+| `src/core/scope.ts`   | viewer ∩ active ∩ account scoping (stage 2) |
+| `src/core/dataset.ts` | `buildDataset()` pipeline + `Dataset` type (stages 3–6) |
+| `utils/currency.ts`, `utils/ownership.ts`, `utils/stats.ts` | unchanged — the pipeline calls these |
+
+`useOverviewStats`, `HistoryPage`, and `DetailPage` each shrink to: build a
+`FilterSpec`, call `buildDataset`, read the slice they render, format at the edge.
+
+### Why this makes expansion cheap
+
+- **New filter** → add a field to `FilterSpec` + one stage in the pipeline. No page
+  changes. (Today: edit 5 sites.)
+- **New view/feature** → consume an existing `Dataset` slice; no new aggregation.
+- **Bugs like empty-dates** → fixed once, at stage 6, for every consumer.
+- **Testability** → `buildDataset(models, spec)` is a pure function; one table of
+  `(spec → expected dataset)` cases replaces the scattered per-page tests.
+
+### Suggested sequencing (incremental, low-risk — for later, if you choose)
+
+1. Extract `FilterSpec` + `resolveFilterSpec` (pure rename of existing reads).
+2. Extract `scope.ts` and route the three pages through it.
+3. Land `buildDataset`, migrate **Overview** first (largest aggregator), verify
+   numbers match, then History and Detail.
+4. Delete the now-dead per-page loops; the empty-dates trim collapses to one site.
+
+Each step is independently shippable and behaviour-preserving.
+
+---
+
+## Appendix — current file map
+
+| Stage | Files |
+|-------|-------|
+| Persistence | `datasource/{types,sheets,xlsx,parse}.ts`, `api/*` |
+| Fetch/cache | `queries/sheetQueries.ts`, `queries/keys.ts`, `hooks/useSheetData.ts` |
+| Working sets | `utils/dates.ts` (`getDatesForPeriod`, `deriveDatesSorted`), `utils/balance.ts` (`activeAccounts`), `utils/ownership.ts` (`accountsVisibleToViewer`) |
+| Aggregate | `utils/stats.ts`, `pages/overview/hooks/useOverviewStats.ts`, `pages/history/HistoryPage.tsx`, `pages/detail/DetailPage.tsx` |
+| Money math | `utils/currency.ts` (`signedMain`, `toMain`, `rateFor`) |
+| Scoping primitives | `utils/ownership.ts` (`viewerShare`, `shareFor`, `ownerVisibleToViewer`) |
+| Present | `utils/format.ts`, `utils/privacy.ts`, `components/ChartTooltip.tsx` |
+| Filter state | `stores/ui.store.ts` (viewer/view), URL params (period/account) |
+</content>
+</invoke>

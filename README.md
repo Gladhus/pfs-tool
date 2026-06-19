@@ -114,6 +114,12 @@ A `CLIENT_ID` from Google Cloud Console is required for sign-in. See [`docs/SETU
 
 ---
 
+## Documentation
+
+Full docs live in [`docs/`](docs/README.md): [setup](docs/SETUP.md), [sheet schema](docs/schema.md), and a [data-architecture overview](docs/ARCHITECTURE.md).
+
+---
+
 ## License
 
 MIT

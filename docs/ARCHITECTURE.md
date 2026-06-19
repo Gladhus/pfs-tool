@@ -380,12 +380,46 @@ And the cross-cutting wins come for free because they live in the shared stages:
   (`checkpointDates` + `valuesOver`) and strategies are unit-tested in isolation
   against tiny fixtures.
 
-> **Honest boundary:** this pipeline is the *net-worth-over-time* engine. Features
-> that aren't a slice of that cube — forecasting, goals, raw transaction/cashflow
-> ledgers, what-if scenarios — should **not** be forced through `buildDataset`.
-> They get their own selector alongside it (and may reuse `ValuedContributor`s as
-> inputs). Keeping that line explicit is what stops `buildDataset` from rotting
-> into a god-function.
+### The governing principle: data layer owns data, views render
+
+`src/core/` is **the data layer** — it owns *all* data computation. Pages and
+components are the **view layer**: they call a selector and render its output, with
+no aggregation, valuation, or scoping of their own. **No data logic in a
+component** is the invariant that holds everywhere.
+
+The layer is organized by **domain**. A domain is a kind of financial thing the
+app tracks; today there are two: **Accounts** and **Stock Options**. Each domain
+owns two things:
+
+1. **A `ValuedContributor`** — how the domain contributes to net worth (its Tier-1
+   interface into the engine).
+2. **Detail selectors** — pure functions for the domain's own pages, exposing
+   shapes the net-worth `Dataset` can't.
+
+| Domain | Contributor (→ net worth) | Detail selectors (its pages) |
+|--------|---------------------------|------------------------------|
+| **Accounts** | `accountContributor` | History (chart + card model), Detail (year-over-year) |
+| **Stock Options** | `equityContributor` | Options (vested/unvested shares, vesting schedule, summary) |
+
+**Overview is not a domain** — it's the **cross-domain roll-up**: `buildDataset`
+combines every domain's contributor into one net-worth view. That's the only place
+the domains meet (History/Detail use accounts only; the Options page uses equity
+only; Overview uses both).
+
+```
+src/core/
+  filters · scope · axis · buckets · dataset   ← cross-domain net-worth engine
+  contributors/types                            ← the ValuedContributor contract
+  accounts/   contributor + history + detail    ← Accounts domain
+  options/    contributor + vesting + summary   ← Stock Options domain
+```
+
+> **Why a domain owns both halves:** the Options page needs "504 vested / 396
+> unvested shares," which is not a net-worth slice — so it lives in the Stock
+> Options domain's detail selectors, beside the `equityContributor` that feeds
+> Overview. Same math (`utils/options`), two shapes. A future domain (crypto,
+> pensions, a cashflow ledger) is added the same way: one contributor + its own
+> detail selectors, never a branch inside `buildDataset`.
 
 ### Migration
 

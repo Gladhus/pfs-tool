@@ -190,34 +190,44 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
   344 green; typecheck + lint clean. (e2e exact-amount specs run in CI on
   `sample.xlsx`; account math is golden-verified.)
 
-### Phase 7 — migrate History + Detail, delete dead code
-- Re-express `computeSeries` and History `cardData` as thin readers over
-  `buildDataset` (or a history-shaped projection that reuses the same
-  contributors).
-- Re-express Detail `getDetailYears` + cells over the shared scope/contributor
-  path; the viewer-empty year filter reduces to the shared trim.
-- Delete the now-dead per-page loops; collapse the empty-dates trim to the one
-  site in `buildDataset`. Decide `utils/stats.ts`'s fate: keep `computeDateStats`
-  as a thin single-date wrapper over `buildDataset` **only** if `EntryPage` still
-  needs it, else remove.
-- **Tests:** History + Detail goldens pass; remove tests pinning deleted internals.
-- **Exit:** one funnel, no duplication; `grep` shows the trim/scope/value logic
-  exists once.
+### Phase 7 — Accounts domain: History + Detail selectors 🔄 in progress
+Move all Accounts-domain data computation out of the components into
+`src/core/accounts/` (the domain that owns `accountContributor`).
+- ✅ History chart: `computeSeries` now values via `accountContributor`.
+- History card model (`cardData`) → a `core/accounts` selector; valuation via the
+  contributor (add `kind` to `Contribution` for the debt line).
+- Detail year-over-year (`getDetailYears` + `buildDetailModel`) → a `core/accounts`
+  selector; the viewer-empty year filter reuses the shared scope/trim.
+- Relocate `accountContributor` under `core/accounts/`; pages become pure views.
+- **Tests:** History + Detail goldens pass; new selector unit tests.
+- **Exit:** no Accounts data math in a component; trim/scope/value logic shared.
+
+### Phase 8 — Stock Options domain selectors
+Move all Stock-Options data computation out of the page components into
+`src/core/options/` (the domain that owns `equityContributor`).
+- Company value / vesting / summary selectors (vested-unvested shares, vesting
+  schedule series, totals) → pure functions reusing `utils/options` +
+  `equityContributor`.
+- Refactor `OptionsPage` + chart components to consume them and render only.
+- Relocate `equityContributor` under `core/options/`.
+- **Tests:** options selector unit tests; existing `options.spec.ts` e2e green.
+- **Exit:** no Stock-Options data math in a component; both domains fully layered.
 
 ---
 
 ## Sequencing notes
 
-- Phases 0–2 carry near-zero risk (tests + types + pure helpers) and can land
-  quickly. Phases 3, 4, 6 are the numeric ones — gated by cross-check + golden
-  tests, reviewed carefully.
-- After Phase 6 the architecture is proven; Phase 7 is mechanical cleanup that the
-  goldens fully protect.
+- Phases 0–2 carry near-zero risk (tests + types + pure helpers). Phases 3, 4, 6
+  are the numeric ones — gated by cross-check + golden tests.
+- After Phase 6 the net-worth engine is proven. Phases 7–8 are the domain split:
+  every page becomes a pure view over a `src/core/<domain>` selector, guarded by
+  the goldens and the e2e suite.
+- **Target structure:** `core/{filters,scope,axis,buckets,dataset}` (cross-domain
+  engine) + `core/contributors/types` (the contract) + `core/accounts/*` +
+  `core/options/*` (the two domains).
 - **Coverage:** each new `src/core/` module raises the floor — bump the
-  thresholds in `vitest.config.ts` as modules land so coverage ratchets up rather
-  than drifting down.
-- **Out of scope (for now):** `EntryPage` totals (`utils/entry.ts`), forecasting,
-  goals, and any non-"net-worth-over-time" feature — per the honest boundary in
-  `ARCHITECTURE.md`. These may *consume* contributors later but are not part of
-  this migration.
+  thresholds in `vitest.config.ts` as modules land.
+- **Still out of scope:** `EntryPage` totals (`utils/entry.ts`) — a data-entry
+  form, not a domain detail view. It already shares `utils` primitives; folding it
+  into a selector is a later, optional cleanup.
 </content>

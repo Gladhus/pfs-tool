@@ -154,8 +154,9 @@ view layer. Pages stop aggregating; they pass a **FilterSpec** in and read a
    │                          accountId?, view, includeInactive}│
    │  [2] scope        accounts ∩ viewer ∩ active  → Scoped     │
    │  [3] timebase     datesSorted → filteredDates (period)     │
-   │  [4] value        sweep + signedMain (+ equity)  per date  │
-   │  [5] bucketize    by category | group | person            │
+   │  [4] value        for each ValuedContributor, per date:    │
+   │                     contribute(date, ctx) → Contribution[] │
+   │  [5] bucketize    BucketStrategy(spec.view) groups them    │
    │  [6] trim         drop leading viewer-empty dates  (ONCE)  │
    └──────────────────────────────────────────────────────────┘
                               │  Dataset
@@ -163,7 +164,102 @@ view layer. Pages stop aggregating; they pass a **FilterSpec** in and read a
         page hook (thin adapter) → picks a slice → fmt*/priv*
 ```
 
-**`FilterSpec`** — the single source of truth for "what am I looking at":
+Two of those stages are **extension points**, not fixed code: stage [4] iterates a
+list of **`ValuedContributor`s** (a new asset type plugs in here), and stage [5]
+delegates to a **`BucketStrategy`** chosen by `spec.view` (a new way of grouping
+plugs in here). Everything else — scoping, timebase, trim, format — is written
+once and never touched again. These two seams are what the rest of this section
+is about; they are the reason a new feature *implements* rather than *rebuilds*.
+
+### Seam 1 — `ValuedContributor` (the key to "implement, don't rebuild")
+
+Everything that contributes value to net worth — cash/investment/real-estate
+account snapshots today, stock-option equity today, **and whatever you add next
+(crypto, pensions, a manual asset, a live API price feed)** — implements one
+interface. The pipeline doesn't know or care which kind it is; it just asks each
+contributor for its signed, main-currency values on a given date.
+
+```ts
+/** A signed, main-currency amount tagged so any BucketStrategy can group it. */
+interface Contribution {
+  amount: number;            // already converted to main currency + signed (debt < 0)
+  category: string;          // folded category id, e.g. 'investments' | 'equity'
+  ownerId?: string;          // for person view / viewer attribution
+  share: number;             // viewer's share of this contribution (0 trims the date)
+  tags?: string[];           // for group/tag matching
+  sourceId: string;          // account id, company id, … (debugging / drill-down)
+}
+
+interface ValueContext {
+  date: string;              // the snapshot date being valued
+  equityDate: string;        // date to value time-vesting assets at (often `today`)
+  viewer: string;
+  main: Currency;
+  fxRate: number | null;     // resolved once per date by the pipeline
+}
+
+interface ValuedContributor {
+  /** Stable id, for memo keys and feature flags. */
+  readonly id: string;
+  /** Cheap gate so disabled features cost nothing (e.g. stock_options flag off). */
+  isEnabled(spec: FilterSpec): boolean;
+  /** Everything this contributor is worth on `ctx.date`, already scoped + converted. */
+  contribute(ctx: ValueContext): Contribution[];
+}
+```
+
+A contributor is constructed from the raw models it needs and closes over them:
+
+```ts
+makeAccountContributor(accounts, snapshots)   // the snapshot/LOCF path
+makeEquityContributor(companies, grants, fmv, exercises)   // stock options
+// later, with ZERO changes to buildDataset, scope, bucketize, trim, or format:
+makeCryptoContributor(holdings, priceFeed)
+makePensionContributor(pensions)
+```
+
+`buildDataset` takes the list, and stage [4] becomes a single uniform loop —
+no more `if (view === 'category') … else if (view === 'person') …` equity
+branches copy-pasted three times:
+
+```ts
+for (const c of contributors.filter(c => c.isEnabled(spec))) {
+  for (const contribution of c.contribute(ctx)) { /* accumulate */ }
+}
+```
+
+**This is the seam you liked:** adding an asset class is "write a
+`ValuedContributor`, register it" — the funnel, the viewer trim, the FX, the
+formatting, and every page that renders a `Dataset` get the new value for free.
+Critically, `share` and `category`/`tags`/`ownerId` are part of the
+`Contribution`, so viewer-scoping and bucketing apply to new contributors
+automatically — the empty-dates trim and the category/group/person cards "just
+work" for crypto the day you add it.
+
+### Seam 2 — `BucketStrategy` (how contributions are grouped)
+
+The `category | group | person` toggle is real polymorphism, not a flag. Make it
+an interface so each grouping is self-contained and a fourth view is additive:
+
+```ts
+interface BucketStrategy {
+  /** Stable bucket definitions for this view (drives series + legend order). */
+  buckets(models: Models, spec: FilterSpec): BucketDef[];
+  /** Which bucket(s) a contribution belongs to, and with what amount. */
+  assign(contribution: Contribution, buckets: BucketDef[]): { bucketKey: string; amount: number }[];
+}
+
+const STRATEGIES: Record<FilterSpec['view'], BucketStrategy> = {
+  category: categoryStrategy,   // foldCategoryId match; equity is its own bucket
+  group:    groupStrategy,      // tag-filter match; equity rolls into matching groups
+  person:   personStrategy,     // per-owner share; equity → its single owner
+};
+```
+
+Stage [5] is then just `STRATEGIES[spec.view]` — the three tangled branches in
+`useOverviewStats` collapse into three small, separately testable files.
+
+### `FilterSpec` — the single source of truth for "what am I looking at"
 
 ```ts
 interface FilterSpec {
@@ -201,30 +297,57 @@ interface Dataset {
 |------|----------------|
 | `src/core/filters.ts` | `FilterSpec` + `resolveFilterSpec()` |
 | `src/core/scope.ts`   | viewer ∩ active ∩ account scoping (stage 2) |
-| `src/core/dataset.ts` | `buildDataset()` pipeline + `Dataset` type (stages 3–6) |
-| `utils/currency.ts`, `utils/ownership.ts`, `utils/stats.ts` | unchanged — the pipeline calls these |
+| `src/core/contributors/` | **Seam 1.** `ValuedContributor` type + one file per source: `accountContributor.ts`, `equityContributor.ts`, … each new asset type is a new file here |
+| `src/core/buckets/` | **Seam 2.** `BucketStrategy` type + `category.ts`, `group.ts`, `person.ts` |
+| `src/core/dataset.ts` | `buildDataset()` — composes scope → timebase → contributors → strategy → trim; owns the `Dataset` type |
+| `utils/currency.ts`, `utils/ownership.ts`, `utils/stats.ts` | unchanged — contributors call these |
 
 `useOverviewStats`, `HistoryPage`, and `DetailPage` each shrink to: build a
 `FilterSpec`, call `buildDataset`, read the slice they render, format at the edge.
 
 ### Why this makes expansion cheap
 
-- **New filter** → add a field to `FilterSpec` + one stage in the pipeline. No page
-  changes. (Today: edit 5 sites.)
-- **New view/feature** → consume an existing `Dataset` slice; no new aggregation.
-- **Bugs like empty-dates** → fixed once, at stage 6, for every consumer.
-- **Testability** → `buildDataset(models, spec)` is a pure function; one table of
-  `(spec → expected dataset)` cases replaces the scattered per-page tests.
+The two seams turn the three most common kinds of change into *additive* work —
+a new file that implements an interface, with no edits to the pipeline or pages:
+
+| You want to add… | You write… | You do **not** touch |
+|------------------|-----------|----------------------|
+| A new asset type (crypto, pension, manual asset) | one `ValuedContributor` | scope, timebase, trim, buckets, format, any page |
+| A new way to group (e.g. "by institution") | one `BucketStrategy` + a `view` value | contributors, valuation, trim, format |
+| A new filter (by tag, currency, account) | one `FilterSpec` field + the stage that reads it | contributors, strategies, pages |
+| A new screen | consume an existing `Dataset` slice | aggregation (none to write) |
+
+And the cross-cutting wins come for free because they live in the shared stages:
+
+- **Viewer-empty trim** — fixed once at stage 6; every contributor (incl. future
+  ones) inherits it, because `share` is part of each `Contribution`.
+- **FX + debt sign** — resolved once per date in `ValueContext` / inside each
+  contributor's `contribute`, never re-derived per page.
+- **Testability** — `buildDataset(models, spec)` is pure; contributors and
+  strategies are unit-tested in isolation against tiny fixtures.
+
+> **Honest boundary:** this pipeline is the *net-worth-over-time* engine. Features
+> that aren't a slice of that cube — forecasting, goals, raw transaction/cashflow
+> ledgers, what-if scenarios — should **not** be forced through `buildDataset`.
+> They get their own selector alongside it (and may reuse `ValuedContributor`s as
+> inputs). Keeping that line explicit is what stops `buildDataset` from rotting
+> into a god-function.
 
 ### Suggested sequencing (incremental, low-risk — for later, if you choose)
 
 1. Extract `FilterSpec` + `resolveFilterSpec` (pure rename of existing reads).
 2. Extract `scope.ts` and route the three pages through it.
-3. Land `buildDataset`, migrate **Overview** first (largest aggregator), verify
-   numbers match, then History and Detail.
-4. Delete the now-dead per-page loops; the empty-dates trim collapses to one site.
+3. Define `ValuedContributor` + `Contribution`; wrap **today's** logic as
+   `accountContributor` and `equityContributor` (behaviour-identical, just moved).
+4. Define `BucketStrategy`; lift the category/group/person branches out of
+   `useOverviewStats` into three strategy files.
+5. Land `buildDataset` composing 2–4; migrate **Overview** first (largest
+   aggregator), verify numbers match, then History and Detail.
+6. Delete the now-dead per-page loops; the empty-dates trim collapses to one site.
 
-Each step is independently shippable and behaviour-preserving.
+Each step is independently shippable and behaviour-preserving. After step 3 you
+can already prove the seam by adding a throwaway `makeManualAssetContributor` and
+watching it appear in every chart and card with no other change.
 
 ---
 

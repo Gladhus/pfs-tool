@@ -45,6 +45,16 @@ test.describe('Header viewer selector', () => {
     await expect(netWorthValue).not.toHaveText(meValue ?? '');
   });
 
+  test('is visible and usable on a mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    const trigger = page.getByRole('combobox', { name: 'View as' });
+    await expect(trigger).toBeVisible();
+
+    await trigger.click();
+    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await expect(trigger).toContainText('Household');
+  });
+
   test('selection persists across reload', async ({ page }) => {
     await page.getByRole('combobox', { name: 'View as' }).click();
     await page.getByRole('option', { name: 'Partner', exact: true }).click();

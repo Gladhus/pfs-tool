@@ -47,7 +47,7 @@ export default function Header() {
         {hasDatasource ? (
           <>
             {activePeople.length > 1 && (
-              <div className="hidden sm:block w-40">
+              <div className="w-28 sm:w-40">
                 <Select
                   variant="header"
                   value={currentViewer}

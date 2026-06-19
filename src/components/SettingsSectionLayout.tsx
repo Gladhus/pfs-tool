@@ -5,7 +5,7 @@ import SubNav, { type SubNavLink } from './SubNav';
 const BASE_LINKS: SubNavLink[] = [
   { to: '/settings', label: 'Preferences', icon: 'settings', end: true },
   { to: '/settings/groups', label: 'Groups', icon: 'users' },
-  { to: '/settings/people', label: 'People', icon: 'users' },
+  { to: '/settings/people', label: 'Household', icon: 'users' },
   { to: '/settings/import', label: 'Import', icon: 'upload' },
   { to: '/portfolio/manage', label: 'Manage accounts', icon: 'wallet', external: true },
 ];

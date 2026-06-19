@@ -106,19 +106,21 @@ export function PeopleSection() {
         ))}
       </div>
 
-      {issues.length > 0 && (
-        <div className="space-y-2 rounded-lg bg-surface-1 p-3 shadow-sm">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-fg">
-            <Icon name="alert" size={14} className="text-amber-500" />
-            {t('ownership_audit_title')}
-          </h3>
+      <div className="space-y-2 rounded-lg bg-surface-1 p-3 shadow-sm">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-fg">
+          <Icon name={issues.length > 0 ? 'alert' : 'check'} size={14} className={issues.length > 0 ? 'text-amber-500' : 'text-emerald-500'} />
+          {t('ownership_audit_title')}
+        </h3>
+        {issues.length > 0 ? (
           <ul className="space-y-1.5">
             {issues.map((issue, i) => (
               <li key={i} className="text-xs text-muted">{describeIssue(issue, accounts, companies, people, t)}</li>
             ))}
           </ul>
-        </div>
-      )}
+        ) : (
+          <p className="text-xs text-muted">{t('ownership_audit_ok')}</p>
+        )}
+      </div>
 
       <PersonDialog
         open={dialogOpen}

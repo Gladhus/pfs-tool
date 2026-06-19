@@ -74,7 +74,7 @@ test.describe('Stock options ownership', () => {
     await expect(page.getByText('Partner Equity Co')).toBeVisible();
 
     await page.getByRole('combobox', { name: 'View as' }).click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
     await expect(page.getByText('Partner Equity Co')).toBeVisible();
   });
 });

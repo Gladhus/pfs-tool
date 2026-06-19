@@ -22,7 +22,7 @@ test.describe('Overview "By person" view', () => {
 
   test('appears once viewing as household and splits the stat cards by person', async ({ page }) => {
     await page.getByRole('combobox', { name: 'View as' }).click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
 
     const viewMode = page.getByRole('group', { name: 'View mode' });
     const byPerson = viewMode.getByRole('radio', { name: 'By person' });
@@ -37,7 +37,7 @@ test.describe('Overview "By person" view', () => {
 
   test('switching back to an individual viewer falls back to the category view', async ({ page }) => {
     await page.getByRole('combobox', { name: 'View as' }).click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
 
     const viewMode = page.getByRole('group', { name: 'View mode' });
     await viewMode.getByRole('radio', { name: 'By person' }).click();

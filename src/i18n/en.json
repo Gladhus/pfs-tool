@@ -204,7 +204,7 @@
   "ownership_issue_unknown_owner": "{{name}} has a share assigned to an unknown or archived person ({{person}}).",
   "ownership_issue_unknown_company_owner": "{{name}} is owned by an unknown or archived person ({{person}}).",
   "viewer_select_label": "View as",
-  "viewer_household": "Household (combined)",
+  "viewer_household": "Household",
   "person_saved": "Person saved.",
   "person_archived": "Person archived.",
   "person_reactivated": "Person reactivated.",

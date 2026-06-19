@@ -22,7 +22,7 @@ test.describe('Header viewer selector', () => {
     await trigger.click();
     await expect(page.getByRole('option', { name: 'Me', exact: true })).toBeVisible();
     await expect(page.getByRole('option', { name: 'Partner', exact: true })).toBeVisible();
-    await expect(page.getByRole('option', { name: 'Household (combined)' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Household' })).toBeVisible();
   });
 
   test('switching to Household changes the displayed net worth', async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('Header viewer selector', () => {
     const meValue = await netWorthValue.textContent();
 
     await page.getByRole('combobox', { name: 'View as' }).click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
 
     await expect(netWorthValue).not.toHaveText(meValue ?? '');
   });
@@ -51,7 +51,7 @@ test.describe('Header viewer selector', () => {
     await expect(trigger).toBeVisible();
 
     await trigger.click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
     await expect(trigger).toContainText('Household');
   });
 
@@ -98,7 +98,7 @@ test.describe('Header viewer selector', () => {
     // 55000 + 6000 + 295000 = 356000 — and, since every account here is owned solely by
     // Me or split exactly Me/Partner, that also equals meNetWorth + partnerNetWorth.
     await page.getByRole('combobox', { name: 'View as' }).click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
     await expect(netWorthValue).toHaveText('$356,000.00');
     await expect(investmentsCard.locator('.text-2xl')).toHaveText('$55,000.00');
     await expect(cashCard.locator('.text-2xl')).toHaveText('$6,000.00');
@@ -124,7 +124,7 @@ test.describe('Header viewer selector', () => {
     await expect(latestCard).toContainText('$147,500.00');
 
     await page.getByRole('combobox', { name: 'View as' }).click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
     await expect(latestCard).toContainText('$356,000.00');
   });
 
@@ -165,7 +165,7 @@ test.describe('Header viewer selector', () => {
     // Household: 100% of the TFSA regardless of how it's split between Me/Partner — the
     // combined total is unaffected by the ratio, only by how it's divided.
     await page.getByRole('combobox', { name: 'View as' }).click();
-    await page.getByRole('option', { name: 'Household (combined)' }).click();
+    await page.getByRole('option', { name: 'Household' }).click();
     await expect(investmentsCard.locator('.text-2xl')).toHaveText('$55,000.00');
     await expect(netWorthValue).toHaveText('$356,000.00');
   });

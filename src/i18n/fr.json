@@ -205,7 +205,7 @@
   "ownership_issue_unknown_owner": "{{name}} a une part attribuée à une personne inconnue ou archivée ({{person}}).",
   "ownership_issue_unknown_company_owner": "{{name}} appartient à une personne inconnue ou archivée ({{person}}).",
   "viewer_select_label": "Afficher comme",
-  "viewer_household": "Foyer (combiné)",
+  "viewer_household": "Foyer",
   "person_saved": "Personne enregistrée.",
   "person_archived": "Personne archivée.",
   "person_reactivated": "Personne réactivée.",

@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.2] — 2026-06-19
+
+### Changed
+- **Settings "People" renamed to "Household"** — nav label and section hint text now refer to the household members feature consistently
+- **Viewer dropdown label simplified** — the header "View as" Household option no longer has the redundant "(combined)" suffix
+
+### Fixed
+- **Header viewer dropdown unreachable on mobile** — the "View as" (Me/Partner/Household) selector was hidden below the `sm` breakpoint with no fallback; it's now always visible, just narrower on small screens
+- **Ownership audit silently invisible** — the Settings → Household ownership audit section only rendered when issues existed, so it never appeared with clean data; it now always renders, showing a confirmation message when there are no issues
+
 ## [2.2.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.1) — 2026-06-19
 
 ### Added

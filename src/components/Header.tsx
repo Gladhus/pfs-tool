@@ -30,8 +30,7 @@ export default function Header() {
       {/* Brand */}
       <div className="flex items-center gap-2.5 text-white shrink-0">
         <Icon name="logo" size={24} strokeWidth={2.5} className="text-[#72bf48]" />
-        {/* Wordmark hides on mobile so the "View as" selector has room in the header. */}
-        <span className="hidden sm:inline font-semibold text-sm tracking-tight">Net Worth Tracker</span>
+        <span className="font-semibold text-sm tracking-tight">Net Worth Tracker</span>
       </div>
 
       {/* Inline nav tabs (desktop) */}
@@ -48,7 +47,7 @@ export default function Header() {
         {hasDatasource ? (
           <>
             {activePeople.length > 1 && (
-              <div className="w-36 sm:w-40">
+              <div className="hidden sm:block w-40">
                 <Select
                   variant="header"
                   value={currentViewer}

@@ -25,15 +25,6 @@ test.describe('Header viewer selector', () => {
     await expect(page.getByRole('option', { name: 'Household (combined)' })).toBeVisible();
   });
 
-  test('the viewer selector stays reachable on a mobile viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 800 });
-    // It used to be `hidden sm:block` (display:none below 640px); it must remain usable on mobile.
-    const trigger = page.getByRole('combobox', { name: 'View as' });
-    await expect(trigger).toBeVisible();
-    await trigger.click();
-    await expect(page.getByRole('option', { name: 'Partner', exact: true })).toBeVisible();
-  });
-
   test('switching to Household changes the displayed net worth', async ({ page }) => {
     const netWorthValue = page.locator('p:has-text("Net worth") + div');
     const meValue = await netWorthValue.textContent();

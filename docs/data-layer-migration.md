@@ -236,7 +236,8 @@ Moved all Stock-Options data computation out of the page components into
   `core/options/*` (the two domains).
 - **Coverage:** each new `src/core/` module raises the floor — bump the
   thresholds in `vitest.config.ts` as modules land.
-- **Still out of scope:** `EntryPage` totals (`utils/entry.ts`) — a data-entry
-  form, not a domain detail view. It already shares `utils` primitives; folding it
-  into a selector is a later, optional cleanup.
+- **Still out of scope:** forecasting, goals, cashflow ledgers — future domains,
+  each added as one contributor + its own selectors. (Entry, initially deferred,
+  was folded into the Accounts domain: it's the domain's *write* surface —
+  `core/accounts/entry.ts` — and its per-date totals are account valuation.)
 </content>

@@ -8,7 +8,7 @@ import { useSaveMonthMutation } from '@/queries/sheetMutations';
 import { tr } from '@/i18n';
 import { fmtMoney } from '@/utils/format';
 import { fxMap as buildFxMap } from '@/utils/currency';
-import { computeEntryTotals, buildEntryRows } from '@/utils/entry';
+import { computeEntryTotals, buildEntryRows } from '@/core/accounts/entry';
 import { deriveDatesSorted, normalizeDate, prevDate, todayISO } from '@/utils/dates';
 import { snapshotForDate, buildEffectiveBalances, computeNetWorthFromSnapshots } from '@/utils/stats';
 import { activeAccounts, categoriesInOrder, accountsForCategory, projectBalance } from '@/utils/balance';

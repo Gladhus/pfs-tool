@@ -398,7 +398,7 @@ owns two things:
 
 | Domain | Contributor (→ net worth) | Detail selectors (its pages) |
 |--------|---------------------------|------------------------------|
-| **Accounts** | `accountContributor` | History (chart + card model), Detail (year-over-year) |
+| **Accounts** | `accountContributor` | History (chart + card model), Detail (year-over-year), Entry (per-date totals + row builder) |
 | **Stock Options** | `equityContributor` | Options (vested/unvested shares, vesting schedule, summary) |
 
 **Overview is not a domain** — it's the **cross-domain roll-up**: `buildDataset`
@@ -410,8 +410,8 @@ only; Overview uses both).
 src/core/
   filters · scope · axis · buckets · dataset   ← cross-domain net-worth engine
   contributors/types                            ← the ValuedContributor contract
-  accounts/   contributor + history + detail    ← Accounts domain
-  options/    contributor + vesting + summary   ← Stock Options domain
+  accounts/   contributor + history + detail + entry   ← Accounts domain
+  options/    contributor + vesting + summary          ← Stock Options domain
 ```
 
 > **Why a domain owns both halves:** the Options page needs "504 vested / 396

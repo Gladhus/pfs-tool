@@ -1,0 +1,198 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GOLDEN Detail year-over-year cell values > viewer = __household__ 1`] = `
+{
+  "cash_usd": {
+    "2021": null,
+    "2022": null,
+    "2023": 1350,
+    "2024": 1680,
+  },
+  "house": {
+    "2021": null,
+    "2022": null,
+    "2023": 400000,
+    "2024": 400000,
+  },
+  "inv_joint": {
+    "2021": null,
+    "2022": null,
+    "2023": 8000,
+    "2024": 9000,
+  },
+  "inv_self": {
+    "2021": null,
+    "2022": null,
+    "2023": 20000,
+    "2024": 25000,
+  },
+  "mortgage": {
+    "2021": null,
+    "2022": null,
+    "2023": -300000,
+    "2024": -290000,
+  },
+  "partner_inv": {
+    "2021": null,
+    "2022": 10000,
+    "2023": 10000,
+    "2024": 10000,
+  },
+}
+`;
+
+exports[`GOLDEN Detail year-over-year cell values > viewer = self 1`] = `
+{
+  "cash_usd": {
+    "2021": null,
+    "2022": null,
+    "2023": 1350,
+    "2024": 1680,
+  },
+  "house": {
+    "2021": null,
+    "2022": null,
+    "2023": 200000,
+    "2024": 200000,
+  },
+  "inv_joint": {
+    "2021": null,
+    "2022": null,
+    "2023": 4000,
+    "2024": 4500,
+  },
+  "inv_self": {
+    "2021": null,
+    "2022": null,
+    "2023": 20000,
+    "2024": 25000,
+  },
+  "mortgage": {
+    "2021": null,
+    "2022": null,
+    "2023": -150000,
+    "2024": -145000,
+  },
+}
+`;
+
+exports[`GOLDEN computeDateStats (net worth + byCategory at latest date) > viewer = __household__ 1`] = `
+{
+  "byCategory": {
+    "cash": 1680,
+    "equity": 6352.5,
+    "investments": 54000,
+    "real_estate": 420000,
+    "real_estate_debt": -290000,
+  },
+  "netWorth": 192032.5,
+}
+`;
+
+exports[`GOLDEN computeDateStats (net worth + byCategory at latest date) > viewer = partner 1`] = `
+{
+  "byCategory": {
+    "cash": 0,
+    "investments": 19500,
+    "real_estate": 210000,
+    "real_estate_debt": -145000,
+  },
+  "netWorth": 84500,
+}
+`;
+
+exports[`GOLDEN computeDateStats (net worth + byCategory at latest date) > viewer = self 1`] = `
+{
+  "byCategory": {
+    "cash": 1680,
+    "equity": 6352.5,
+    "investments": 34500,
+    "real_estate": 210000,
+    "real_estate_debt": -145000,
+  },
+  "netWorth": 107532.5,
+}
+`;
+
+exports[`GOLDEN computeSeries (History chart) > viewer = __household__ 1`] = `
+{
+  "dates": [
+    "2021-03-15",
+    "2022-02-01",
+    "2023-05-10",
+    "2024-06-01",
+  ],
+  "investments": [
+    10000,
+    38000,
+    44000,
+    54000,
+  ],
+  "other": [
+    null,
+    1300,
+    1620,
+    1680,
+  ],
+  "realEstateNet": [
+    null,
+    100000,
+    110000,
+    130000,
+  ],
+}
+`;
+
+exports[`GOLDEN computeSeries (History chart) > viewer = partner 1`] = `
+{
+  "dates": [
+    "2021-03-15",
+    "2022-02-01",
+    "2023-05-10",
+    "2024-06-01",
+  ],
+  "investments": [
+    10000,
+    14000,
+    14500,
+    19500,
+  ],
+  "other": [
+    0,
+    0,
+    0,
+    0,
+  ],
+  "realEstateNet": [
+    null,
+    50000,
+    55000,
+    65000,
+  ],
+}
+`;
+
+exports[`GOLDEN computeSeries (History chart) > viewer = self 1`] = `
+{
+  "dates": [
+    "2022-02-01",
+    "2023-05-10",
+    "2024-06-01",
+  ],
+  "investments": [
+    24000,
+    29500,
+    34500,
+  ],
+  "other": [
+    1300,
+    1620,
+    1680,
+  ],
+  "realEstateNet": [
+    50000,
+    55000,
+    65000,
+  ],
+}
+`;

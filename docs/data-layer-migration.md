@@ -45,10 +45,15 @@ output against one rich fixture and assert equality through every later phase.
   - `computeSeries` (extends existing `historySeries.test.ts`)
   - `HistoryPage` card data (net / investments / real-estate / debts per month)
   - `getDetailYears` + Detail cell values (YoY table)
-- **e2e characterization** (`e2e/networth-baseline.spec.ts`): load `sample.xlsx`,
-  snapshot the **hero net-worth string** and a couple of **category card values**.
-  This catches any end-to-end drift the unit goldens might miss (formatting,
-  wiring).
+- **e2e characterization** — **already provided** by the existing suite, which
+  loads `sample.xlsx` and pins exact end-to-end numbers: `viewer-select.spec.ts`
+  asserts the hero net worth and Investments/Cash card values across Me / Partner
+  / Household ($208,500 / $147,500 / $356,000) and the History card sync, and
+  `person-view`, `options`, `migration`, `people`, `xlsx` cover the rest. These
+  stay green through every phase as the end-to-end net — no new baseline spec is
+  needed (adding one would duplicate `viewer-select`). The new **unit goldens**
+  carry the cases the e2e fixture lacks: FX conversion, equity vesting, and the
+  leading viewer-empty trim.
 
 These goldens are the contract Phases 3–7 must satisfy. When a phase intends to
 change a number, we update the golden in *that* phase's commit with a note.
@@ -80,10 +85,16 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
 
 ## Phases
 
-### Phase 0 — Safety net (no production code change)
-- Add `src/tests/fixtures/portfolio.ts` and all golden tests above.
-- Add `e2e/networth-baseline.spec.ts`.
-- **Exit:** goldens pass against *current* code; CI green. This commit is pure test.
+### Phase 0 — Safety net (no production code change) ✅ done
+- Added `src/tests/fixtures/portfolio.ts` — the rich shared fixture.
+- Added `src/tests/golden/overviewStats.golden.test.ts` (inline snapshots,
+  category/group/person × self/partner/household) and
+  `src/tests/golden/series.golden.test.ts` (`computeSeries`, `computeDateStats`,
+  and a Detail YoY grid; external `.snap`).
+- e2e baseline already covered by `e2e/viewer-select.spec.ts` (exact amounts) — no
+  new spec added.
+- **Exit:** ✅ goldens pass against current code; full suite 281 tests green;
+  typecheck + lint clean. Pure-test commit.
 
 ### Phase 1 — `FilterSpec` + `scope` (pure extraction)
 - `src/core/filters.ts`: `FilterSpec` + `resolveFilterSpec(searchParams, uiState)`

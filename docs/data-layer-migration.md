@@ -142,18 +142,21 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
 - **Exit:** ✅ account valuation provably equals legacy; suite 318 green;
   goldens untouched; still unused by pages.
 
-### Phase 4 — `equityContributor` (vesting, exact days, `equityDate`)
+### Phase 4 — `equityContributor` (vesting, exact days, `equityDate`) ✅ done
 - `src/core/contributors/equityContributor.ts`:
-  - `isEnabled(spec)` = stock-options flag.
-  - `checkpointDates(range)` = **exact** vesting days (`grantFirstVestDate` →
-    `grantFullyVestedDate`) ∪ FMV days ∪ exercise days — **not**
-    `generateMonthlyDates`.
-  - `valuesOver(axis, ctx)` = `computeCompanyEquityValue` per company at the axis
-    date (or `ctx.equityDate` for the current scalar), single owner, converted.
-- **Tests:** vesting step on exact day; FMV LOCF; exercise step-down; owner
-  visibility; currency; `equityDate=today` vs series-date; disabled ⇒ no
-  contributions. Cross-check vs `computeCompanyEquityValue`.
-- **Exit:** equity valuation provably equals legacy.
+  - `isEnabled()` = has an active company (config-flag gating stays at construction
+    time in Phase 6, matching today's OverviewPage).
+  - `checkpointDates(range)` = **exact** vesting-step days (cliff, each interval
+    boundary, full vest — via `addMonths`, day-of-month preserved) ∪ FMV ∪ exercise
+    days; explicitly **not** `generateMonthlyDates`.
+  - `valuesOver(axis, ctx)` = `computeCompanyEquityValue` per company at
+    `ctx.equityDate ?? date`, single owner, converted at that date's rate. No wall
+    clock read — the as-of date is injected.
+- **Tests:** exact day-of-month checkpoints (mid-month grant, no `-01` snap);
+  one-per-owner; `equityDate` override vs axis date; partner (non-owner) sees 0;
+  disabled when no active companies. Cross-check: equity total per viewer ==
+  `computeDateStats` equity bucket at every date.
+- **Exit:** ✅ equity valuation provably equals legacy; suite 328 green.
 
 ### Phase 5 — `BucketStrategy` (category / group / person)
 - `src/core/buckets/{types,category,group,person}.ts` — each `buckets()` +

@@ -1,7 +1,7 @@
 import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 import { HEADERS } from '@/constants';
 import { normalizeDate } from '@/utils/dates';
-import { ownershipFromRow, serializeOwnership } from '@/utils/ownership';
+import { LEGACY_SELF_ID, ownershipFromRow, serializeOwnership } from '@/utils/ownership';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -169,6 +169,7 @@ export function parseOptionCompanyRows(rows: unknown[][]): OptionCompany[] {
       active: obj.active === true || String(obj.active).toUpperCase() !== 'FALSE',
       tags: parseTagString(obj.tags),
       currency: cur === 'USD' || cur === 'CAD' ? cur : undefined,
+      owner: String(obj.owner || '').trim() || LEGACY_SELF_ID,
     } as OptionCompany;
   }).filter((x): x is OptionCompany => x !== null);
 }
@@ -275,7 +276,7 @@ function serializeByHeaders<T extends Record<string, unknown>>(headers: readonly
 
 export function serializeOptionCompanies(items: OptionCompany[]): unknown[][] {
   return serializeByHeaders(
-    ['id', 'name', 'ticker', 'active', 'tags', 'currency'],
+    ['id', 'name', 'ticker', 'active', 'tags', 'currency', 'owner'],
     items.map(c => ({ ...c, active: c.active === false ? 'FALSE' : 'TRUE', tags: c.tags.join(', ') })) as unknown as Record<string, unknown>[],
   );
 }

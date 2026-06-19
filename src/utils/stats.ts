@@ -3,7 +3,7 @@ import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/ty
 import { buildXAxisTicks } from './dates';
 import { computeCompanyEquityValue } from './options';
 import { signedMain, toMain, rateFor } from './currency';
-import { LEGACY_SELF_ID } from './ownership';
+import { LEGACY_SELF_ID, ownerVisibleToViewer } from './ownership';
 
 export { buildXAxisTicks };
 
@@ -118,6 +118,7 @@ export function computeDateStats(
     let eqVal = 0;
     for (const c of equity.companies) {
       if (c.active === false) continue;
+      if (!ownerVisibleToViewer(c.owner, viewer)) continue;
       const v = computeCompanyEquityValue(c.id, equity.grants, equity.fmv, equity.exercises, equityDate);
       if (v) eqVal += toMain(v, c.currency ?? main, main, eqUsdCad);
     }

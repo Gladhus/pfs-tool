@@ -12,9 +12,11 @@ import {
   useOptionFmvQuery,
   useOptionExercisesQuery,
   useFxRatesQuery,
+  usePeopleQuery,
 } from '@/queries/sheetQueries';
 import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { fxMap as buildFxMap } from '@/utils/currency';
+import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
 import type { Currency } from '@/types/sheets';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
@@ -49,6 +51,7 @@ export default function OverviewPage() {
   const categoryMetaQ = useCategoryMetaQuery();
   const groupsQ = useGroupsQuery();
   const configQ = useConfigQuery();
+  const peopleQ = usePeopleQuery();
   const fxRatesQ = useFxRatesQuery();
   const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
   const currency = mainCurrency;
@@ -66,6 +69,9 @@ export default function OverviewPage() {
   const accounts = accountsQ.data ?? [];
   const categoryMeta = categoryMetaQ.data ?? [];
   const groups = groupsQ.data ?? [];
+  const people = peopleQ.data ?? [];
+  const showPerson = viewer === HOUSEHOLD_VIEWER;
+  const effectiveView = !showPerson && ovView === 'person' ? 'category' : ovView;
 
   const datesSorted = deriveDatesSorted(snapshots);
   const filteredDates = getDatesForPeriod(datesSorted, period);
@@ -92,10 +98,11 @@ export default function OverviewPage() {
     accounts,
     categoryMeta,
     groups,
+    people,
     optionData,
     filteredDates,
     datesSorted,
-    view: ovView,
+    view: effectiveView,
     seriesVisible,
     stockOptEnabled,
     main: mainCurrency,
@@ -148,7 +155,7 @@ export default function OverviewPage() {
               netColor="var(--accent)"
               buckets={stats.bucketData}
               catsWithData={stats.catsWithData}
-              view={ovView}
+              view={effectiveView}
               catColor={catColor}
             />
             <OverviewChart
@@ -160,7 +167,7 @@ export default function OverviewPage() {
               currency={currency}
               isPrivate={privateMode}
               netLabel={t('net_worth_chart')}
-              view={ovView}
+              view={effectiveView}
             />
           </>
         )}
@@ -175,14 +182,15 @@ export default function OverviewPage() {
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-medium text-muted">{t('allocation_title')}</h2>
-          <ViewToggle value={ovView} onChange={setOvView} />
+          <ViewToggle value={effectiveView} onChange={setOvView} showPerson={showPerson} />
         </div>
         <StatCardGrid
-          view={ovView}
+          view={effectiveView}
           effectiveCats={stats.effectiveCats}
           byCategory={stats.byCategory}
           prevByCategory={stats.prevByCategory}
           groupStats={stats.groupStats}
+          personStats={stats.personStats}
           accounts={accounts}
           sparkDates={stats.sparkDates}
           sweepForSpark={stats.sweepForSpark}

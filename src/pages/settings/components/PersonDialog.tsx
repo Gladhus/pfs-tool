@@ -13,6 +13,7 @@ interface Props {
   onClose: () => void;
   person: Person | null;
   nextSortOrder: number;
+  archiveBlocked?: boolean;
   onSave: (person: Person) => void;
   onToggleActive: () => void;
 }
@@ -21,7 +22,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div><Label>{label}</Label>{children}</div>;
 }
 
-export function PersonDialog({ open, onClose, person, nextSortOrder, onSave, onToggleActive }: Props) {
+export function PersonDialog({ open, onClose, person, nextSortOrder, archiveBlocked = false, onSave, onToggleActive }: Props) {
   const { t } = useTranslation();
   const isNew = person === null;
 
@@ -68,11 +69,13 @@ export function PersonDialog({ open, onClose, person, nextSortOrder, onSave, onT
 
       <div className="mt-5 flex items-center justify-between">
         {!isNew && !person!.primary
-          ? (
-            <Button variant="danger" size="sm" onClick={onToggleActive}>
-              {person!.active ? t('archive_person') : t('reactivate_person')}
-            </Button>
-          )
+          ? (archiveBlocked && person!.active
+            ? <p className="text-xs text-muted">{t('cannot_archive_has_ownership')}</p>
+            : (
+              <Button variant="danger" size="sm" onClick={onToggleActive}>
+                {person!.active ? t('archive_person') : t('reactivate_person')}
+              </Button>
+            ))
           : !isNew && person!.primary
             ? <p className="text-xs text-muted">{t('cannot_archive_primary')}</p>
             : <span />}

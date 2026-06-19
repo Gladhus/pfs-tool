@@ -1,4 +1,4 @@
-import type { OwnershipEntry, Person } from '@/types/sheets';
+import type { Account, OptionCompany, OwnershipEntry, Person } from '@/types/sheets';
 
 /** Ids baked into DEFAULT_PEOPLE — used only to migrate legacy owner/ownership_share data. */
 export const LEGACY_SELF_ID = 'self';
@@ -12,7 +12,7 @@ export function parseOwnership(raw: unknown): OwnershipEntry[] {
   if (Array.isArray(raw)) {
     return raw
       .map(e => ({ person_id: String((e as OwnershipEntry).person_id ?? ''), share: Number((e as OwnershipEntry).share) }))
-      .filter(e => e.person_id && Number.isFinite(e.share));
+      .filter(e => e.person_id && Number.isFinite(e.share) && e.share >= 0);
   }
   if (typeof raw !== 'string' || !raw.trim()) return [];
   try {
@@ -61,6 +61,11 @@ export function viewerShare(ownership: OwnershipEntry[], viewer: string): number
   return viewer === HOUSEHOLD_VIEWER ? totalShare(ownership) : shareFor(ownership, viewer);
 }
 
+/** Whether a single-owner item (e.g. an option company) should be visible to the given viewer. */
+export function ownerVisibleToViewer(ownerId: string, viewer: string): boolean {
+  return viewer === HOUSEHOLD_VIEWER || viewer === ownerId;
+}
+
 /**
  * Ensures exactly one person is flagged `primary`. Sheets written before the `primary`
  * column existed (or any row data that lost the flag) fall back to LEGACY_SELF_ID, or the
@@ -70,6 +75,40 @@ export function ensurePrimaryPerson(people: Person[]): Person[] {
   if (!people.length || people.some(p => p.primary)) return people;
   const fallbackId = people.find(p => p.id === LEGACY_SELF_ID)?.id ?? people[0].id;
   return people.map(p => p.id === fallbackId ? { ...p, primary: true } : p);
+}
+
+/** Whether a person still has a stake in any active account or owns any active option company. Archived accounts/companies don't count. */
+export function personHasActiveClaims(personId: string, accounts: Account[], companies: OptionCompany[]): boolean {
+  if (accounts.some(a => a.active && shareFor(a.ownership, personId) > 0)) return true;
+  if (companies.some(c => c.active && c.owner === personId)) return true;
+  return false;
+}
+
+export type OwnershipIssue =
+  | { kind: 'unbalanced_account'; accountId: string; pct: number }
+  | { kind: 'unknown_account_owner'; accountId: string; personId: string }
+  | { kind: 'unknown_company_owner'; companyId: string; personId: string };
+
+/**
+ * Flags ownership data that's inconsistent with the current people list: active accounts whose
+ * shares don't sum to 100%, and active accounts/companies referencing an unknown or archived person.
+ */
+export function auditOwnership(accounts: Account[], companies: OptionCompany[], people: Person[]): OwnershipIssue[] {
+  const knownIds = new Set(people.filter(p => p.active).map(p => p.id));
+  const issues: OwnershipIssue[] = [];
+  for (const a of accounts) {
+    if (!a.active) continue;
+    const pct = Math.round(totalShare(a.ownership) * 100);
+    if (pct !== 100) issues.push({ kind: 'unbalanced_account', accountId: a.id, pct });
+    for (const personId of new Set(a.ownership.map(o => o.person_id))) {
+      if (!knownIds.has(personId)) issues.push({ kind: 'unknown_account_owner', accountId: a.id, personId });
+    }
+  }
+  for (const c of companies) {
+    if (!c.active) continue;
+    if (!knownIds.has(c.owner)) issues.push({ kind: 'unknown_company_owner', companyId: c.id, personId: c.owner });
+  }
+  return issues;
 }
 
 /** Human-readable "Name 50% · Partner 50%" (or just "Name" for a single full owner). */

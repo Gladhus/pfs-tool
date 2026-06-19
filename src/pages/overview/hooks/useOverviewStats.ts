@@ -1,12 +1,17 @@
 import { useMemo } from 'react';
-import type { Account, CategoryMeta, Group, Snapshot, OptionCompany, OptionGrant, OptionFmv, OptionExercise, Currency } from '@/types/sheets';
+import type { Account, CategoryMeta, Group, Snapshot, OptionCompany, OptionGrant, OptionFmv, OptionExercise, Currency, Person } from '@/types/sheets';
 import { buildEffectiveBalances, buildBalanceSweep, computeDateStats } from '@/utils/stats';
 import { todayISO } from '@/utils/dates';
 import { computeCompanyEquityValue } from '@/utils/options';
 import { foldCategoryId, accountMatchesGroup, groupColor } from '@/utils/colors';
 import { signedMain, toMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID } from '@/utils/ownership';
+import { LEGACY_SELF_ID, shareFor, ownerVisibleToViewer } from '@/utils/ownership';
 import { tr } from '@/i18n';
+
+const PERSON_COLORS = ['#06b6d4', '#f59e0b', '#8b5cf6', '#10b981', '#ef4444', '#3b82f6'];
+function personColor(person: Person, index: number): string {
+  return person.color || PERSON_COLORS[index % PERSON_COLORS.length];
+}
 
 export interface EquityData {
   companies: OptionCompany[];
@@ -23,6 +28,13 @@ export interface BucketData {
   data: (number | null)[];
 }
 
+export interface PersonStat {
+  person: Person;
+  color: string;
+  value: number;
+  prevValue: number | null;
+}
+
 export interface OverviewStats {
   latestDate: string | null;
   periodRefDate: string | null;
@@ -33,6 +45,7 @@ export interface OverviewStats {
   effectiveCats: CategoryMeta[];
   catsWithData: Set<string>;
   groupStats: { group: Group; value: number; prevValue: number | null }[];
+  personStats: PersonStat[];
   sparkDates: string[];
   sweepForSpark: Record<string, number>[];
   chartDates: string[];
@@ -85,6 +98,7 @@ function groupStatsFor(
     const eqUsdCad = rateFor(fxMap, equityDate);
     for (const c of optionData.companies) {
       if (c.active === false) continue;
+      if (!ownerVisibleToViewer(c.owner, viewer)) continue;
       if (accountMatchesGroup({ tags: c.tags }, group)) {
         const v = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, equityDate);
         total += toMain(v, c.currency ?? main, main, eqUsdCad);
@@ -99,10 +113,11 @@ interface Params {
   accounts: Account[];
   categoryMeta: CategoryMeta[];
   groups: Group[];
+  people?: Person[];
   optionData?: EquityData;
   filteredDates: string[];
   datesSorted: string[];
-  view: 'category' | 'group';
+  view: 'category' | 'group' | 'person';
   seriesVisible: Record<string, boolean>;
   stockOptEnabled: boolean;
   main: Currency;
@@ -115,6 +130,7 @@ export function useOverviewStats({
   accounts,
   categoryMeta,
   groups,
+  people = [],
   optionData,
   filteredDates,
   datesSorted,
@@ -162,6 +178,14 @@ export function useOverviewStats({
       prevValue: periodRefDate ? groupStatsFor(periodRefDate, g, snapshots, accounts, main, fxMap, optionData, periodRefDate, viewer) : null,
     }));
 
+    const activePeople = people.filter(p => p.active);
+    const personStats: PersonStat[] = activePeople.map((p, i) => ({
+      person: p,
+      color: personColor(p, i),
+      value: latestDate ? foldedStatsFor(latestDate, snapshots, accounts, main, fxMap, optionData, today, p.id).netWorth : 0,
+      prevValue: periodRefDate ? foldedStatsFor(periodRefDate, snapshots, accounts, main, fxMap, optionData, periodRefDate, p.id).netWorth : null,
+    }));
+
     // Sparklines follow the selected period; fall back to the last 24 entries
     // only when the period yields nothing.
     const sparkDates = filteredDates.length ? filteredDates : datesSorted.slice(-24);
@@ -177,6 +201,7 @@ export function useOverviewStats({
       effectiveCats,
       catsWithData,
       groupStats,
+      personStats,
       sparkDates,
       sweepForSpark,
       chartDates: [],
@@ -193,6 +218,7 @@ export function useOverviewStats({
       label: string;
       color: string | null;
       catId?: string;
+      personId?: string;
       match: (a: Account) => boolean;
     };
 
@@ -202,6 +228,14 @@ export function useOverviewStats({
           label: g.name,
           color: groupColor(g),
           match: (a: Account) => accountMatchesGroup(a, g),
+        }))
+      : view === 'person'
+      ? activePeople.map((p, i) => ({
+          key: 'person:' + p.id,
+          label: p.name || p.id,
+          color: personColor(p, i),
+          personId: p.id,
+          match: () => false,
         }))
       : effectiveCats.map(c => ({
           key: c.id,
@@ -238,11 +272,20 @@ export function useOverviewStats({
         dayHasAny = true;
         const signed = signedMain(a, balance_raw, main, usdCad, viewer);
         net[i] += signed;
-        for (let b = 0; b < buckets.length; b++) {
-          if (b === equityBucketIdx) continue;
-          if (buckets[b].match(a)) {
-            seriesArr[b][i] += signed;
+        if (view === 'person') {
+          for (let b = 0; b < buckets.length; b++) {
+            const personId = buckets[b].personId!;
+            if (!shareFor(a.ownership, personId)) continue;
+            seriesArr[b][i] += signedMain(a, balance_raw, main, usdCad, personId);
             if (bucketFirstSeen[b] === -1) bucketFirstSeen[b] = i;
+          }
+        } else {
+          for (let b = 0; b < buckets.length; b++) {
+            if (b === equityBucketIdx) continue;
+            if (buckets[b].match(a)) {
+              seriesArr[b][i] += signed;
+              if (bucketFirstSeen[b] === -1) bucketFirstSeen[b] = i;
+            }
           }
         }
       }
@@ -252,6 +295,7 @@ export function useOverviewStats({
           let equity = 0;
           for (const c of optionData.companies) {
             if (c.active === false) continue;
+            if (!ownerVisibleToViewer(c.owner, viewer)) continue;
             const v = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, filteredDates[i]);
             equity += toMain(v, c.currency ?? main, main, usdCad);
           }
@@ -263,10 +307,26 @@ export function useOverviewStats({
               if (bucketFirstSeen[equityBucketIdx] === -1) bucketFirstSeen[equityBucketIdx] = i;
             }
           }
+        } else if (view === 'person') {
+          // Person view: each company's equity belongs entirely to its single owner.
+          for (const c of optionData.companies) {
+            if (c.active === false) continue;
+            const raw = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, filteredDates[i]);
+            const ceq = toMain(raw, c.currency ?? main, main, usdCad);
+            if (!ceq) continue;
+            net[i] += ceq;
+            dayHasAny = true;
+            const b = buckets.findIndex(bucket => bucket.personId === c.owner);
+            if (b >= 0) {
+              seriesArr[b][i] += ceq;
+              if (bucketFirstSeen[b] === -1) bucketFirstSeen[b] = i;
+            }
+          }
         } else {
           // Group view: attribute each company's (converted) equity to groups its tags match.
           for (const c of optionData.companies) {
             if (c.active === false) continue;
+            if (!ownerVisibleToViewer(c.owner, viewer)) continue;
             const raw = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, filteredDates[i]);
             const ceq = toMain(raw, c.currency ?? main, main, usdCad);
             if (!ceq) continue;
@@ -321,6 +381,7 @@ export function useOverviewStats({
       effectiveCats,
       catsWithData,
       groupStats,
+      personStats,
       sparkDates,
       sweepForSpark,
       chartDates,
@@ -328,7 +389,7 @@ export function useOverviewStats({
       bucketData,
     };
   }, [
-    snapshots, accounts, categoryMeta, groups, optionData,
+    snapshots, accounts, categoryMeta, groups, people, optionData,
     filteredDates, datesSorted, view, seriesVisible, stockOptEnabled, main, fxMap, viewer,
   ]);
 }

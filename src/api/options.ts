@@ -1,5 +1,6 @@
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 import { HEADERS } from '@/constants';
+import { LEGACY_SELF_ID } from '@/utils/ownership';
 import { gapiCall, safeWriteTab } from './sheets';
 
 function parseNum(v: unknown, fallback = 0): number {
@@ -60,6 +61,7 @@ export const loadOptionCompanies = (sheetId: string): Promise<OptionCompany[]> =
       active: obj.active === true || String(obj.active).toUpperCase() !== 'FALSE',
       tags: parseTags(obj.tags),
       currency: cur === 'USD' || cur === 'CAD' ? cur : undefined,
+      owner: String(obj.owner || '').trim() || LEGACY_SELF_ID,
     } as OptionCompany;
   });
 

@@ -10,14 +10,14 @@ interface UIState {
   lang: Lang;
   theme: Theme;
   ovSeriesVisible: Record<string, boolean>;
-  ovView: 'category' | 'group';
+  ovView: 'category' | 'group' | 'person';
   currentViewer: string;
 
   togglePrivateMode: () => void;
   setLang: (lang: Lang) => void;
   setTheme: (theme: Theme) => void;
   setOvSeriesVisible: (series: Record<string, boolean>) => void;
-  setOvView: (view: 'category' | 'group') => void;
+  setOvView: (view: 'category' | 'group' | 'person') => void;
   setCurrentViewer: (viewer: string) => void;
 }
 

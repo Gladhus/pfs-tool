@@ -18,7 +18,7 @@ export const HEADERS = {
   tags:             ['name'],
   people:           ['id', 'name', 'email', 'color', 'sort_order', 'active', 'primary'],
   groups:           ['name', 'color', 'all', 'any', 'exclude'],
-  option_companies: ['id', 'name', 'ticker', 'active', 'tags', 'currency'],
+  option_companies: ['id', 'name', 'ticker', 'active', 'tags', 'currency', 'owner'],
   option_grants:    ['id', 'company_id', 'label', 'grant_type', 'grant_date', 'total_shares', 'strike_price', 'vesting_start', 'cliff_months', 'vesting_months', 'vesting_interval', 'expiry_date'],
   option_fmv:       ['date', 'company_id', 'fmv', 'note'],
   option_exercises: ['id', 'grant_id', 'date', 'shares_exercised', 'price_paid', 'note'],

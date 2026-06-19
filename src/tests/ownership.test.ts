@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseOwnership, serializeOwnership, migrateLegacyOwnership, ownershipFromRow,
-  shareFor, totalShare, viewerShare, ensurePrimaryPerson, ownershipLabel, HOUSEHOLD_VIEWER,
+  shareFor, totalShare, viewerShare, ensurePrimaryPerson, ownershipLabel, auditOwnership, HOUSEHOLD_VIEWER,
 } from '@/utils/ownership';
-import type { Person } from '@/types/sheets';
+import type { Account, OptionCompany, Person } from '@/types/sheets';
 
 describe('parseOwnership', () => {
   it('parses a JSON string of entries', () => {
@@ -16,6 +16,11 @@ describe('parseOwnership', () => {
 
   it('drops entries with a missing person_id or non-finite share', () => {
     expect(parseOwnership([{ person_id: '', share: 1 }, { person_id: 'self', share: NaN }])).toEqual([]);
+  });
+
+  it('drops entries with a negative share', () => {
+    expect(parseOwnership([{ person_id: 'self', share: -0.5 }, { person_id: 'partner', share: 0.5 }]))
+      .toEqual([{ person_id: 'partner', share: 0.5 }]);
   });
 
   it('returns [] for empty, blank, or malformed input', () => {
@@ -169,5 +174,56 @@ describe('ownershipLabel', () => {
 
   it('falls back to the raw person_id when the person is unknown', () => {
     expect(ownershipLabel([{ person_id: 'ghost', share: 1 }], people, 'Joint')).toBe('ghost');
+  });
+});
+
+describe('auditOwnership', () => {
+  const people: Person[] = [
+    { id: 'self', name: 'Me', sort_order: 10, active: true, primary: true },
+    { id: 'partner', name: 'Partner', sort_order: 20, active: true, primary: false },
+  ];
+
+  const mkAccount = (over: Partial<Account>): Account => ({
+    id: 'a1', type: 'tfsa', name_fr: 'A', name_en: 'A', category: 'investments', kind: 'asset',
+    ownership: [{ person_id: 'self', share: 1 }], active: true, sort_order: 0, tags: [], annual_rate: 0, ...over,
+  });
+
+  const mkCompany = (over: Partial<OptionCompany>): OptionCompany => ({
+    id: 'c1', name: 'ACME', ticker: '', active: true, tags: [], owner: 'self', ...over,
+  });
+
+  it('returns no issues for fully balanced, known ownership', () => {
+    expect(auditOwnership([mkAccount({})], [mkCompany({})], people)).toEqual([]);
+  });
+
+  it('flags an active account whose shares don\'t sum to 100%', () => {
+    const account = mkAccount({ ownership: [{ person_id: 'self', share: 0.6 }] });
+    expect(auditOwnership([account], [], people)).toEqual([
+      { kind: 'unbalanced_account', accountId: 'a1', pct: 60 },
+    ]);
+  });
+
+  it('ignores archived accounts entirely', () => {
+    const account = mkAccount({ active: false, ownership: [{ person_id: 'self', share: 0.5 }] });
+    expect(auditOwnership([account], [], people)).toEqual([]);
+  });
+
+  it('flags an active account referencing an unknown or archived person', () => {
+    const account = mkAccount({ ownership: [{ person_id: 'ghost', share: 1 }] });
+    expect(auditOwnership([account], [], people)).toEqual([
+      { kind: 'unknown_account_owner', accountId: 'a1', personId: 'ghost' },
+    ]);
+  });
+
+  it('flags an active option company owned by an unknown or archived person', () => {
+    const company = mkCompany({ owner: 'ghost' });
+    expect(auditOwnership([], [company], people)).toEqual([
+      { kind: 'unknown_company_owner', companyId: 'c1', personId: 'ghost' },
+    ]);
+  });
+
+  it('ignores archived option companies', () => {
+    const company = mkCompany({ active: false, owner: 'ghost' });
+    expect(auditOwnership([], [company], people)).toEqual([]);
   });
 });

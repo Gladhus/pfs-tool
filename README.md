@@ -1,6 +1,6 @@
 # PFS Tool — Personal Financial Statement
 
-![Version](https://img.shields.io/badge/version-2.2.2-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.2.3-6366f1?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
 ![Deploy](https://img.shields.io/github/actions/workflow/status/Gladhus/pfs-tool/deploy.yml?style=flat-square&label=deploy)
 

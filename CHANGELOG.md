@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.2.3] — 2026-06-19
+## [2.2.3](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.3) — 2026-06-19
 
 ### Changed
 - **Ownership-filtered account lists** — the Detail, History, and Entry pages now only show accounts the current "View as" viewer has a stake in: Detail hides year-over-year rows the viewer owns 0% of, the History account-filter dropdown drops them, and the Entry page lists only the viewer's accounts for balance entry (with the net-worth summary and progress counting just those). Switching the header viewer dropdown re-filters every page consistently

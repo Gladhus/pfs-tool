@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.2.2] — 2026-06-19
+## [2.2.2](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.2) — 2026-06-19
 
 ### Changed
 - **Settings "People" renamed to "Household"** — nav label and section hint text now refer to the household members feature consistently

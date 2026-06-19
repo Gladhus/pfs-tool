@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.1] — 2026-06-19
+
+### Added
+- **Header viewer selector** — a "View as" dropdown in the header lets you switch the net worth and category figures across Overview, History, and Detail between each person and a combined "Household" total, using each account's ownership split; selection persists across reloads
+- **Extensive viewer-selector e2e regression coverage** — `e2e/viewer-select.spec.ts` pins exact dollar amounts for Me, Partner, and Household across Overview and History, asserts Household always equals the sum of the two individual views, and edits an account live to an uneven 70/30 split to prove the math generalizes beyond a 50/50 ownership ratio
+
 ## [2.2.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.0) — 2026-06-18
 
 ### Added

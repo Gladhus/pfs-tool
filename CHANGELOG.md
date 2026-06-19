@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.2.5] — 2026-06-19
+## [2.2.5](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.5) — 2026-06-19
 
 ### Added
 - **"Viewing as" indicator** — the Detail, History, and Entry pages now show a small chip naming the active "View as" viewer (a person or Household), so it's obvious when account filtering is narrowing what you see instead of leaving it a mystery. Shown only when more than one person exists

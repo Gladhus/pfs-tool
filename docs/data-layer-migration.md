@@ -158,14 +158,16 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
   `computeDateStats` equity bucket at every date.
 - **Exit:** ✅ equity valuation provably equals legacy; suite 328 green.
 
-### Phase 5 — `BucketStrategy` (category / group / person)
-- `src/core/buckets/{types,category,group,person}.ts` — each `buckets()` +
-  `assign(contribution)`. Equity per view: own bucket (category) / tag-match
-  (group) / by `ownerId` (person).
-- **Tests:** each strategy against small contribution fixtures, incl. equity
-  attribution and the `real_estate_debt` fold.
-- **Exit:** grouping logic isolated and unit-tested; `useOverviewStats` not yet
-  changed.
+### Phase 5 — `BucketStrategy` (category / group / person) ✅ done
+- `src/core/buckets/{types,category,group,person,index}.ts` — each a factory →
+  `{ buckets, assign(contribution) }`. Equity per view: own bucket (category) /
+  tag-match (group) / by `ownerId` (person). `bucketStrategy(view, models)`
+  dispatches; `personColor` + palette moved here from `useOverviewStats`.
+- **Tests:** `src/tests/buckets.test.ts` — bucket order incl. equity-when-present,
+  `real_estate_debt` fold, equity routing/drop, multi-group tag match, person
+  by-owner + unknown-owner drop, selector dispatch.
+- **Exit:** ✅ grouping logic isolated + unit-tested; suite 338 green;
+  `useOverviewStats` not yet changed.
 
 ### Phase 6 — `buildDataset` + migrate Overview (the proof) ⚠
 - `src/core/dataset.ts`: `buildDataset(models, spec)` composes scope → axis →

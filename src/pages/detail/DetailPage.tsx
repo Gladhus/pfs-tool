@@ -8,7 +8,8 @@ import { deriveDatesSorted } from '@/utils/dates';
 import { buildEffectiveBalances } from '@/utils/stats';
 import { categoriesInOrder, accountsForCategory } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID } from '@/utils/ownership';
+import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/utils/ownership';
+import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
@@ -65,7 +66,7 @@ function buildDetailModel(
   let anyData = false;
 
   for (const cat of categoriesInOrder(accounts, categoryMeta)) {
-    const accts = accountsForCategory(accounts, cat.id);
+    const accts = accountsVisibleToViewer(accountsForCategory(accounts, cat.id), viewer);
     if (!accts.length) continue;
 
     const catByYear: Record<string, number | null> = Object.fromEntries(years.map(y => [y, null]));

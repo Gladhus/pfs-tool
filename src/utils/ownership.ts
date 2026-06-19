@@ -66,6 +66,11 @@ export function ownerVisibleToViewer(ownerId: string, viewer: string): boolean {
   return viewer === HOUSEHOLD_VIEWER || viewer === ownerId;
 }
 
+/** Accounts the viewer has any stake in — i.e. excludes accounts they own 0% of. */
+export function accountsVisibleToViewer(accounts: Account[], viewer: string): Account[] {
+  return accounts.filter(a => viewerShare(a.ownership, viewer) > 0);
+}
+
 /**
  * Ensures exactly one person is flagged `primary`. Sheets written before the `primary`
  * column existed (or any row data that lost the flag) fall back to LEGACY_SELF_ID, or the

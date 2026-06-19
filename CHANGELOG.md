@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.6] — 2026-06-19
+
+### Fixed
+- **Empty leading dates/years for later-joining viewers** — when viewing as a person who started tracking after others, the Detail (year-over-year) table and the overview/history charts padded the start with a run of empty columns/dates that belonged solely to other people. Each now begins where the selected viewer's own history actually starts: Detail keeps a year only when a viewer-visible account carries a value into it, and the charts trim leading dates where the viewer holds no stake instead of plotting a flat zero line
+
+### Security
+- **Patched `xlsx` advisories** — moved to the maintained SheetJS build (0.20.3), resolving the prototype-pollution and ReDoS advisories that had no fix on the npm registry build, and bumped a transitive `undici` advisory. `npm audit` is now clean
+- **Hardened spreadsheet parsing** — row parsing now drops `__proto__`/`constructor`/`prototype` header columns from uploaded XLSX/Sheet data so a crafted file can't pollute `Object.prototype`
+
+### Changed
+- **Type-checking is now a build gate** — `npm run build` runs `tsc --noEmit` before bundling and the deploy workflow gained an explicit `typecheck` step, so type errors can no longer reach production. Cleared ~30 pre-existing type errors (shared, typed chart-tooltip helper; corrected `Person` typing; removed dead code)
+- **Stricter lint and coverage floors** — `lint` fails on any warning (`--max-warnings 0`) and Vitest enforces minimum coverage thresholds so the suite can only grow
+- **Internal cleanup** — extracted the Entry page's net-worth/row-building logic into pure, tested helpers; collapsed repeated React Query wiring into a `useDatasourceQuery` factory; removed 3.4k lines of unused legacy CSS
+
 ## [2.2.5](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.5) — 2026-06-19
 
 ### Added

@@ -2,13 +2,12 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  type TooltipProps,
 } from 'recharts';
 import type { Account, Snapshot } from '@/types/sheets';
 import { buildBalanceSweep } from '@/utils/stats';
 import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
-import { fmtMoney } from '@/utils/format';
+import { seriesTooltip } from '@/components/ChartTooltip';
 import { tr } from '@/i18n';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import type { SeriesState } from './SeriesToggleBar';
@@ -34,7 +33,14 @@ interface Props {
   isPrivate: boolean;
 }
 
-const TT = { background: '#0f1a0c', border: 'none', borderRadius: 10, padding: '10px 12px' };
+/** A row in either the stacked-overview shape or the single-account shape. */
+type ChartPoint = {
+  date: string;
+  investments?: number | null;
+  realEstate?: number | null;
+  other?: number | null;
+  value?: number;
+};
 
 export function HistoryChart({
   filteredDates, snapshots, series, seriesVisible, hasOtherData, selectedAccount, accounts, locale, currency, isPrivate,
@@ -43,7 +49,7 @@ export function HistoryChart({
   const [containerRef, width] = useContainerWidth();
   const isOverview = selectedAccount === '';
 
-  const { data, chartDates } = useMemo(() => {
+  const { data, chartDates } = useMemo<{ data: ChartPoint[]; chartDates: string[] }>(() => {
     if (isOverview) {
       const dates = series.dates;
       return {
@@ -75,21 +81,7 @@ export function HistoryChart({
   const acct = !isOverview ? accounts.find(a => a.id === selectedAccount) : undefined;
   const acctColor = acct?.kind === 'debt' ? 'var(--cat-debts)' : 'var(--accent)';
 
-  const renderTooltip = ({ active, payload }: TooltipProps<number, string>) => {
-    if (!active || !payload?.length) return null;
-    const items = payload.filter(p => p.value != null && p.value !== 0);
-    if (!items.length) return null;
-    return (
-      <div style={TT}>
-        {items.map(p => (
-          <p key={p.dataKey as string} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 500, margin: '2px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-            {p.name}: <span style={{ fontFamily: 'DM Mono, ui-monospace, monospace', fontWeight: 600 }}>{isPrivate ? '••••••' : fmtMoney(p.value!, locale, currency)}</span>
-          </p>
-        ))}
-      </div>
-    );
-  };
+  const renderTooltip = seriesTooltip({ locale, currency, isPrivate, hideZero: true });
 
   return (
     <div ref={containerRef} className="h-[280px]">

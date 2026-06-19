@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useDatasourceStore } from '@/stores/datasource.store';
+import type { Datasource } from '@/datasource/types';
 import { qk } from './keys';
 import { loadCategoryMeta, loadAccountTypes } from '@/api/accounts';
 
@@ -9,24 +10,31 @@ function useDatasource() {
   return useDatasourceStore(s => s.datasource);
 }
 
-export function useAccountsQuery() {
+/**
+ * Shared wiring for every datasource-backed query: keys the cache by the active
+ * datasource id, only runs once a datasource exists, and forwards the loader.
+ * `extraEnabled` lets callers gate on additional conditions (e.g. a feature flag).
+ */
+function useDatasourceQuery<T>(
+  keyFor: (id: string) => readonly unknown[],
+  load: (ds: Datasource) => Promise<T>,
+  opts: { staleTime?: number; extraEnabled?: boolean } = {},
+) {
   const ds = useDatasource();
   return useQuery({
-    queryKey: qk.accounts(ds?.id ?? ''),
-    queryFn: () => ds!.loadAccounts(),
-    enabled: !!ds,
-    staleTime: STALE_5M,
+    queryKey: keyFor(ds?.id ?? ''),
+    queryFn: () => load(ds!),
+    enabled: !!ds && (opts.extraEnabled ?? true),
+    staleTime: opts.staleTime,
   });
 }
 
+export function useAccountsQuery() {
+  return useDatasourceQuery(qk.accounts, ds => ds.loadAccounts(), { staleTime: STALE_5M });
+}
+
 export function useSnapshotsQuery() {
-  const ds = useDatasource();
-  return useQuery({
-    queryKey: qk.snapshots(ds?.id ?? ''),
-    queryFn: () => ds!.loadSnapshots(),
-    enabled: !!ds,
-    staleTime: STALE_5M,
-  });
+  return useDatasourceQuery(qk.snapshots, ds => ds.loadSnapshots(), { staleTime: STALE_5M });
 }
 
 export function useCategoryMetaQuery() {
@@ -46,49 +54,23 @@ export function useAccountTypesQuery() {
 }
 
 export function useFxRatesQuery() {
-  const ds = useDatasource();
-  return useQuery({
-    queryKey: qk.fxRates(ds?.id ?? ''),
-    queryFn: () => ds!.loadFxRates(),
-    enabled: !!ds,
-    staleTime: STALE_5M,
-  });
+  return useDatasourceQuery(qk.fxRates, ds => ds.loadFxRates(), { staleTime: STALE_5M });
 }
 
 export function useConfigQuery() {
-  const ds = useDatasource();
-  return useQuery({
-    queryKey: qk.config(ds?.id ?? ''),
-    queryFn: () => ds!.loadConfig(),
-    enabled: !!ds,
-  });
+  return useDatasourceQuery(qk.config, ds => ds.loadConfig());
 }
 
 export function useTagsQuery() {
-  const ds = useDatasource();
-  return useQuery({
-    queryKey: qk.tags(ds?.id ?? ''),
-    queryFn: () => ds!.loadTags(),
-    enabled: !!ds,
-  });
+  return useDatasourceQuery(qk.tags, ds => ds.loadTags());
 }
 
 export function useGroupsQuery() {
-  const ds = useDatasource();
-  return useQuery({
-    queryKey: qk.groups(ds?.id ?? ''),
-    queryFn: () => ds!.loadGroups(),
-    enabled: !!ds,
-  });
+  return useDatasourceQuery(qk.groups, ds => ds.loadGroups());
 }
 
 export function usePeopleQuery() {
-  const ds = useDatasource();
-  return useQuery({
-    queryKey: qk.people(ds?.id ?? ''),
-    queryFn: () => ds!.loadPeople(),
-    enabled: !!ds,
-  });
+  return useDatasourceQuery(qk.people, ds => ds.loadPeople());
 }
 
 function useOptionsEnabled() {
@@ -97,41 +79,17 @@ function useOptionsEnabled() {
 }
 
 export function useOptionCompaniesQuery() {
-  const ds = useDatasource();
-  const enabled = useOptionsEnabled();
-  return useQuery({
-    queryKey: qk.optCompanies(ds?.id ?? ''),
-    queryFn: () => ds!.loadOptionCompanies(),
-    enabled: enabled && !!ds,
-  });
+  return useDatasourceQuery(qk.optCompanies, ds => ds.loadOptionCompanies(), { extraEnabled: useOptionsEnabled() });
 }
 
 export function useOptionGrantsQuery() {
-  const ds = useDatasource();
-  const enabled = useOptionsEnabled();
-  return useQuery({
-    queryKey: qk.optGrants(ds?.id ?? ''),
-    queryFn: () => ds!.loadOptionGrants(),
-    enabled: enabled && !!ds,
-  });
+  return useDatasourceQuery(qk.optGrants, ds => ds.loadOptionGrants(), { extraEnabled: useOptionsEnabled() });
 }
 
 export function useOptionFmvQuery() {
-  const ds = useDatasource();
-  const enabled = useOptionsEnabled();
-  return useQuery({
-    queryKey: qk.optFmv(ds?.id ?? ''),
-    queryFn: () => ds!.loadOptionFmv(),
-    enabled: enabled && !!ds,
-  });
+  return useDatasourceQuery(qk.optFmv, ds => ds.loadOptionFmv(), { extraEnabled: useOptionsEnabled() });
 }
 
 export function useOptionExercisesQuery() {
-  const ds = useDatasource();
-  const enabled = useOptionsEnabled();
-  return useQuery({
-    queryKey: qk.optExercises(ds?.id ?? ''),
-    queryFn: () => ds!.loadOptionExercises(),
-    enabled: enabled && !!ds,
-  });
+  return useDatasourceQuery(qk.optExercises, ds => ds.loadOptionExercises(), { extraEnabled: useOptionsEnabled() });
 }

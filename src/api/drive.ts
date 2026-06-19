@@ -1,6 +1,7 @@
 import seedData from '../../seed/default-accounts.json';
 import { HEADERS, SHEET_TITLE, DEFAULT_PEOPLE } from '@/constants';
 import { migrateLegacyOwnership, serializeOwnership } from '@/utils/ownership';
+import type { Person } from '@/types/sheets';
 import cfg from '@/config';
 
 export async function verifySheet(id: string): Promise<boolean> {
@@ -63,8 +64,16 @@ export async function seedNewSheet(sheetId: string): Promise<void> {
       return (a[h] as string | number | boolean) ?? '';
     })),
   ];
-  const people = seed.people?.length
-    ? seed.people.map(p => ({ ...p, sort_order: Number(p.sort_order) || 0, active: p.active !== false, primary: p.primary === true }))
+  const people: Person[] = seed.people?.length
+    ? seed.people.map(p => ({
+        id: String(p.id ?? ''),
+        name: String(p.name ?? ''),
+        email: p.email ? String(p.email) : '',
+        color: p.color ? String(p.color) : '',
+        sort_order: Number(p.sort_order) || 0,
+        active: p.active !== false,
+        primary: p.primary === true,
+      }))
     : DEFAULT_PEOPLE;
 
   await gapi.client.sheets.spreadsheets.values.batchUpdate({
@@ -85,7 +94,7 @@ export async function seedNewSheet(sheetId: string): Promise<void> {
         { range: 'groups!A1',           values: [[...HEADERS.groups]] },
         { range: 'people!A1',           values: [
             [...HEADERS.people],
-            ...people.map(p => [p.id as string, p.name as string, (p.email as string) ?? '', (p.color as string) ?? '', p.sort_order as number, p.active ? 'TRUE' : 'FALSE', p.primary ? 'TRUE' : 'FALSE']),
+            ...people.map(p => [p.id, p.name, p.email ?? '', p.color ?? '', p.sort_order, p.active ? 'TRUE' : 'FALSE', p.primary ? 'TRUE' : 'FALSE']),
           ]},
         { range: 'option_companies!A1', values: [[...HEADERS.option_companies]] },
         { range: 'option_grants!A1',    values: [[...HEADERS.option_grants]] },

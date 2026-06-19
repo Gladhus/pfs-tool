@@ -26,13 +26,20 @@ function getDetailYears(
   snapshots: Snapshot[],
   datesSorted: string[],
   period: Period,
+  visibleIds: Set<string>,
 ): string[] {
   const currentYear = String(new Date().getFullYear());
   const seen = new Set(datesSorted.map(d => d.slice(0, 4)));
   seen.add(currentYear);
+  // Keep a year only when at least one account the viewer can see has a value
+  // carried into Jan 1 of that year. Otherwise a viewer who joined later would
+  // get a run of empty leading columns for years that belong to someone else.
   let sorted = [...seen]
     .sort()
-    .filter(y => Object.keys(buildEffectiveBalances(snapshots, `${y}-01-01`)).length > 0);
+    .filter(y => {
+      const bals = buildEffectiveBalances(snapshots, `${y}-01-01`);
+      return Object.keys(bals).some(id => visibleIds.has(id));
+    });
   const limit = PERIOD_LIMIT[period];
   if (limit && sorted.length > limit) sorted = sorted.slice(-limit);
   return sorted;
@@ -145,9 +152,13 @@ export default function DetailPage() {
   const categoryMeta = useMemo(() => categoryMetaQ.data ?? [], [categoryMetaQ.data]);
 
   const datesSorted = useMemo(() => deriveDatesSorted(snapshots), [snapshots]);
+  const visibleIds = useMemo(
+    () => new Set(accountsVisibleToViewer(activeAccounts(accounts), viewer).map(a => a.id)),
+    [accounts, viewer],
+  );
   const years = useMemo(
-    () => getDetailYears(snapshots, datesSorted, period),
-    [snapshots, datesSorted, period],
+    () => getDetailYears(snapshots, datesSorted, period, visibleIds),
+    [snapshots, datesSorted, period, visibleIds],
   );
   const model = useMemo(
     () => (years.length && accounts.length

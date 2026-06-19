@@ -7,7 +7,7 @@ import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/utils/ownership';
+import { LEGACY_SELF_ID, accountsVisibleToViewer, viewerShare } from '@/utils/ownership';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
@@ -23,7 +23,7 @@ import type { Account, Snapshot, Currency } from '@/types/sheets';
 
 const HIST_PAGE_SIZE = 12;
 
-function computeSeries(
+export function computeSeries(
   dates: string[],
   accounts: Account[],
   snapshots: Snapshot[],
@@ -38,15 +38,20 @@ function computeSeries(
   const investments: number[] = [];
   const realEstateNet: number[] = [];
   const other: number[] = [];
+  // Tracks, per emitted date, whether the viewer actually holds a stake that day —
+  // used to trim leading dates that belong solely to other people.
+  const viewerHasData: boolean[] = [];
 
   for (let i = 0; i < dates.length; i++) {
     const balances = sweep[i];
     if (!Object.keys(balances).length) continue;
     const usdCad = rateFor(fxMap, dates[i]);
     let n = 0, inv = 0, re = 0, red = 0;
+    let viewerHas = false;
     for (const [id, balance_raw] of Object.entries(balances)) {
       const a = acctById[id];
       if (!a) continue;
+      if (viewerShare(a.ownership, viewer) > 0) viewerHas = true;
       const signed = signedMain(a, balance_raw, main, usdCad, viewer);
       n += signed;
       if (a.category === 'investments') inv += signed;
@@ -57,7 +62,14 @@ function computeSeries(
     investments.push(inv);
     realEstateNet.push(re + red);
     other.push(n - inv - (re + red));
+    viewerHasData.push(viewerHas);
   }
+
+  // Drop leading dates with no data for this viewer so the x-axis starts where
+  // their history actually begins (LOCF carry-forward means gaps only appear
+  // before the first stake, never after).
+  const firstWithData = viewerHasData.findIndex(Boolean);
+  const start = firstWithData < 0 ? outDates.length : firstWithData;
 
   const nullBeforeFirst = (arr: number[]): (number | null)[] => {
     const first = arr.findIndex(v => v !== 0);
@@ -65,10 +77,10 @@ function computeSeries(
   };
 
   return {
-    dates: outDates,
-    investments: nullBeforeFirst(investments),
-    realEstateNet: nullBeforeFirst(realEstateNet),
-    other: nullBeforeFirst(other),
+    dates: outDates.slice(start),
+    investments: nullBeforeFirst(investments.slice(start)),
+    realEstateNet: nullBeforeFirst(realEstateNet.slice(start)),
+    other: nullBeforeFirst(other.slice(start)),
   };
 }
 

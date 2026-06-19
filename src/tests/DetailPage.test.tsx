@@ -115,6 +115,32 @@ describe('DetailPage', () => {
     expect(screen.queryByText('detail_total')).toBeNull();
   });
 
+  // A viewer who joined later should not see a run of empty leading year columns
+  // that belong solely to someone else's earlier history.
+  it('drops leading years that have no data for the current viewer', () => {
+    (useAccountsQuery as MockFn).mockReturnValue(ok([
+      { id: 'self-1', name_en: 'My TFSA', name_fr: 'Mon REER', category: 'investments', kind: 'asset', ownership: [{ person_id: 'self', share: 1 }], tags: [], active: true, sort_order: 1 },
+      { id: 'partner-1', name_en: 'Partner RRSP', name_fr: 'REER Partenaire', category: 'investments', kind: 'asset', ownership: [{ person_id: 'partner', share: 1 }], tags: [], active: true, sort_order: 2 },
+    ]));
+    (useSnapshotsQuery as MockFn).mockReturnValue(ok([
+      // Partner has years of history before self joins…
+      { date: '2019-12-31', account_id: 'partner-1', balance_raw: 5000 },
+      { date: '2020-12-31', account_id: 'partner-1', balance_raw: 5000 },
+      // …self's first stake lands at end of 2020, with a 2021 snapshot keeping 2021 a column.
+      { date: '2020-12-31', account_id: 'self-1', balance_raw: 1000 },
+      { date: '2021-06-01', account_id: 'self-1', balance_raw: 1000 },
+    ]));
+
+    useUIStore.setState({ currentViewer: 'self' });
+    render(<DetailPage />, { wrapper: Wrapper });
+
+    // Self has data carried into 2021, so that column shows…
+    expect(screen.getByText('2021')).toBeTruthy();
+    // …but 2019/2020 belong only to the partner and must be trimmed for this viewer.
+    expect(screen.queryByText('2019')).toBeNull();
+    expect(screen.queryByText('2020')).toBeNull();
+  });
+
   it('shows a viewer-specific empty state when the viewer owns none of the accounts', () => {
     useUIStore.setState({ currentViewer: 'partner' });
     (useAccountsQuery as MockFn).mockReturnValue(ok([

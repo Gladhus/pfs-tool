@@ -5,7 +5,7 @@ import { todayISO } from '@/utils/dates';
 import { computeCompanyEquityValue } from '@/utils/options';
 import { foldCategoryId, accountMatchesGroup, groupColor } from '@/utils/colors';
 import { signedMain, toMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, shareFor, ownerVisibleToViewer } from '@/utils/ownership';
+import { LEGACY_SELF_ID, shareFor, viewerShare, ownerVisibleToViewer } from '@/utils/ownership';
 import { tr } from '@/i18n';
 
 const PERSON_COLORS = ['#06b6d4', '#f59e0b', '#8b5cf6', '#10b981', '#ef4444', '#3b82f6'];
@@ -269,7 +269,10 @@ export function useOverviewStats({
       for (const [acctId, balance_raw] of Object.entries(balances)) {
         const a = acctById[acctId];
         if (!a) continue;
-        dayHasAny = true;
+        // Only count the day as having data when the viewer actually holds a
+        // stake — otherwise leading dates that belong solely to other people
+        // render as a flat zero line instead of being trimmed away.
+        if (viewerShare(a.ownership, viewer) > 0) dayHasAny = true;
         const signed = signedMain(a, balance_raw, main, usdCad, viewer);
         net[i] += signed;
         if (view === 'person') {

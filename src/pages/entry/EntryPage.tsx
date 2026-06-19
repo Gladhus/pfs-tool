@@ -6,8 +6,9 @@ import { useToastStore } from '@/stores/toast.store';
 import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery, usePeopleQuery } from '@/queries/sheetQueries';
 import { useSaveMonthMutation } from '@/queries/sheetMutations';
 import { tr } from '@/i18n';
-import { fmtMoney, parseMoney } from '@/utils/format';
-import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
+import { fmtMoney } from '@/utils/format';
+import { fxMap as buildFxMap } from '@/utils/currency';
+import { computeEntryTotals, buildEntryRows } from '@/utils/entry';
 import { deriveDatesSorted, normalizeDate, prevDate, todayISO } from '@/utils/dates';
 import { snapshotForDate, buildEffectiveBalances, computeNetWorthFromSnapshots } from '@/utils/stats';
 import { activeAccounts, categoriesInOrder, accountsForCategory, projectBalance } from '@/utils/balance';
@@ -134,24 +135,10 @@ export default function EntryPage() {
   );
 
   // ── Derived totals ────────────────────────────────────────────────────
-  const totals = useMemo(() => {
-    const byCategory: Record<string, number> = {};
-    let netWorth = 0;
-    let filled = 0;
-    let usingFallback = false;
-    const usdCad = rateFor(fxRateMap, date);
-    for (const a of visible) {
-      const parsed = parseMoney(form[a.id]?.balance ?? '');
-      let balance: number;
-      if (parsed !== null) { filled++; balance = parsed; }
-      else if (prevBalances[a.id] !== undefined) { balance = prevBalances[a.id]; usingFallback = true; }
-      else continue;
-      const signed = signedMain(a, balance, mainCurrency, usdCad, viewer);
-      byCategory[a.category] = (byCategory[a.category] ?? 0) + signed;
-      netWorth += signed;
-    }
-    return { byCategory, netWorth, filled, total: visible.length, usingFallback };
-  }, [visible, form, prevBalances, date, mainCurrency, fxRateMap, viewer]);
+  const totals = useMemo(
+    () => computeEntryTotals({ visible, form, prevBalances, date, mainCurrency, fxRateMap, viewer }),
+    [visible, form, prevBalances, date, mainCurrency, fxRateMap, viewer],
+  );
 
   const prevNet = useMemo(
     () => (prevD ? computeNetWorthFromSnapshots(snapshots, accounts, prevD, mainCurrency, fxRateMap, viewer) : null),
@@ -174,38 +161,6 @@ export default function EntryPage() {
   };
 
   // ── Actions ───────────────────────────────────────────────────────────
-  const buildRowsForDate = (): { rows: Snapshot[]; deletedNames: string[] } => {
-    const enteredAt = new Date().toISOString();
-    const activeIds = new Set(active.map(a => a.id));
-    const rows: Snapshot[] = [];
-    for (const a of active) {
-      const parsed = parseMoney(form[a.id]?.balance ?? '');
-      if (parsed !== null) {
-        rows.push({
-          date,
-          account_id: a.id,
-          balance_raw: parsed,
-          comment: (form[a.id]?.comment ?? '').trim(),
-          entered_at: enteredAt,
-        });
-      }
-    }
-    const dc = dayComment.trim();
-    if (dc) rows.push({ date, account_id: '__day__', balance_raw: 0, comment: dc, entered_at: enteredAt });
-
-    for (const s of snapshots) {
-      if (s.date !== date || s.account_id === '__day__') continue;
-      if (!activeIds.has(s.account_id)) rows.push(s);
-    }
-
-    const writtenIds = new Set(rows.map(r => r.account_id));
-    const deletedNames = active
-      .filter(a => existing.balances[a.id] !== undefined && !writtenIds.has(a.id))
-      .map(a => tr(a));
-
-    return { rows, deletedNames };
-  };
-
   const doSave = (rows: Snapshot[]) => {
     saveMonth.mutate(
       { date, rows },
@@ -217,9 +172,11 @@ export default function EntryPage() {
   };
 
   const onSave = () => {
-    const { rows, deletedNames } = buildRowsForDate();
+    const { rows, deleted } = buildEntryRows({
+      active, form, dayComment, snapshots, date, existingBalances: existing.balances,
+    });
     if (!rows.length) { addToast(t('nothing_to_save'), 'warn'); return; }
-    if (deletedNames.length) { setPendingDelete({ names: deletedNames, rows }); return; }
+    if (deleted.length) { setPendingDelete({ names: deleted.map(tr), rows }); return; }
     doSave(rows);
   };
 

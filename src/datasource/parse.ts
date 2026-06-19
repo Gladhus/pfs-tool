@@ -18,9 +18,18 @@ export function parseNum(v: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+// Header cells come from user-supplied spreadsheets (XLSX upload / Sheet edits),
+// so a crafted file could carry a `__proto__`/`constructor`/`prototype` column.
+// Assigning those keys can pollute Object.prototype, so we drop them — no
+// legitimate schema column uses these names.
+const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
 function toObj(headers: string[], row: unknown[]): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
-  headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+  headers.forEach((h, i) => {
+    if (UNSAFE_KEYS.has(h)) return;
+    obj[h] = row[i] ?? '';
+  });
   return obj;
 }
 

@@ -1,9 +1,10 @@
 import { useMemo, Fragment } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine,
-  type TooltipProps,
+  type TooltipContentProps,
 } from 'recharts';
 import { sharesTickFmt } from '@/utils/chartOptions';
+import { TT } from '@/components/ChartTooltip';
 import { privShares } from '@/utils/privacy';
 import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
 import { computeVestedShares, grantFullyVestedDate, generateMonthlyDates } from '@/utils/options';
@@ -17,8 +18,6 @@ interface Props {
   locale: string;
   isPrivate: boolean;
 }
-
-const TT = { background: '#0f1a0c', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
 export function CompanyVestingChart({ grants, now, locale, isPrivate }: Props) {
   const [containerRef, width] = useContainerWidth();
@@ -67,7 +66,7 @@ export function CompanyVestingChart({ grants, now, locale, isPrivate }: Props) {
   const xTicks = useMemo(() => dates.filter((_, i) => tickSet.has(i)), [dates, tickSet]);
   const tickFmt = useMemo(() => sharesTickFmt({ isPrivate }), [isPrivate]);
 
-  const renderTooltip = ({ active, label }: TooltipProps<number, string>) => {
+  const renderTooltip = ({ active, label }: TooltipContentProps) => {
     if (!active || !label) return null;
     const dateStr = String(label);
     const di = dates.indexOf(dateStr);

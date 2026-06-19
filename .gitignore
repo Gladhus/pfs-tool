@@ -71,6 +71,7 @@ dist
 playwright-report/
 playwright-output/
 test-results/
+coverage/
 e2e/fixtures/sample.xlsx
 
 *.sublime*

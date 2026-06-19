@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 import {
   ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  type TooltipProps,
 } from 'recharts';
 import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
-import { fmtMoney } from '@/utils/format';
+import { seriesTooltip } from '@/components/ChartTooltip';
 import { categoryKey } from '@/utils/icons';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import type { BucketData } from '../hooks/useOverviewStats';
@@ -21,8 +20,6 @@ interface Props {
   netLabel: string;
   view: string;
 }
-
-const TT = { background: '#0f1a0c', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
 export function OverviewChart({
   dates, netData, buckets, seriesVisible, locale, currency, isPrivate, netLabel,
@@ -54,21 +51,7 @@ export function OverviewChart({
   const catColor = (b: BucketData) =>
     b.color ?? (!b.catId || b.catId === 'equity' ? 'var(--cat-equity)' : `var(--cat-${categoryKey(b.catId)})`);
 
-  const renderTooltip = ({ active, payload }: TooltipProps<number, string>) => {
-    if (!active || !payload?.length) return null;
-    const items = payload.filter(p => p.value != null);
-    if (!items.length) return null;
-    return (
-      <div style={TT}>
-        {items.map(p => (
-          <p key={p.dataKey as string} style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 500, margin: '2px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-            {p.name}: <span style={{ fontFamily: 'DM Mono, ui-monospace, monospace', fontWeight: 600 }}>{isPrivate ? '••••••' : fmtMoney(p.value!, locale, currency)}</span>
-          </p>
-        ))}
-      </div>
-    );
-  };
+  const renderTooltip = seriesTooltip({ locale, currency, isPrivate });
 
   return (
     <div ref={containerRef} className="h-[320px]">

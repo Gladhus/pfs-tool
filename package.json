@@ -1,16 +1,17 @@
 {
   "name": "pfs-tool",
-  "version": "2.2.5",
+  "version": "2.2.6",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "typecheck": "tsc --noEmit -p .",
+    "build": "tsc --noEmit -p . && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "lint": "eslint src/"
+    "lint": "eslint src/ --max-warnings 0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -53,7 +54,7 @@
     "react-i18next": "^17.0.8",
     "react-router-dom": "^7.17.0",
     "recharts": "^3.8.1",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zustand": "^5.0.14"
   }
 }

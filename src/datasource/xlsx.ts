@@ -7,7 +7,7 @@ import {
   parseAccountRows, parseSnapshotRows, parseConfigRows,
   parseTagRows, parseGroupRows, parsePeopleRows, parseFxRateRows,
   parseOptionCompanyRows, parseOptionGrantRows, parseOptionFmvRows, parseOptionExerciseRows,
-  serializeAccounts, serializeSnapshots, serializeConfig,
+  serializeAccounts, serializeSnapshots,
   serializeTags, serializeGroups, serializePeople, serializeFxRates,
   serializeOptionCompanies, serializeOptionGrants, serializeOptionFmv, serializeOptionExercises,
 } from './parse';

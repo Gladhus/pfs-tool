@@ -7,7 +7,7 @@ import { loadTagsCatalog, writeTagsCatalog } from '@/api/tags';
 import { loadGroupsCatalog, writeGroupsCatalog } from '@/api/groups';
 import { loadPeopleCatalog, writePeopleCatalog } from '@/api/people';
 import { loadFxRates, writeFxRates } from '@/api/fx';
-import { loadOptionCompanies, loadOptionGrants, loadOptionFmv, loadOptionExercises, writeOptionCompanies, writeOptionGrants, writeOptionFmv, writeOptionExercises } from '@/api/options';
+import { loadOptionCompanies, loadOptionGrants, loadOptionFmv, loadOptionExercises } from '@/api/options';
 import { safeWriteTab } from '@/api/sheets';
 import { HEADERS } from '@/constants';
 import { qk } from '@/queries/keys';

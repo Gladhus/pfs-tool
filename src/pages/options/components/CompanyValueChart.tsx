@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import {
   ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  type TooltipProps,
+  type TooltipContentProps,
 } from 'recharts';
 import { moneyTickFmt } from '@/utils/chartOptions';
+import { TT } from '@/components/ChartTooltip';
 import { privMoney } from '@/utils/privacy';
 import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
 import { generateMonthlyDates, getEffectiveFmv, computeIntrinsicValue, computeUnvestedValue } from '@/utils/options';
@@ -21,8 +22,6 @@ interface Props {
   currency: string;
   isPrivate: boolean;
 }
-
-const TT = { background: '#0f1a0c', border: 'none', borderRadius: 10, padding: '10px 12px' };
 
 export function CompanyValueChart({
   company, grants, fmv, exercises, color, now, locale, currency, isPrivate,
@@ -67,13 +66,13 @@ export function CompanyValueChart({
   const xTicks = useMemo(() => dates.filter((_, i) => tickSet.has(i)), [dates, tickSet]);
   const tickFmt = useMemo(() => moneyTickFmt({ prefix: '$', isPrivate }), [isPrivate]);
 
-  const renderTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+  const renderTooltip = ({ active, payload, label }: TooltipContentProps) => {
     if (!active || !payload?.length || !label) return null;
     const dateStr = String(label);
     const vestedPt = payload.find(p => p.dataKey === 'vested');
     const totalPt = payload.find(p => p.dataKey === 'total');
-    const vestedVal = vestedPt?.value ?? 0;
-    const unvestedVal = (totalPt?.value ?? 0) - vestedVal;
+    const vestedVal = Number(vestedPt?.value ?? 0);
+    const unvestedVal = Number(totalPt?.value ?? 0) - vestedVal;
     return (
       <div style={TT}>
         <p style={{ color: '#8aaa7a', fontSize: 11, margin: '0 0 4px' }}>

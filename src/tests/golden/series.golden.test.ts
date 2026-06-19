@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSeries } from '@/pages/history/HistoryPage';
+import { computeSeries, buildHistoryCards } from '@/core/accounts/history';
 import { computeDateStats, buildEffectiveBalances } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { signedMain, rateFor } from '@/utils/currency';
@@ -23,6 +23,14 @@ describe('GOLDEN computeSeries (History chart)', () => {
   for (const viewer of VIEWERS) {
     it(`viewer = ${viewer}`, () => {
       expect(computeSeries(DATES_SORTED, active, SNAPSHOTS, MAIN, FX_MAP, viewer)).toMatchSnapshot();
+    });
+  }
+});
+
+describe('GOLDEN buildHistoryCards (History card list)', () => {
+  for (const viewer of VIEWERS) {
+    it(`viewer = ${viewer}`, () => {
+      expect(buildHistoryCards(DATES_SORTED, ACCOUNTS, SNAPSHOTS, MAIN, FX_MAP, viewer)).toMatchSnapshot();
     });
   }
 });

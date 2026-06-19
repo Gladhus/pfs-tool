@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeAccountContributor } from '@/core/contributors/accountContributor';
+import { makeAccountContributor } from '@/core/accounts/contributor';
 import type { ValueContext } from '@/core/contributors/types';
 import { computeDateStats, computeNetWorthFromSnapshots } from '@/utils/stats';
 import { rateFor } from '@/utils/currency';

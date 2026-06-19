@@ -5,24 +5,9 @@ import { Delta } from '@/ui/Delta';
 import { Icon } from '@/ui/Icon';
 import { Amount } from '@/ui/Amount';
 import { fmtMonth } from '@/utils/dates';
+import type { CardData } from '@/core/accounts/history';
 
-export interface CardData {
-  month: string;       // YYYY-MM
-  latestDate: string;
-  net: number;
-  prevNet: number | null;
-  investments: number;
-  realEstate: number;
-  realEstateDebts: number;
-  debts: number;
-  incomplete: boolean;
-  olderDates: {
-    date: string;
-    net: number;
-    prevNet: number | null;
-    incomplete: boolean;
-  }[];
-}
+export type { CardData };
 
 interface Props {
   card: CardData;

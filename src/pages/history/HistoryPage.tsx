@@ -4,13 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/ui.store';
 import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery } from '@/queries/sheetQueries';
 import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
-import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
-import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/utils/ownership';
-import { makeAccountContributor } from '@/core/contributors/accountContributor';
+import { fxMap as buildFxMap } from '@/utils/currency';
 import { resolveFilterSpec } from '@/core/filters';
 import { isViewerLockedOut } from '@/core/scope';
+import { computeSeries, buildHistoryCards } from '@/core/accounts/history';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
@@ -20,72 +18,11 @@ import { ViewingAsBadge } from '@/components/ViewingAsBadge';
 import { AccountSelect } from './components/AccountSelect';
 import { SeriesToggleBar, type SeriesState } from './components/SeriesToggleBar';
 import { HistoryChart } from './components/HistoryChart';
-import { HistoryCard, type CardData } from './components/HistoryCard';
+import { HistoryCard } from './components/HistoryCard';
 import { Pagination } from './components/Pagination';
-import type { Account, Snapshot, Currency } from '@/types/sheets';
+import type { Currency } from '@/types/sheets';
 
 const HIST_PAGE_SIZE = 12;
-
-export function computeSeries(
-  dates: string[],
-  accounts: Account[],
-  snapshots: Snapshot[],
-  main: Currency,
-  fxMap: Map<string, number>,
-  viewer: string = LEGACY_SELF_ID,
-) {
-  if (!dates.length) return { dates: [], investments: [], realEstateNet: [], other: [] };
-  // Valuation goes through the shared account contributor (per-owner, FX, sign,
-  // carry-forward); this page only groups the result into its investments /
-  // real-estate / other split.
-  const perDate = makeAccountContributor(accounts, snapshots)
-    .valuesOver(dates, { viewer, main, fxRateFor: d => rateFor(fxMap, d) });
-  const scopeToViewer = (cs: typeof perDate[number]) =>
-    viewer === HOUSEHOLD_VIEWER ? cs : cs.filter(c => c.ownerId === viewer);
-
-  const outDates: string[] = [];
-  const investments: number[] = [];
-  const realEstateNet: number[] = [];
-  const other: number[] = [];
-  // Tracks, per emitted date, whether the viewer actually holds a stake that day —
-  // used to trim leading dates that belong solely to other people.
-  const viewerHasData: boolean[] = [];
-
-  for (let i = 0; i < dates.length; i++) {
-    if (!perDate[i].length) continue; // no account has data on this date yet
-    const scoped = scopeToViewer(perDate[i]);
-    let n = 0, inv = 0, re = 0, red = 0;
-    for (const c of scoped) {
-      n += c.amount;
-      if (c.category === 'investments') inv += c.amount;
-      else if (c.category === 'real_estate') re += c.amount;
-      else if (c.category === 'real_estate_debt') red += c.amount;
-    }
-    outDates.push(dates[i]);
-    investments.push(inv);
-    realEstateNet.push(re + red);
-    other.push(n - inv - (re + red));
-    viewerHasData.push(scoped.length > 0);
-  }
-
-  // Drop leading dates with no data for this viewer so the x-axis starts where
-  // their history actually begins (LOCF carry-forward means gaps only appear
-  // before the first stake, never after).
-  const firstWithData = viewerHasData.findIndex(Boolean);
-  const start = firstWithData < 0 ? outDates.length : firstWithData;
-
-  const nullBeforeFirst = (arr: number[]): (number | null)[] => {
-    const first = arr.findIndex(v => v !== 0);
-    return first <= 0 ? arr : arr.map((v, i) => (i < first ? null : v));
-  };
-
-  return {
-    dates: outDates.slice(start),
-    investments: nullBeforeFirst(investments.slice(start)),
-    realEstateNet: nullBeforeFirst(realEstateNet.slice(start)),
-    other: nullBeforeFirst(other.slice(start)),
-  };
-}
 
 export default function HistoryPage() {
   const { t } = useTranslation();
@@ -133,93 +70,10 @@ export default function HistoryPage() {
     [overviewSeries.other],
   );
 
-  const cardData = useMemo((): CardData[] => {
-    if (!datesSorted.length) return [];
-    const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
-    const sweep = buildBalanceSweep(snapshots, datesSorted);
-
-    const exactByDate = new Map<string, Set<string>>();
-    for (const s of snapshots) {
-      if (s.account_id === '__day__') continue;
-      if (!exactByDate.has(s.date)) exactByDate.set(s.date, new Set());
-      exactByDate.get(s.date)!.add(s.account_id);
-    }
-    const activeIds = new Set(activeAccounts(accounts).map(a => a.id));
-
-    const byDate = new Map<string, {
-      net: number; investments: number; realEstate: number;
-      realEstateDebts: number; debts: number; incomplete: boolean;
-    }>();
-
-    for (let i = 0; i < datesSorted.length; i++) {
-      const date = datesSorted[i];
-      const balances = sweep[i];
-      if (!Object.keys(balances).length) continue;
-      const usdCad = rateFor(fxRateMap, date);
-      let net = 0, inv = 0, re = 0, red = 0, debts = 0;
-      for (const [id, balance_raw] of Object.entries(balances)) {
-        const a = acctById[id];
-        if (!a) continue;
-        const signed = signedMain(a, balance_raw, mainCurrency, usdCad, viewer);
-        net += signed;
-        if (a.kind === 'debt') debts += signed;
-        // Use exact categories (matching computeSeries): re = real-estate assets,
-        // red = real-estate debt. HistoryCard sums them for net real estate — folding
-        // the debt into `re` here would double-count it (it appeared all-negative).
-        if (a.category === 'investments') inv += signed;
-        else if (a.category === 'real_estate') re += signed;
-        else if (a.category === 'real_estate_debt') red += signed;
-      }
-      const exact = exactByDate.get(date) ?? new Set<string>();
-      byDate.set(date, {
-        net, investments: inv, realEstate: re, realEstateDebts: red, debts,
-        incomplete: [...activeIds].some(id => !exact.has(id)),
-      });
-    }
-
-    const allDatesList = [...byDate.keys()].sort();
-    const byMonth = new Map<string, string[]>();
-    for (const d of allDatesList) {
-      const mo = d.slice(0, 7);
-      if (!byMonth.has(mo)) byMonth.set(mo, []);
-      byMonth.get(mo)!.push(d);
-    }
-    const monthsDesc = [...byMonth.keys()].sort().reverse();
-
-    return monthsDesc.map((mo, moIdx) => {
-      const datesInMonth = [...byMonth.get(mo)!].reverse(); // newest first
-      const latestDate = datesInMonth[0];
-      const latest = byDate.get(latestDate)!;
-      const prevMoKey = monthsDesc[moIdx + 1];
-      const prevLatest = prevMoKey ? [...byMonth.get(prevMoKey)!].sort().pop() : undefined;
-      const prevNet = prevLatest ? byDate.get(prevLatest)!.net : null;
-
-      const olderDates = datesInMonth.slice(1).map(date => {
-        const d = byDate.get(date)!;
-        const prevI = allDatesList.indexOf(date) - 1;
-        const prevK = prevI >= 0 ? allDatesList[prevI] : null;
-        return {
-          date,
-          net: d.net,
-          prevNet: prevK ? byDate.get(prevK)!.net : null,
-          incomplete: d.incomplete,
-        };
-      });
-
-      return {
-        month: mo,
-        latestDate,
-        net: latest.net,
-        prevNet,
-        investments: latest.investments,
-        realEstate: latest.realEstate,
-        realEstateDebts: latest.realEstateDebts,
-        debts: latest.debts,
-        incomplete: latest.incomplete,
-        olderDates,
-      };
-    });
-  }, [datesSorted, accounts, snapshots, mainCurrency, fxRateMap, viewer]);
+  const cardData = useMemo(
+    () => buildHistoryCards(datesSorted, accounts, snapshots, mainCurrency, fxRateMap, viewer),
+    [datesSorted, accounts, snapshots, mainCurrency, fxRateMap, viewer],
+  );
 
   const totalPages = Math.ceil(cardData.length / HIST_PAGE_SIZE);
   const safePage = Math.min(page, Math.max(0, totalPages - 1));

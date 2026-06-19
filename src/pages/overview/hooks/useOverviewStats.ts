@@ -6,7 +6,7 @@ import { foldCategoryId } from '@/utils/colors';
 import { rateFor } from '@/utils/currency';
 import { LEGACY_SELF_ID } from '@/utils/ownership';
 import { tr } from '@/i18n';
-import { makeAccountContributor } from '@/core/contributors/accountContributor';
+import { makeAccountContributor } from '@/core/accounts/contributor';
 import { makeEquityContributor } from '@/core/contributors/equityContributor';
 import type { ValuedContributor } from '@/core/contributors/types';
 import { personColor } from '@/core/buckets';

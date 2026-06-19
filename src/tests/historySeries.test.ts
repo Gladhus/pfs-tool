@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSeries } from '@/pages/history/HistoryPage';
+import { computeSeries } from '@/core/accounts/history';
 import type { Account, Snapshot } from '@/types/sheets';
 
 const mk = (id: string, person: string): Account => ({

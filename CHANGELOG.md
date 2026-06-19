@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.2.4] — 2026-06-19
+## [2.2.4](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.4) — 2026-06-19
 
 ### Fixed
 - **Detail page dropped line items for some viewers** — a category's per-account rows were only shown when more than one account in it was visible *to the current viewer*, so a category with mixed ownership (e.g. a 50/50 real estate account alongside a solely-owned one) would collapse to "total only" for whichever viewer saw fewer of its accounts, while another viewer of the same category still got line items. The decision is now based on the category's full account count, independent of viewer

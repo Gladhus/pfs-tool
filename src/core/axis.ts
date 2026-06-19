@@ -1,6 +1,5 @@
-import type { Period } from '@/ui/PeriodPills';
 import { addMonths } from '@/utils/dates';
-import type { FilterSpec } from './filters';
+import type { FilterSpec, Period } from './filters';
 import type { DateRange, ValuedContributor } from './contributors/types';
 
 // Mirrors getDatesForPeriod's month windows so a range-then-merge over account

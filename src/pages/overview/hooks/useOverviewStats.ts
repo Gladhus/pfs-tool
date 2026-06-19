@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Account, CategoryMeta, Group, Snapshot, OptionCompany, OptionGrant, OptionFmv, OptionExercise, Currency, Person } from '@/types/sheets';
+import type { Account, CategoryMeta, Group, Snapshot, Currency, Person } from '@/types/sheets';
 import { buildBalanceSweep } from '@/utils/stats';
 import { todayISO } from '@/utils/dates';
 import { foldCategoryId } from '@/utils/colors';
@@ -13,13 +13,9 @@ import { personColor } from '@/core/buckets';
 import type { BucketModels } from '@/core/buckets';
 import { buildDataset } from '@/core/dataset';
 import type { FilterSpec } from '@/core/filters';
+import type { EquityData } from '@/core/options/selectors';
 
-export interface EquityData {
-  companies: OptionCompany[];
-  grants: OptionGrant[];
-  fmv: OptionFmv[];
-  exercises: OptionExercise[];
-}
+export type { EquityData };
 
 export interface BucketData {
   key: string;

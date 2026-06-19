@@ -4,12 +4,12 @@ import { StatCard } from '@/ui/StatCard';
 import { Delta } from '@/ui/Delta';
 import { Sparkline } from './Sparkline';
 import { EmptyGroupsState } from './EmptyGroupsState';
-import type { EquityData, PersonStat } from '../hooks/useOverviewStats';
-import { foldCategoryId, accountMatchesGroup, groupColor } from '@/utils/colors';
+import type { PersonStat } from '../hooks/useOverviewStats';
+import type { EquityData } from '@/core/options/selectors';
+import { groupColor } from '@/utils/colors';
 import { categoryKey } from '@/utils/icons';
-import { computeCompanyEquityValue } from '@/utils/options';
-import { signedMain, toMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, shareFor, ownerVisibleToViewer } from '@/utils/ownership';
+import { LEGACY_SELF_ID } from '@/utils/ownership';
+import { categorySparkline, groupSparkline, personSparkline, equitySparkline } from '@/core/sparklines';
 import type { Currency } from '@/types/sheets';
 import { tr } from '@/i18n';
 import { useTranslation } from 'react-i18next';
@@ -49,102 +49,6 @@ function catColorVar(catId?: string): string {
   return cs.getPropertyValue('--cat-' + categoryKey(catId)).trim() || cs.getPropertyValue('--accent').trim();
 }
 
-/** Drop leading entries that have no underlying data so the line starts at the first real point. */
-function trimLeading(raw: { total: number; has: boolean }[]): number[] {
-  const first = raw.findIndex(r => r.has);
-  return first < 0 ? [] : raw.slice(first).map(r => r.total);
-}
-
-function buildCategorySpark(
-  catId: string,
-  accounts: Account[],
-  sweepForSpark: Record<string, number>[],
-  sparkDates: string[],
-  main: Currency,
-  fxMap: Map<string, number>,
-  viewer: string = LEGACY_SELF_ID,
-): number[] {
-  const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
-  return trimLeading(sweepForSpark.map((balances, i) => {
-    const usdCad = rateFor(fxMap, sparkDates[i]);
-    let total = 0;
-    let has = false;
-    for (const [id, balance_raw] of Object.entries(balances)) {
-      const a = acctById[id];
-      if (!a || foldCategoryId(a.category) !== catId) continue;
-      total += signedMain(a, balance_raw, main, usdCad, viewer);
-      has = true;
-    }
-    return { total, has };
-  }));
-}
-
-function buildGroupSpark(
-  group: Group,
-  accounts: Account[],
-  sweepForSpark: Record<string, number>[],
-  sparkDates: string[],
-  main: Currency,
-  fxMap: Map<string, number>,
-  optionData?: EquityData,
-  viewer: string = LEGACY_SELF_ID,
-): number[] {
-  const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
-  return trimLeading(sweepForSpark.map((balances, i) => {
-    const usdCad = rateFor(fxMap, sparkDates[i]);
-    let total = 0;
-    let has = false;
-    for (const [id, balance_raw] of Object.entries(balances)) {
-      const a = acctById[id];
-      if (!a || !accountMatchesGroup(a, group)) continue;
-      total += signedMain(a, balance_raw, main, usdCad, viewer);
-      has = true;
-    }
-    if (optionData) {
-      for (const c of optionData.companies) {
-        if (c.active === false) continue;
-        if (!ownerVisibleToViewer(c.owner, viewer)) continue;
-        if (accountMatchesGroup({ tags: c.tags }, group)) {
-          const raw = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, sparkDates[i]);
-          if (raw) { total += toMain(raw, c.currency ?? main, main, usdCad); has = true; }
-        }
-      }
-    }
-    return { total, has };
-  }));
-}
-
-function buildPersonSpark(
-  personId: string,
-  accounts: Account[],
-  sweepForSpark: Record<string, number>[],
-  sparkDates: string[],
-  main: Currency,
-  fxMap: Map<string, number>,
-  optionData?: EquityData,
-): number[] {
-  const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
-  return trimLeading(sweepForSpark.map((balances, i) => {
-    const usdCad = rateFor(fxMap, sparkDates[i]);
-    let total = 0;
-    let has = false;
-    for (const [id, balance_raw] of Object.entries(balances)) {
-      const a = acctById[id];
-      if (!a || !shareFor(a.ownership, personId)) continue;
-      total += signedMain(a, balance_raw, main, usdCad, personId);
-      has = true;
-    }
-    if (optionData) {
-      for (const c of optionData.companies) {
-        if (c.active === false || c.owner !== personId) continue;
-        const raw = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, sparkDates[i]);
-        if (raw) { total += toMain(raw, c.currency ?? main, main, usdCad); has = true; }
-      }
-    }
-    return { total, has };
-  }));
-}
-
 export function StatCardGrid({
   view,
   effectiveCats,
@@ -171,36 +75,26 @@ export function StatCardGrid({
 
   const catSparks = useMemo(() =>
     effectiveCats.reduce<Record<string, number[]>>((acc, cat) => {
-      acc[cat.id] = buildCategorySpark(cat.id, accounts, sweepForSpark, sparkDates, main, fxMap, viewer);
+      acc[cat.id] = categorySparkline(cat.id, accounts, sweepForSpark, sparkDates, main, fxMap, viewer);
       return acc;
     }, {}),
     [effectiveCats, accounts, sweepForSpark, sparkDates, main, fxMap, viewer],
   );
 
   const groupSparks = useMemo(() =>
-    groupStats.map(({ group }) => buildGroupSpark(group, accounts, sweepForSpark, sparkDates, main, fxMap, optionData, viewer)),
+    groupStats.map(({ group }) => groupSparkline(group, accounts, sweepForSpark, sparkDates, main, fxMap, optionData, viewer)),
     [groupStats, accounts, sweepForSpark, sparkDates, main, fxMap, optionData, viewer],
   );
 
   const personSparks = useMemo(() =>
-    personStats.map(({ person }) => buildPersonSpark(person.id, accounts, sweepForSpark, sparkDates, main, fxMap, optionData)),
+    personStats.map(({ person }) => personSparkline(person.id, accounts, sweepForSpark, sparkDates, main, fxMap, optionData)),
     [personStats, accounts, sweepForSpark, sparkDates, main, fxMap, optionData],
   );
 
-  const equitySpark = useMemo(() => {
-    if (!optionData) return [];
-    const raw = sparkDates.map(d => {
-      const usdCad = rateFor(fxMap, d);
-      return optionData.companies.reduce((s, c) => {
-        if (c.active === false) return s;
-        if (!ownerVisibleToViewer(c.owner, viewer)) return s;
-        const v = computeCompanyEquityValue(c.id, optionData.grants, optionData.fmv, optionData.exercises, d);
-        return s + toMain(v, c.currency ?? main, main, usdCad);
-      }, 0);
-    });
-    const first = raw.findIndex(v => v !== 0);
-    return first < 0 ? [] : raw.slice(first);
-  }, [optionData, sparkDates, main, fxMap, viewer]);
+  const equitySpark = useMemo(
+    () => equitySparkline(optionData, sparkDates, main, fxMap, viewer),
+    [optionData, sparkDates, main, fxMap, viewer],
+  );
 
   const renderDelta = (delta: number | null, base: number | null) =>
     delta != null ? (

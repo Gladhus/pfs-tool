@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { SegmentControl } from './SegmentControl';
+import type { Period } from '@/core/filters';
 
-export type Period = '3m' | '6m' | '1y' | '2y' | '3y' | '5y' | 'ytd' | 'all';
+export type { Period };
 
 /** Canonical period set used app-wide (Overview, History). Detail uses its own YoY set. */
 export const APP_PERIODS: Period[] = ['3m', '6m', 'ytd', '1y', '2y', '5y', 'all'];

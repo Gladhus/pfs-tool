@@ -14,6 +14,14 @@ import { getDatesForPeriod } from '@/utils/dates';
  * can't express — beside the `equityContributor` that feeds Overview.
  */
 
+/** The four option tables, bundled — the equity domain's raw input shape. */
+export interface EquityData {
+  companies: OptionCompany[];
+  grants: OptionGrant[];
+  fmv: OptionFmv[];
+  exercises: OptionExercise[];
+}
+
 /** Per-company headline numbers for a card, as of `now`. */
 export function companyEquitySummary(
   company: OptionCompany,

@@ -190,17 +190,19 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
   344 green; typecheck + lint clean. (e2e exact-amount specs run in CI on
   `sample.xlsx`; account math is golden-verified.)
 
-### Phase 7 — Accounts domain: History + Detail selectors 🔄 in progress
-Move all Accounts-domain data computation out of the components into
+### Phase 7 — Accounts domain: History + Detail selectors ✅ done
+Moved all Accounts-domain data computation out of the components into
 `src/core/accounts/` (the domain that owns `accountContributor`).
-- ✅ History chart: `computeSeries` now values via `accountContributor`.
-- History card model (`cardData`) → a `core/accounts` selector; valuation via the
-  contributor (add `kind` to `Contribution` for the debt line).
-- Detail year-over-year (`getDetailYears` + `buildDetailModel`) → a `core/accounts`
-  selector; the viewer-empty year filter reuses the shared scope/trim.
-- Relocate `accountContributor` under `core/accounts/`; pages become pure views.
-- **Tests:** History + Detail goldens pass; new selector unit tests.
-- **Exit:** no Accounts data math in a component; trim/scope/value logic shared.
+- `core/accounts/contributor.ts` — relocated `accountContributor`.
+- `core/accounts/history.ts` — `computeSeries` (values via the contributor) +
+  `buildHistoryCards` + `CardData`. `HistoryPage` calls them and renders only;
+  `HistoryCard` imports `CardData` from core.
+- `core/accounts/detail.ts` — `getDetailYears` + `buildDetailModel` + the
+  `DetailModel`/`DetailRow` types (labels injected to keep core i18n-free).
+  `DetailPage` is a pure view; `DetailTable` imports the types from core.
+- **Tests:** goldens added for `buildHistoryCards` + `buildDetailModel`;
+  `computeSeries`/Overview goldens unchanged; History/Detail component tests green.
+- **Exit:** ✅ no Accounts data math in a component; suite 350 green.
 
 ### Phase 8 — Stock Options domain selectors
 Move all Stock-Options data computation out of the page components into

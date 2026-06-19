@@ -2,20 +2,9 @@ import { privDelta, privPct } from '@/utils/privacy';
 import { Amount } from '@/ui/Amount';
 import { Icon } from '@/ui/Icon';
 import { categoryIcon } from '@/utils/icons';
+import type { DetailRowKind, DetailRow, DetailModel } from '@/core/accounts/detail';
 
-export type DetailRowKind = 'category-header' | 'account' | 'category-total' | 'net';
-
-export interface DetailRow {
-  kind: DetailRowKind;
-  label: string;
-  categoryId?: string;
-  values: (number | null)[];
-}
-
-export interface DetailModel {
-  years: string[];
-  rows: DetailRow[];
-}
+export type { DetailRowKind, DetailRow, DetailModel };
 
 interface Props {
   model: DetailModel;

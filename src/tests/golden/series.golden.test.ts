@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { computeSeries, buildHistoryCards } from '@/core/accounts/history';
+import { getDetailYears, buildDetailModel } from '@/core/accounts/detail';
 import { computeDateStats, buildEffectiveBalances } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { signedMain, rateFor } from '@/utils/currency';
 import { accountsVisibleToViewer, HOUSEHOLD_VIEWER } from '@/utils/ownership';
 import {
-  ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN, OPTION_DATA,
+  ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN, CATEGORY_META, OPTION_DATA,
 } from '../fixtures/portfolio';
 
 /**
@@ -64,6 +65,19 @@ describe('GOLDEN Detail year-over-year cell values', () => {
         }
       }
       expect(grid).toMatchSnapshot();
+    });
+  }
+});
+
+// The actual Detail selectors (post-migration): year columns + the full table model.
+describe('GOLDEN Detail model (getDetailYears + buildDetailModel)', () => {
+  const stubLabels = { net: 'Net worth', total: 'Total', tr: (e: { name_en?: string }) => e.name_en ?? '' };
+  for (const viewer of ['self', 'partner', HOUSEHOLD_VIEWER]) {
+    it(`viewer = ${viewer}`, () => {
+      const visibleIds = new Set(accountsVisibleToViewer(active, viewer).map(a => a.id));
+      const years = getDetailYears(SNAPSHOTS, DATES_SORTED, 'all', visibleIds);
+      const model = buildDetailModel(SNAPSHOTS, ACCOUNTS, CATEGORY_META, years, MAIN, FX_MAP, viewer, stubLabels);
+      expect({ years, model }).toMatchSnapshot();
     });
   }
 });

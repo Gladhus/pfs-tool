@@ -1,5 +1,386 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`GOLDEN Detail model (getDetailYears + buildDetailModel) > viewer = __household__ 1`] = `
+{
+  "model": {
+    "rows": [
+      {
+        "categoryId": "investments",
+        "kind": "category-header",
+        "label": "Investments",
+        "values": [
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "account",
+        "label": "inv_self",
+        "values": [
+          null,
+          20000,
+          25000,
+          30000,
+        ],
+      },
+      {
+        "kind": "account",
+        "label": "inv_joint",
+        "values": [
+          null,
+          8000,
+          9000,
+          9000,
+        ],
+      },
+      {
+        "kind": "account",
+        "label": "partner_inv",
+        "values": [
+          10000,
+          10000,
+          10000,
+          15000,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          10000,
+          38000,
+          44000,
+          54000,
+        ],
+      },
+      {
+        "categoryId": "cash",
+        "kind": "category-header",
+        "label": "Cash",
+        "values": [
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          null,
+          1350,
+          1680,
+          1680,
+        ],
+      },
+      {
+        "categoryId": "real_estate",
+        "kind": "category-header",
+        "label": "Real Estate",
+        "values": [
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          null,
+          400000,
+          400000,
+          420000,
+        ],
+      },
+      {
+        "categoryId": "real_estate_debt",
+        "kind": "category-header",
+        "label": "RE Debt",
+        "values": [
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          null,
+          -300000,
+          -290000,
+          -290000,
+        ],
+      },
+      {
+        "kind": "net",
+        "label": "Net worth",
+        "values": [
+          10000,
+          139350,
+          155680,
+          185680,
+        ],
+      },
+    ],
+    "years": [
+      "2022",
+      "2023",
+      "2024",
+      "2026",
+    ],
+  },
+  "years": [
+    "2022",
+    "2023",
+    "2024",
+    "2026",
+  ],
+}
+`;
+
+exports[`GOLDEN Detail model (getDetailYears + buildDetailModel) > viewer = partner 1`] = `
+{
+  "model": {
+    "rows": [
+      {
+        "categoryId": "investments",
+        "kind": "category-header",
+        "label": "Investments",
+        "values": [
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "account",
+        "label": "inv_joint",
+        "values": [
+          null,
+          4000,
+          4500,
+          4500,
+        ],
+      },
+      {
+        "kind": "account",
+        "label": "partner_inv",
+        "values": [
+          10000,
+          10000,
+          10000,
+          15000,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          10000,
+          14000,
+          14500,
+          19500,
+        ],
+      },
+      {
+        "categoryId": "real_estate",
+        "kind": "category-header",
+        "label": "Real Estate",
+        "values": [
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          null,
+          200000,
+          200000,
+          210000,
+        ],
+      },
+      {
+        "categoryId": "real_estate_debt",
+        "kind": "category-header",
+        "label": "RE Debt",
+        "values": [
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          null,
+          -150000,
+          -145000,
+          -145000,
+        ],
+      },
+      {
+        "kind": "net",
+        "label": "Net worth",
+        "values": [
+          10000,
+          64000,
+          69500,
+          84500,
+        ],
+      },
+    ],
+    "years": [
+      "2022",
+      "2023",
+      "2024",
+      "2026",
+    ],
+  },
+  "years": [
+    "2022",
+    "2023",
+    "2024",
+    "2026",
+  ],
+}
+`;
+
+exports[`GOLDEN Detail model (getDetailYears + buildDetailModel) > viewer = self 1`] = `
+{
+  "model": {
+    "rows": [
+      {
+        "categoryId": "investments",
+        "kind": "category-header",
+        "label": "Investments",
+        "values": [
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "account",
+        "label": "inv_self",
+        "values": [
+          20000,
+          25000,
+          30000,
+        ],
+      },
+      {
+        "kind": "account",
+        "label": "inv_joint",
+        "values": [
+          4000,
+          4500,
+          4500,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          24000,
+          29500,
+          34500,
+        ],
+      },
+      {
+        "categoryId": "cash",
+        "kind": "category-header",
+        "label": "Cash",
+        "values": [
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          1350,
+          1680,
+          1680,
+        ],
+      },
+      {
+        "categoryId": "real_estate",
+        "kind": "category-header",
+        "label": "Real Estate",
+        "values": [
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          200000,
+          200000,
+          210000,
+        ],
+      },
+      {
+        "categoryId": "real_estate_debt",
+        "kind": "category-header",
+        "label": "RE Debt",
+        "values": [
+          null,
+          null,
+          null,
+        ],
+      },
+      {
+        "kind": "category-total",
+        "label": "Total",
+        "values": [
+          -150000,
+          -145000,
+          -145000,
+        ],
+      },
+      {
+        "kind": "net",
+        "label": "Net worth",
+        "values": [
+          75350,
+          86180,
+          101180,
+        ],
+      },
+    ],
+    "years": [
+      "2023",
+      "2024",
+      "2026",
+    ],
+  },
+  "years": [
+    "2023",
+    "2024",
+    "2026",
+  ],
+}
+`;
+
 exports[`GOLDEN Detail year-over-year cell values > viewer = __household__ 1`] = `
 {
   "cash_usd": {

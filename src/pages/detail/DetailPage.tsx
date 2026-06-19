@@ -5,129 +5,21 @@ import { useUIStore } from '@/stores/ui.store';
 import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQuery, useFxRatesQuery } from '@/queries/sheetQueries';
 import { tr } from '@/i18n';
 import { deriveDatesSorted } from '@/utils/dates';
-import { buildEffectiveBalances } from '@/utils/stats';
-import { categoriesInOrder, accountsForCategory } from '@/utils/balance';
-import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/utils/ownership';
+import { fxMap as buildFxMap } from '@/utils/currency';
 import { resolveFilterSpec } from '@/core/filters';
 import { activeVisibleAccounts, isViewerLockedOut } from '@/core/scope';
+import { getDetailYears, buildDetailModel } from '@/core/accounts/detail';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
 import { Icon } from '@/ui/Icon';
 import { ViewingAsBadge } from '@/components/ViewingAsBadge';
-import { DetailTable, type DetailModel, type DetailRow } from './components/DetailTable';
-import type { Account, CategoryMeta, Snapshot, Currency } from '@/types/sheets';
+import { DetailTable } from './components/DetailTable';
+import type { Currency } from '@/types/sheets';
 
 // Detail is year-over-year, so it keeps its own period set (exempt from APP_PERIODS).
 const DETAIL_PERIODS: Period[] = ['3y', '5y', 'all'];
-const PERIOD_LIMIT: Record<string, number | null> = { '3y': 3, '5y': 5, all: null };
-
-function getDetailYears(
-  snapshots: Snapshot[],
-  datesSorted: string[],
-  period: Period,
-  visibleIds: Set<string>,
-): string[] {
-  const currentYear = String(new Date().getFullYear());
-  const seen = new Set(datesSorted.map(d => d.slice(0, 4)));
-  seen.add(currentYear);
-  // Keep a year only when at least one account the viewer can see has a value
-  // carried into Jan 1 of that year. Otherwise a viewer who joined later would
-  // get a run of empty leading columns for years that belong to someone else.
-  let sorted = [...seen]
-    .sort()
-    .filter(y => {
-      const bals = buildEffectiveBalances(snapshots, `${y}-01-01`);
-      return Object.keys(bals).some(id => visibleIds.has(id));
-    });
-  const limit = PERIOD_LIMIT[period];
-  if (limit && sorted.length > limit) sorted = sorted.slice(-limit);
-  return sorted;
-}
-
-function buildDetailModel(
-  snapshots: Snapshot[],
-  accounts: Account[],
-  categoryMeta: CategoryMeta[],
-  years: string[],
-  netLabel: string,
-  totalLabel: string,
-  main: Currency,
-  fxMap: Map<string, number>,
-  viewer: string = LEGACY_SELF_ID,
-): DetailModel | null {
-  const yearBals: Record<string, Record<string, number>> = {};
-  const yearRate: Record<string, number | null> = {};
-  for (const y of years) {
-    yearBals[y] = buildEffectiveBalances(snapshots, `${y}-01-01`);
-    yearRate[y] = rateFor(fxMap, `${y}-01-01`);
-  }
-
-  const getVal = (acct: Account, year: string): number | null => {
-    const raw = yearBals[year][acct.id];
-    return raw !== undefined ? signedMain(acct, raw, main, yearRate[year], viewer) : null;
-  };
-
-  const rows: DetailRow[] = [];
-  const netByYear: Record<string, number> = Object.fromEntries(years.map(y => [y, 0]));
-  const netHasData: Record<string, boolean> = Object.fromEntries(years.map(y => [y, false]));
-  let anyData = false;
-
-  for (const cat of categoriesInOrder(accounts, categoryMeta)) {
-    const allAccts = accountsForCategory(accounts, cat.id);
-    const accts = accountsVisibleToViewer(allAccts, viewer);
-    if (!accts.length) continue;
-
-    const catByYear: Record<string, number | null> = Object.fromEntries(years.map(y => [y, null]));
-    const catRows: { acct: Account; vals: Record<string, number | null> }[] = [];
-
-    for (const acct of accts) {
-      const vals: Record<string, number | null> = Object.fromEntries(years.map(y => [y, getVal(acct, y)]));
-      if (!years.some(y => vals[y] !== null)) continue;
-      for (const y of years) {
-        const v = vals[y];
-        if (v !== null) {
-          catByYear[y] = (catByYear[y] ?? 0) + v;
-          netByYear[y] += v;
-          netHasData[y] = true;
-          anyData = true;
-        }
-      }
-      catRows.push({ acct, vals });
-    }
-    if (!catRows.length) continue;
-
-    rows.push({ kind: 'category-header', label: tr(cat), categoryId: cat.id, values: years.map(() => null) });
-
-    // Line items are gated on the category's full account count, not the viewer-filtered one —
-    // otherwise a category collapses to "total only" for whichever viewer happens to see fewer
-    // of its accounts, while another viewer of the same category still gets line items.
-    const showLineItems = allAccts.length > 1;
-    if (showLineItems) {
-      for (const { acct, vals } of catRows) {
-        rows.push({ kind: 'account', label: tr(acct), values: years.map(y => vals[y]) });
-      }
-    }
-
-    // Skip the category total when it would just repeat a single visible line item verbatim
-    // (e.g. a multi-account category where the viewer owns only one of them).
-    if (!(showLineItems && catRows.length === 1)) {
-      rows.push({ kind: 'category-total', label: totalLabel, values: years.map(y => catByYear[y]) });
-    }
-  }
-
-  if (!anyData) return null;
-
-  rows.push({
-    kind: 'net',
-    label: netLabel,
-    values: years.map(y => (netHasData[y] ? netByYear[y] : null)),
-  });
-
-  return { years, rows };
-}
 
 export default function DetailPage() {
   const { t } = useTranslation();
@@ -164,7 +56,8 @@ export default function DetailPage() {
   );
   const model = useMemo(
     () => (years.length && accounts.length
-      ? buildDetailModel(snapshots, accounts, categoryMeta, years, t('net_worth'), t('detail_total'), mainCurrency, fxRateMap, viewer)
+      ? buildDetailModel(snapshots, accounts, categoryMeta, years, mainCurrency, fxRateMap, viewer,
+          { net: t('net_worth'), total: t('detail_total'), tr })
       : null),
     [snapshots, accounts, categoryMeta, years, t, mainCurrency, fxRateMap, viewer],
   );

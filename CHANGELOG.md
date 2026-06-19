@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.2.6] — 2026-06-19
+## [2.2.6](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.6) — 2026-06-19
 
 ### Fixed
 - **Empty leading dates/years for later-joining viewers** — when viewing as a person who started tracking after others, the Detail (year-over-year) table and the overview/history charts padded the start with a run of empty columns/dates that belonged solely to other people. Each now begins where the selected viewer's own history actually starts: Detail keeps a year only when a viewer-visible account carries a value into it, and the charts trim leading dates where the viewer holds no stake instead of plotting a flat zero line

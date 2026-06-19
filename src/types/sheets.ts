@@ -100,6 +100,8 @@ export interface OptionCompany {
   tags: string[];
   /** Currency of this company's FMV + strike prices. Absent → main currency. */
   currency?: Currency;
+  /** The single person who owns this company's equity. Options can't be split. */
+  owner: string;
 }
 
 export interface OptionGrant {

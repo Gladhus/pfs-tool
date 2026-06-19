@@ -7,7 +7,7 @@ interface SeriesToggleProps {
   netColor: string;
   buckets: BucketData[];
   catsWithData: Set<string>;
-  view: 'category' | 'group';
+  view: 'category' | 'group' | 'person';
   catColor: (id?: string) => string;
 }
 

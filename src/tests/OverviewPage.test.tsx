@@ -33,6 +33,7 @@ vi.mock('@/queries/sheetQueries', () => ({
   useOptionFmvQuery: vi.fn(),
   useOptionExercisesQuery: vi.fn(),
   useFxRatesQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [] })),
+  usePeopleQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [] })),
 }));
 
 import {

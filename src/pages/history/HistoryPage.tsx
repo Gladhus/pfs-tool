@@ -7,6 +7,7 @@ import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
+import { LEGACY_SELF_ID } from '@/utils/ownership';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
@@ -27,6 +28,7 @@ function computeSeries(
   snapshots: Snapshot[],
   main: Currency,
   fxMap: Map<string, number>,
+  viewer: string = LEGACY_SELF_ID,
 ) {
   if (!dates.length) return { dates: [], investments: [], realEstateNet: [], other: [] };
   const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
@@ -44,7 +46,7 @@ function computeSeries(
     for (const [id, balance_raw] of Object.entries(balances)) {
       const a = acctById[id];
       if (!a) continue;
-      const signed = signedMain(a, balance_raw, main, usdCad);
+      const signed = signedMain(a, balance_raw, main, usdCad, viewer);
       n += signed;
       if (a.category === 'investments') inv += signed;
       else if (a.category === 'real_estate') re += signed;
@@ -73,6 +75,7 @@ export default function HistoryPage() {
   const { t } = useTranslation();
   const lang = useUIStore(s => s.lang);
   const privateMode = useUIStore(s => s.privateMode);
+  const viewer = useUIStore(s => s.currentViewer);
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
   const configQ = useConfigQuery();
   const fxRatesQ = useFxRatesQuery();
@@ -104,8 +107,8 @@ export default function HistoryPage() {
   const filteredDates = useMemo(() => getDatesForPeriod(datesSorted, period), [datesSorted, period]);
 
   const overviewSeries = useMemo(
-    () => computeSeries(filteredDates, activeAccounts(accounts), snapshots, mainCurrency, fxRateMap),
-    [filteredDates, accounts, snapshots, mainCurrency, fxRateMap],
+    () => computeSeries(filteredDates, activeAccounts(accounts), snapshots, mainCurrency, fxRateMap, viewer),
+    [filteredDates, accounts, snapshots, mainCurrency, fxRateMap, viewer],
   );
 
   const hasOtherData = useMemo(
@@ -140,7 +143,7 @@ export default function HistoryPage() {
       for (const [id, balance_raw] of Object.entries(balances)) {
         const a = acctById[id];
         if (!a) continue;
-        const signed = signedMain(a, balance_raw, mainCurrency, usdCad);
+        const signed = signedMain(a, balance_raw, mainCurrency, usdCad, viewer);
         net += signed;
         if (a.kind === 'debt') debts += signed;
         // Use exact categories (matching computeSeries): re = real-estate assets,
@@ -199,7 +202,7 @@ export default function HistoryPage() {
         olderDates,
       };
     });
-  }, [datesSorted, accounts, snapshots, mainCurrency, fxRateMap]);
+  }, [datesSorted, accounts, snapshots, mainCurrency, fxRateMap, viewer]);
 
   const totalPages = Math.ceil(cardData.length / HIST_PAGE_SIZE);
   const safePage = Math.min(page, Math.max(0, totalPages - 1));

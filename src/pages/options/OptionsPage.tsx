@@ -10,6 +10,7 @@ import {
 import { computeCompanyEquityValue, computeCompanyUnvestedValue, generateMonthlyDates } from '@/utils/options';
 import { fxMap as buildFxMap, toMain, rateFor } from '@/utils/currency';
 import { getDatesForPeriod, todayISO } from '@/utils/dates';
+import { ownerVisibleToViewer } from '@/utils/ownership';
 import type { Currency } from '@/types/sheets';
 import { Skeleton } from '@/ui/Skeleton';
 import { Button } from '@/ui/Button';
@@ -28,6 +29,7 @@ export default function OptionsPage() {
   const lang = useUIStore(s => s.lang);
   const locale = lang === 'fr' ? 'fr' : 'en';
   const privateMode = useUIStore(s => s.privateMode);
+  const currentViewer = useUIStore(s => s.currentViewer);
   const now = todayISO();
 
   const configQ = useConfigQuery();
@@ -46,7 +48,10 @@ export default function OptionsPage() {
   const fmvQ = useOptionFmvQuery();
   const exercisesQ = useOptionExercisesQuery();
 
-  const companies = useMemo(() => (companiesQ.data ?? []).filter(c => c.active !== false), [companiesQ.data]);
+  const companies = useMemo(
+    () => (companiesQ.data ?? []).filter(c => c.active !== false && ownerVisibleToViewer(c.owner, currentViewer)),
+    [companiesQ.data, currentViewer],
+  );
   const grants = grantsQ.data ?? [];
   const fmv = useMemo(() => fmvQ.data ?? [], [fmvQ.data]);
   const exercises = exercisesQ.data ?? [];

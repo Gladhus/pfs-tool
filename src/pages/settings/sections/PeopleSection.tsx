@@ -1,21 +1,45 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToastStore } from '@/stores/toast.store';
-import { usePeopleQuery } from '@/queries/sheetQueries';
+import { usePeopleQuery, useAccountsQuery, useOptionCompaniesQuery } from '@/queries/sheetQueries';
 import { useWritePeopleMutation } from '@/queries/sheetMutations';
+import { personHasActiveClaims, auditOwnership, type OwnershipIssue } from '@/utils/ownership';
+import { tr } from '@/i18n';
 import { Icon } from '@/ui/Icon';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { PersonDialog } from '../components/PersonDialog';
-import type { Person } from '@/types/sheets';
+import type { Account, OptionCompany, Person } from '@/types/sheets';
+
+function describeIssue(issue: OwnershipIssue, accounts: Account[], companies: OptionCompany[], people: Person[], t: (key: string, opts?: Record<string, unknown>) => string): string {
+  const personName = (id: string) => people.find(p => p.id === id)?.name || id;
+  switch (issue.kind) {
+    case 'unbalanced_account': {
+      const name = tr(accounts.find(a => a.id === issue.accountId) ?? { name_en: issue.accountId });
+      return t('ownership_issue_unbalanced', { name, pct: issue.pct });
+    }
+    case 'unknown_account_owner': {
+      const name = tr(accounts.find(a => a.id === issue.accountId) ?? { name_en: issue.accountId });
+      return t('ownership_issue_unknown_owner', { name, person: personName(issue.personId) });
+    }
+    case 'unknown_company_owner': {
+      const name = companies.find(c => c.id === issue.companyId)?.name ?? issue.companyId;
+      return t('ownership_issue_unknown_company_owner', { name, person: personName(issue.personId) });
+    }
+  }
+}
 
 export function PeopleSection() {
   const { t } = useTranslation();
   const addToast = useToastStore(s => s.addToast);
 
   const peopleQ = usePeopleQuery();
+  const accountsQ = useAccountsQuery();
+  const companiesQ = useOptionCompaniesQuery();
   const writePeople = useWritePeopleMutation();
   const people = peopleQ.data ?? [];
+  const accounts = accountsQ.data ?? [];
+  const companies = companiesQ.data ?? [];
 
   const [editId, setEditId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -24,6 +48,7 @@ export function PeopleSection() {
   const openEdit = (id: string) => { setEditId(id); setDialogOpen(true); };
 
   const editing = editId !== null ? people.find(p => p.id === editId) ?? null : null;
+  const archiveBlocked = editing ? personHasActiveClaims(editing.id, accounts, companies) : false;
   const nextSortOrder = (Math.max(0, ...people.map(p => p.sort_order ?? 0)) || 0) + 10;
 
   const persist = (next: Person[], okMsg: string) => {
@@ -41,11 +66,13 @@ export function PeopleSection() {
 
   const onToggleActive = () => {
     if (!editing || editing.primary) return;
+    if (editing.active && personHasActiveClaims(editing.id, accounts, companies)) return;
     const next = people.map(p => p.id === editing.id ? { ...p, active: !p.active } : p);
     persist(next, editing.active ? 'person_archived' : 'person_reactivated');
   };
 
   const sorted = [...people].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const issues = auditOwnership(accounts, companies, people);
 
   if (peopleQ.isPending) {
     return <div className="space-y-2">{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} variant="card" className="h-14" />)}</div>;
@@ -79,11 +106,26 @@ export function PeopleSection() {
         ))}
       </div>
 
+      {issues.length > 0 && (
+        <div className="space-y-2 rounded-lg bg-surface-1 p-3 shadow-sm">
+          <h3 className="flex items-center gap-2 text-sm font-medium text-fg">
+            <Icon name="alert" size={14} className="text-amber-500" />
+            {t('ownership_audit_title')}
+          </h3>
+          <ul className="space-y-1.5">
+            {issues.map((issue, i) => (
+              <li key={i} className="text-xs text-muted">{describeIssue(issue, accounts, companies, people, t)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <PersonDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         person={editing}
         nextSortOrder={nextSortOrder}
+        archiveBlocked={archiveBlocked}
         onSave={onSave}
         onToggleActive={onToggleActive}
       />

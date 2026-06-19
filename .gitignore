@@ -69,6 +69,7 @@ node_modules
 bower_components
 dist
 playwright-report/
+playwright-output/
 test-results/
 e2e/fixtures/sample.xlsx
 

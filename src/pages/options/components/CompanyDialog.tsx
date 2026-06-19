@@ -7,7 +7,7 @@ import { Select, SelectItem } from '@/ui/Select';
 import { Checkbox } from '@/ui/Checkbox';
 import { Label } from '@/ui/Label';
 import { TagChipInput } from '@/pages/settings/components/TagChipInput';
-import type { OptionCompany, Currency } from '@/types/sheets';
+import type { OptionCompany, Currency, Person } from '@/types/sheets';
 
 const CURRENCIES: Currency[] = ['CAD', 'USD'];
 
@@ -15,6 +15,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   company: OptionCompany | null;
+  people: Person[];
   availableTags?: string[];
   mainCurrency: Currency;
   onSave: (company: OptionCompany) => void;
@@ -25,14 +26,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div><Label>{label}</Label>{children}</div>;
 }
 
-export function CompanyDialog({ open, onClose, company, availableTags = [], mainCurrency, onSave, onDelete }: Props) {
+export function CompanyDialog({ open, onClose, company, people, availableTags = [], mainCurrency, onSave, onDelete }: Props) {
   const { t } = useTranslation();
   const isNew = company === null;
+  const activePeople = people.filter(p => p.active);
+  const defaultOwner = people.find(p => p.primary)?.id ?? activePeople[0]?.id ?? '';
   const [name, setName] = useState('');
   const [ticker, setTicker] = useState('');
   const [active, setActive] = useState(true);
   const [tags, setTags] = useState<string[]>([]);
   const [currency, setCurrency] = useState<Currency>(mainCurrency);
+  const [owner, setOwner] = useState(defaultOwner);
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +45,8 @@ export function CompanyDialog({ open, onClose, company, availableTags = [], main
     setActive(company?.active !== false);
     setTags(company?.tags ? [...company.tags] : []);
     setCurrency(company?.currency ?? mainCurrency);
-  }, [open, company, mainCurrency]);
+    setOwner(company?.owner ?? defaultOwner);
+  }, [open, company, mainCurrency, defaultOwner]);
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -53,6 +58,7 @@ export function CompanyDialog({ open, onClose, company, availableTags = [], main
       active,
       tags,
       currency,
+      owner,
     });
   };
 
@@ -68,6 +74,11 @@ export function CompanyDialog({ open, onClose, company, availableTags = [], main
         <Field label={t('currency_label')}>
           <Select value={currency} onValueChange={v => setCurrency(v as Currency)}>
             {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </Select>
+        </Field>
+        <Field label={t('owner_label_field')}>
+          <Select value={owner} onValueChange={setOwner} aria-label={t('owner_label_field')}>
+            {activePeople.map(p => <SelectItem key={p.id} value={p.id}>{p.name || p.id}</SelectItem>)}
           </Select>
         </Field>
         <Field label={t('opt_equity_tags')}>

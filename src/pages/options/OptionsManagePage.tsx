@@ -4,9 +4,10 @@ import { useToastStore } from '@/stores/toast.store';
 import {
   useOptionCompaniesQuery, useOptionGrantsQuery,
   useOptionFmvQuery, useOptionExercisesQuery,
-  useAccountsQuery, useTagsQuery, useConfigQuery,
+  useAccountsQuery, useTagsQuery, useConfigQuery, usePeopleQuery,
 } from '@/queries/sheetQueries';
 import { allKnownTags, mergeTagNames } from '@/utils/tags';
+import { LEGACY_SELF_ID } from '@/utils/ownership';
 import type { Currency } from '@/types/sheets';
 import {
   useWriteOptionCompaniesMutation, useWriteOptionGrantsMutation,
@@ -40,8 +41,10 @@ export default function OptionsManagePage() {
   const accountsQ = useAccountsQuery();
   const tagsQ = useTagsQuery();
   const configQ = useConfigQuery();
+  const peopleQ = usePeopleQuery();
   const availableTags = allKnownTags(tagsQ.data ?? [], accountsQ.data ?? []);
   const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
+  const people = peopleQ.data ?? [];
 
   const writeCompanies = useWriteOptionCompaniesMutation();
   const writeTags = useWriteTagsMutation();
@@ -59,7 +62,8 @@ export default function OptionsManagePage() {
 
   // ── Company CRUD ────────────────────────────────────────────────────
   // Persist the "assume main currency" default for any company still missing one.
-  const normCompanies = (list: OptionCompany[]) => list.map(c => ({ ...c, currency: c.currency ?? mainCurrency }));
+  const defaultOwnerId = people.find(p => p.primary)?.id ?? LEGACY_SELF_ID;
+  const normCompanies = (list: OptionCompany[]) => list.map(c => ({ ...c, currency: c.currency ?? mainCurrency, owner: c.owner || defaultOwnerId }));
 
   const saveCompany = (c: OptionCompany) => {
     const { merged, grew } = mergeTagNames(tagsQ.data ?? [], c.tags);
@@ -133,6 +137,7 @@ export default function OptionsManagePage() {
               <div className="flex items-center gap-2">
                 <strong className="text-fg">{company.name}</strong>
                 {company.ticker && <span className="text-xs text-muted">{company.ticker}</span>}
+                <span className="text-xs text-muted">{people.find(p => p.id === company.owner)?.name || company.owner}</span>
                 {company.active === false && <span className="rounded bg-surface-3 px-1.5 py-0.5 text-[10px] uppercase text-muted">{t('opt_inactive')}</span>}
               </div>
               <Button variant="ghost" size="sm" onClick={() => setCompanyDlg({ company })}>
@@ -219,6 +224,7 @@ export default function OptionsManagePage() {
           open
           onClose={() => setCompanyDlg(null)}
           company={companyDlg.company}
+          people={people}
           availableTags={availableTags}
           mainCurrency={mainCurrency}
           onSave={saveCompany}

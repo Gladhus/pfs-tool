@@ -113,7 +113,7 @@ export function AccountDialog({
   }, [open, account]);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
-  const setShare = (personId: string, pct: number) => setForm(f => ({ ...f, shares: { ...f.shares, [personId]: pct } }));
+  const setShare = (personId: string, pct: number) => setForm(f => ({ ...f, shares: { ...f.shares, [personId]: Math.max(0, Math.min(100, Number.isFinite(pct) ? pct : 0)) } }));
 
   const onTypeChange = (prefix: string) => {
     const type = accountTypes.find(at => at.id_prefix === prefix);
@@ -200,7 +200,7 @@ export function AccountDialog({
 
         {!form.split ? (
           <Field label={t('owner_label_field')}>
-            <Select value={form.owner} onValueChange={v => set('owner', v)}>
+            <Select value={form.owner} onValueChange={v => set('owner', v)} aria-label={t('owner_label_field')}>
               {activePeople.map(p => <SelectItem key={p.id} value={p.id}>{p.name || p.id}</SelectItem>)}
             </Select>
           </Field>

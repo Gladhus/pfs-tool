@@ -8,6 +8,7 @@ import { deriveDatesSorted } from '@/utils/dates';
 import { buildEffectiveBalances } from '@/utils/stats';
 import { categoriesInOrder, accountsForCategory } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
+import { LEGACY_SELF_ID } from '@/utils/ownership';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
@@ -44,6 +45,7 @@ function buildDetailModel(
   totalLabel: string,
   main: Currency,
   fxMap: Map<string, number>,
+  viewer: string = LEGACY_SELF_ID,
 ): DetailModel | null {
   const yearBals: Record<string, Record<string, number>> = {};
   const yearRate: Record<string, number | null> = {};
@@ -54,7 +56,7 @@ function buildDetailModel(
 
   const getVal = (acct: Account, year: string): number | null => {
     const raw = yearBals[year][acct.id];
-    return raw !== undefined ? signedMain(acct, raw, main, yearRate[year]) : null;
+    return raw !== undefined ? signedMain(acct, raw, main, yearRate[year], viewer) : null;
   };
 
   const rows: DetailRow[] = [];
@@ -111,7 +113,8 @@ export default function DetailPage() {
   const { t } = useTranslation();
   const lang = useUIStore(s => s.lang);
   const privateMode = useUIStore(s => s.privateMode);
-const locale = lang === 'fr' ? 'fr' : 'en';
+  const viewer = useUIStore(s => s.currentViewer);
+  const locale = lang === 'fr' ? 'fr' : 'en';
 
   const [searchParams, setSearchParams] = useSearchParams();
   const period = (searchParams.get('period') as Period) ?? 'all';
@@ -137,9 +140,9 @@ const locale = lang === 'fr' ? 'fr' : 'en';
   );
   const model = useMemo(
     () => (years.length && accounts.length
-      ? buildDetailModel(snapshots, accounts, categoryMeta, years, t('net_worth'), t('detail_total'), mainCurrency, fxRateMap)
+      ? buildDetailModel(snapshots, accounts, categoryMeta, years, t('net_worth'), t('detail_total'), mainCurrency, fxRateMap, viewer)
       : null),
-    [snapshots, accounts, categoryMeta, years, t, mainCurrency, fxRateMap],
+    [snapshots, accounts, categoryMeta, years, t, mainCurrency, fxRateMap, viewer],
   );
 
   const onPeriodChange = (p: Period) =>

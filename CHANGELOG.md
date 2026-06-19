@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.3] — 2026-06-19
+
+### Fixed
+- **Viewer selector now reachable on mobile** — the header "View as" dropdown was `hidden` below the `sm` breakpoint, so on phones there was no way to change the viewer; it now shows on every screen size (the wordmark collapses to just the logo on mobile to make room), and an e2e test pins its visibility at a 375px viewport
+
 ## [2.2.2] — 2026-06-19
 
 ### Changed

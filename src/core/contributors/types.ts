@@ -11,7 +11,11 @@ import type { FilterSpec } from '../filters';
 export interface Contribution {
   /** This owner's slice, converted to main currency and signed (debt < 0). */
   amount: number;
-  /** Folded category id, e.g. 'investments' | 'real_estate' | 'equity'. */
+  /**
+   * Raw category id, e.g. 'investments' | 'real_estate' | 'real_estate_debt' |
+   * 'equity'. Kept raw (not folded) so consumers that distinguish real-estate debt
+   * still can; the category BucketStrategy folds via foldCategoryId when grouping.
+   */
   category: string;
   /** The single owner this slice belongs to (drives viewer scoping + person view). */
   ownerId: string;

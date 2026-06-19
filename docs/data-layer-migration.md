@@ -126,16 +126,21 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
 - **Exit:** ✅ types + axis exist, unused by prod; suite 304 green, typecheck +
   lint clean.
 
-### Phase 3 — `accountContributor` (wrap today's math, per-owner) ⚠ highest numeric risk
+### Phase 3 — `accountContributor` (wrap today's math, per-owner) ✅ done
 - `src/core/contributors/accountContributor.ts`:
-  - `checkpointDates(range)` = snapshot dates within range.
-  - `valuesOver(axis, ctx)` = `buildBalanceSweep`-style LOCF, emitting **one
-    `Contribution` per owner** (amount = that owner's `signedMain` slice).
-- **Tests (spec):** LOCF + carry-in; joint → 2 contributions summing to the whole;
-  debt negative; USD→main via `ctx.fxRateFor`; viewer slice.
-- **Tests (cross-check):** assert account-only `valuesOver` reproduces
-  `computeSeries` / `computeDateStats` numbers on the Phase 0 fixture.
-- **Exit:** account valuation provably equals legacy, still unused by pages.
+  - `checkpointDates(range)` = snapshot dates within range (sorted, deduped,
+    `__day__` excluded).
+  - `valuesOver(axis, ctx)` = `buildBalanceSweep` LOCF (carry-in seeded), emitting
+    **one `Contribution` per owner** (amount = that owner's converted/signed slice,
+    raw category preserved).
+- **Tests (spec):** carry-in into a late axis start; joint → 2 contributions
+  summing to the whole; debt negative; USD→main via `ctx.fxRateFor`; raw
+  `real_estate_debt` kept; orphan snapshots skipped.
+- **Tests (cross-check):** `valuesOver` net per viewer == `computeNetWorthFrom
+  Snapshots` at every date, and folded category sums == `computeDateStats`, for
+  self / partner / household.
+- **Exit:** ✅ account valuation provably equals legacy; suite 318 green;
+  goldens untouched; still unused by pages.
 
 ### Phase 4 — `equityContributor` (vesting, exact days, `equityDate`)
 - `src/core/contributors/equityContributor.ts`:

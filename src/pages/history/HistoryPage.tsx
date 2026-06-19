@@ -7,7 +7,8 @@ import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, viewerShare } from '@/utils/ownership';
+import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { makeAccountContributor } from '@/core/contributors/accountContributor';
 import { resolveFilterSpec } from '@/core/filters';
 import { isViewerLockedOut } from '@/core/scope';
 import { Skeleton } from '@/ui/Skeleton';
@@ -34,8 +35,14 @@ export function computeSeries(
   viewer: string = LEGACY_SELF_ID,
 ) {
   if (!dates.length) return { dates: [], investments: [], realEstateNet: [], other: [] };
-  const acctById = Object.fromEntries(accounts.map(a => [a.id, a]));
-  const sweep = buildBalanceSweep(snapshots, dates);
+  // Valuation goes through the shared account contributor (per-owner, FX, sign,
+  // carry-forward); this page only groups the result into its investments /
+  // real-estate / other split.
+  const perDate = makeAccountContributor(accounts, snapshots)
+    .valuesOver(dates, { viewer, main, fxRateFor: d => rateFor(fxMap, d) });
+  const scopeToViewer = (cs: typeof perDate[number]) =>
+    viewer === HOUSEHOLD_VIEWER ? cs : cs.filter(c => c.ownerId === viewer);
+
   const outDates: string[] = [];
   const investments: number[] = [];
   const realEstateNet: number[] = [];
@@ -45,26 +52,20 @@ export function computeSeries(
   const viewerHasData: boolean[] = [];
 
   for (let i = 0; i < dates.length; i++) {
-    const balances = sweep[i];
-    if (!Object.keys(balances).length) continue;
-    const usdCad = rateFor(fxMap, dates[i]);
+    if (!perDate[i].length) continue; // no account has data on this date yet
+    const scoped = scopeToViewer(perDate[i]);
     let n = 0, inv = 0, re = 0, red = 0;
-    let viewerHas = false;
-    for (const [id, balance_raw] of Object.entries(balances)) {
-      const a = acctById[id];
-      if (!a) continue;
-      if (viewerShare(a.ownership, viewer) > 0) viewerHas = true;
-      const signed = signedMain(a, balance_raw, main, usdCad, viewer);
-      n += signed;
-      if (a.category === 'investments') inv += signed;
-      else if (a.category === 'real_estate') re += signed;
-      else if (a.category === 'real_estate_debt') red += signed;
+    for (const c of scoped) {
+      n += c.amount;
+      if (c.category === 'investments') inv += c.amount;
+      else if (c.category === 'real_estate') re += c.amount;
+      else if (c.category === 'real_estate_debt') red += c.amount;
     }
     outDates.push(dates[i]);
     investments.push(inv);
     realEstateNet.push(re + red);
     other.push(n - inv - (re + red));
-    viewerHasData.push(viewerHas);
+    viewerHasData.push(scoped.length > 0);
   }
 
   // Drop leading dates with no data for this viewer so the x-axis starts where

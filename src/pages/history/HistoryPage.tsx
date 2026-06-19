@@ -7,7 +7,9 @@ import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, accountsVisibleToViewer, viewerShare } from '@/utils/ownership';
+import { LEGACY_SELF_ID, viewerShare } from '@/utils/ownership';
+import { resolveFilterSpec } from '@/core/filters';
+import { isViewerLockedOut } from '@/core/scope';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
@@ -97,8 +99,9 @@ export default function HistoryPage() {
   const fxRateMap = useMemo(() => buildFxMap(fxRatesQ.data ?? []), [fxRatesQ.data]);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const period = (searchParams.get('period') as Period) ?? 'all';
-  const selectedAccount = searchParams.get('account') ?? '';
+  const spec = resolveFilterSpec(searchParams, { viewer });
+  const period = spec.period;
+  const selectedAccount = spec.accountId;
 
   const [seriesVisible, setSeriesVisible] = useState<SeriesState>({
     investments: true,
@@ -258,8 +261,7 @@ export default function HistoryPage() {
 
   // There's snapshot data, but none of it belongs to the current viewer — so every series
   // would just plot zero. Surface the filter instead of a misleading all-zero chart.
-  const active = activeAccounts(accounts);
-  if (active.length > 0 && accountsVisibleToViewer(active, viewer).length === 0) {
+  if (isViewerLockedOut(accounts, viewer)) {
     return (
       <EmptyState
         icon={<Icon name="user" size={28} />}

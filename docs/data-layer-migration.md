@@ -96,16 +96,22 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
 - **Exit:** ✅ goldens pass against current code; full suite 281 tests green;
   typecheck + lint clean. Pure-test commit.
 
-### Phase 1 — `FilterSpec` + `scope` (pure extraction)
-- `src/core/filters.ts`: `FilterSpec` + `resolveFilterSpec(searchParams, uiState)`
-  (consolidates today's scattered Zustand/URL reads).
-- `src/core/scope.ts`: `scopeAccounts(accounts, spec)` = `active ∩ visibleToViewer
-  (∩ accountId)`, lifting `activeAccounts` / `accountsVisibleToViewer` usage.
-- Route Overview/History/Detail through them for their existing inline derivations.
-- **Tests:** `resolveFilterSpec` (defaults, URL-vs-store precedence, `person`→
-  fallback when not household); `scopeAccounts` (active, viewer slice, household,
-  account drill-down). Goldens + e2e unchanged.
-- **Exit:** behaviour identical; one source of truth for "what am I looking at".
+### Phase 1 — `FilterSpec` + `scope` (pure extraction) ✅ done
+- `src/core/filters.ts`: `FilterSpec` + `resolveFilterSpec(params, inputs)` —
+  consolidates the period default, the `account` drill-down read, and the
+  "By person" → category fallback that was duplicated in `OverviewPage`.
+- `src/core/scope.ts`: `activeVisibleAccounts(accounts, viewer)` and
+  `isViewerLockedOut(accounts, viewer)` — the active∩visible display set and the
+  viewer empty-state predicate, previously copy-pasted across History/Detail.
+  (Aggregator inputs are deliberately untouched: viewer scoping still happens
+  inside `signedMain` and unifies onto contributors in Phase 6/7 — pre-filtering
+  Overview/History now would change household/person results.)
+- Routed Overview/History/Detail through both.
+- **Tests:** `src/tests/filters.test.ts` (defaults, URL reads, person→category
+  fallback, includeInactive) and `src/tests/scope.test.ts` (active/inactive,
+  per-person, household, locked-out predicate).
+- **Exit:** ✅ behaviour identical — goldens unchanged, full suite 295 green,
+  typecheck + lint clean.
 
 ### Phase 2 — Contributor types + axis builder
 - `src/core/contributors/types.ts`: `Contribution`, `ValueContext`,

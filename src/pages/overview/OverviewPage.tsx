@@ -17,6 +17,7 @@ import {
 import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { fxMap as buildFxMap } from '@/utils/currency';
 import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { resolveFilterSpec } from '@/core/filters';
 import type { Currency } from '@/types/sheets';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
@@ -44,7 +45,8 @@ export default function OverviewPage() {
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const period = (searchParams.get('period') as Period) ?? DEFAULT_PERIOD;
+  const spec = resolveFilterSpec(searchParams, { viewer, view: ovView, defaultPeriod: DEFAULT_PERIOD });
+  const period = spec.period;
 
   const accountsQ = useAccountsQuery();
   const snapshotsQ = useSnapshotsQuery();
@@ -71,7 +73,7 @@ export default function OverviewPage() {
   const groups = groupsQ.data ?? [];
   const people = peopleQ.data ?? [];
   const showPerson = viewer === HOUSEHOLD_VIEWER;
-  const effectiveView = !showPerson && ovView === 'person' ? 'category' : ovView;
+  const effectiveView = spec.view;
 
   const datesSorted = deriveDatesSorted(snapshots);
   const filteredDates = getDatesForPeriod(datesSorted, period);

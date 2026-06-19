@@ -6,9 +6,11 @@ import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQue
 import { tr } from '@/i18n';
 import { deriveDatesSorted } from '@/utils/dates';
 import { buildEffectiveBalances } from '@/utils/stats';
-import { categoriesInOrder, accountsForCategory, activeAccounts } from '@/utils/balance';
+import { categoriesInOrder, accountsForCategory } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
 import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/utils/ownership';
+import { resolveFilterSpec } from '@/core/filters';
+import { activeVisibleAccounts, isViewerLockedOut } from '@/core/scope';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, type Period } from '@/ui/PeriodPills';
@@ -135,7 +137,7 @@ export default function DetailPage() {
   const locale = lang === 'fr' ? 'fr' : 'en';
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const period = (searchParams.get('period') as Period) ?? 'all';
+  const period = resolveFilterSpec(searchParams, { viewer }).period;
 
   const accountsQ = useAccountsQuery();
   const snapshotsQ = useSnapshotsQuery();
@@ -153,7 +155,7 @@ export default function DetailPage() {
 
   const datesSorted = useMemo(() => deriveDatesSorted(snapshots), [snapshots]);
   const visibleIds = useMemo(
-    () => new Set(accountsVisibleToViewer(activeAccounts(accounts), viewer).map(a => a.id)),
+    () => new Set(activeVisibleAccounts(accounts, viewer).map(a => a.id)),
     [accounts, viewer],
   );
   const years = useMemo(
@@ -169,10 +171,7 @@ export default function DetailPage() {
 
   // True when there's data, but none of it belongs to the current viewer — so the page is
   // blank because of the "View as" filter, not because the account list is genuinely empty.
-  const viewerHasNoAccounts = useMemo(() => {
-    const active = activeAccounts(accounts);
-    return active.length > 0 && accountsVisibleToViewer(active, viewer).length === 0;
-  }, [accounts, viewer]);
+  const viewerHasNoAccounts = useMemo(() => isViewerLockedOut(accounts, viewer), [accounts, viewer]);
 
   const onPeriodChange = (p: Period) =>
     setSearchParams(prev => { prev.set('period', p); return prev; });

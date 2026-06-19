@@ -20,6 +20,10 @@ vi.mock('@/queries/sheetQueries', () => ({
   useCategoryMetaQuery: vi.fn(),
   useConfigQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: { currency: 'CAD' } })),
   useFxRatesQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [] })),
+  usePeopleQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [
+    { id: 'self', name: 'Me', sort_order: 1, active: true, primary: true },
+    { id: 'partner', name: 'Partner', sort_order: 2, active: true, primary: false },
+  ] })),
 }));
 
 import {
@@ -107,5 +111,21 @@ describe('DetailPage', () => {
     render(<DetailPage />, { wrapper: Wrapper });
     expect(screen.getByText('House')).toBeTruthy();
     expect(screen.queryByText('Mortgage')).toBeNull();
+    // The category total would just repeat the single visible House row, so it's suppressed.
+    expect(screen.queryByText('detail_total')).toBeNull();
+  });
+
+  it('shows a viewer-specific empty state when the viewer owns none of the accounts', () => {
+    useUIStore.setState({ currentViewer: 'partner' });
+    (useAccountsQuery as MockFn).mockReturnValue(ok([
+      { id: 'self-1', name_en: 'My TFSA', name_fr: 'Mon REER', category: 'investments', kind: 'asset', ownership: [{ person_id: 'self', share: 1 }], tags: [], active: true, sort_order: 1 },
+    ]));
+    (useSnapshotsQuery as MockFn).mockReturnValue(ok([
+      { date: '2024-01-15', account_id: 'self-1', balance_raw: 1000 },
+    ]));
+    render(<DetailPage />, { wrapper: Wrapper });
+    expect(screen.getByText('viewer_empty_title')).toBeTruthy();
+    // Not the generic "no data" state — there IS data, just none for this viewer.
+    expect(screen.queryByText('empty_detail_title')).toBeNull();
   });
 });

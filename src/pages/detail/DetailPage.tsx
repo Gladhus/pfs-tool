@@ -6,7 +6,7 @@ import { useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery, useConfigQue
 import { tr } from '@/i18n';
 import { deriveDatesSorted } from '@/utils/dates';
 import { buildEffectiveBalances } from '@/utils/stats';
-import { categoriesInOrder, accountsForCategory } from '@/utils/balance';
+import { categoriesInOrder, accountsForCategory, activeAccounts } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
 import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/utils/ownership';
 import { Button } from '@/ui/Button';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
 import { Icon } from '@/ui/Icon';
+import { ViewingAsBadge } from '@/components/ViewingAsBadge';
 import { DetailTable, type DetailModel, type DetailRow } from './components/DetailTable';
 import type { Account, CategoryMeta, Snapshot, Currency } from '@/types/sheets';
 
@@ -91,16 +92,21 @@ function buildDetailModel(
 
     rows.push({ kind: 'category-header', label: tr(cat), categoryId: cat.id, values: years.map(() => null) });
 
-    // Based on the category's full account count, not the viewer-filtered one — otherwise
-    // a category collapses to "total only" for whichever viewer happens to see fewer of its
-    // accounts, while another viewer of the same category still gets line items.
-    if (allAccts.length > 1) {
+    // Line items are gated on the category's full account count, not the viewer-filtered one —
+    // otherwise a category collapses to "total only" for whichever viewer happens to see fewer
+    // of its accounts, while another viewer of the same category still gets line items.
+    const showLineItems = allAccts.length > 1;
+    if (showLineItems) {
       for (const { acct, vals } of catRows) {
         rows.push({ kind: 'account', label: tr(acct), values: years.map(y => vals[y]) });
       }
     }
 
-    rows.push({ kind: 'category-total', label: totalLabel, values: years.map(y => catByYear[y]) });
+    // Skip the category total when it would just repeat a single visible line item verbatim
+    // (e.g. a multi-account category where the viewer owns only one of them).
+    if (!(showLineItems && catRows.length === 1)) {
+      rows.push({ kind: 'category-total', label: totalLabel, values: years.map(y => catByYear[y]) });
+    }
   }
 
   if (!anyData) return null;
@@ -150,6 +156,13 @@ export default function DetailPage() {
     [snapshots, accounts, categoryMeta, years, t, mainCurrency, fxRateMap, viewer],
   );
 
+  // True when there's data, but none of it belongs to the current viewer — so the page is
+  // blank because of the "View as" filter, not because the account list is genuinely empty.
+  const viewerHasNoAccounts = useMemo(() => {
+    const active = activeAccounts(accounts);
+    return active.length > 0 && accountsVisibleToViewer(active, viewer).length === 0;
+  }, [accounts, viewer]);
+
   const onPeriodChange = (p: Period) =>
     setSearchParams(prev => { prev.set('period', p); return prev; });
 
@@ -159,6 +172,16 @@ export default function DetailPage() {
         <Skeleton variant="card" className="h-10 w-64" />
         <Skeleton variant="card" className="h-[420px]" />
       </div>
+    );
+  }
+
+  if (viewerHasNoAccounts) {
+    return (
+      <EmptyState
+        icon={<Icon name="user" size={28} />}
+        title={t('viewer_empty_title')}
+        description={t('viewer_empty_body')}
+      />
     );
   }
 
@@ -179,7 +202,10 @@ export default function DetailPage() {
 
   return (
     <div className="space-y-4">
-      <PeriodPills value={period} onChange={onPeriodChange} options={DETAIL_PERIODS} />
+      <div className="flex items-center justify-between gap-2">
+        <PeriodPills value={period} onChange={onPeriodChange} options={DETAIL_PERIODS} />
+        <ViewingAsBadge />
+      </div>
 
       <DetailTable
         model={model}

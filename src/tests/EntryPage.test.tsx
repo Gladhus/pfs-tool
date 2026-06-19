@@ -106,7 +106,7 @@ describe('EntryPage viewer filtering', () => {
   it('shows an empty state when the viewer owns no accounts', () => {
     useUIStore.setState({ currentViewer: 'ghost' });
     render(<EntryPage />, { wrapper: Wrapper });
-    expect(screen.getByText('entry_no_accounts_viewer')).toBeTruthy();
+    expect(screen.getByText('viewer_empty_title')).toBeTruthy();
     expect(screen.queryByText('My TFSA')).toBeNull();
   });
 });

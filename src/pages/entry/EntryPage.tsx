@@ -22,6 +22,7 @@ import { ProgressBar } from '@/ui/ProgressBar';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import { Skeleton } from '@/ui/Skeleton';
 import { EmptyState } from '@/ui/EmptyState';
+import { ViewingAsBadge } from '@/components/ViewingAsBadge';
 import { DateField } from './components/DateField';
 import { EntryAccountRow } from './components/EntryAccountRow';
 import type { Snapshot, Currency } from '@/types/sheets';
@@ -282,8 +283,8 @@ export default function EntryPage() {
     return (
       <EmptyState
         icon={<Icon name="inbox" size={28} />}
-        title={t('entry_no_accounts_viewer')}
-        description={t('entry_no_accounts_viewer_body')}
+        title={t('viewer_empty_title')}
+        description={t('viewer_empty_body')}
       />
     );
   }
@@ -313,7 +314,9 @@ export default function EntryPage() {
           </div>
 
           {/* Spacer — desktop only */}
-          <div className="hidden flex-1 sm:block" />
+          <div className="hidden flex-1 sm:flex sm:justify-center">
+            <ViewingAsBadge />
+          </div>
 
           {/* Row 2 on mobile / Right on desktop: action buttons */}
           <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-1.5 sm:w-auto">

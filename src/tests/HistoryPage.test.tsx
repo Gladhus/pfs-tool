@@ -32,6 +32,10 @@ vi.mock('@/queries/sheetQueries', () => ({
   useCategoryMetaQuery: vi.fn(),
   useConfigQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: { currency: 'CAD' } })),
   useFxRatesQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [] })),
+  usePeopleQuery: vi.fn(() => ({ isPending: false, isSuccess: true, data: [
+    { id: 'self', name: 'Me', sort_order: 1, active: true, primary: true },
+    { id: 'partner', name: 'Partner', sort_order: 2, active: true, primary: false },
+  ] })),
 }));
 
 import {
@@ -85,7 +89,7 @@ function setDefaultMocks() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useUIStore.setState({ privateMode: false, lang: 'en', theme: 'system' });
+  useUIStore.setState({ privateMode: false, lang: 'en', theme: 'system', currentViewer: 'self' });
   setDefaultMocks();
 });
 
@@ -148,6 +152,14 @@ describe('HistoryPage', () => {
     const trigger = screen.getByRole('combobox');
     fireEvent.click(trigger);
     expect(screen.getAllByText('overview_option').length).toBeGreaterThan(0);
+  });
+
+  it('shows a viewer-specific empty state when the viewer owns none of the accounts', () => {
+    useUIStore.setState({ currentViewer: 'partner' });
+    render(<HistoryPage />, { wrapper: Wrapper });
+    expect(screen.getByText('viewer_empty_title')).toBeTruthy();
+    // There ARE snapshots — it's the viewer filter, not a genuinely empty history.
+    expect(screen.queryByText('empty_history_title')).toBeNull();
   });
 
   it('account select excludes accounts the current viewer has 0% ownership of', () => {

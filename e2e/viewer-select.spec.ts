@@ -118,14 +118,17 @@ test.describe('Header viewer selector', () => {
     await page.getByRole('link', { name: 'New entry' }).first().click();
     await page.waitForURL(/\/entry/);
 
-    // Me: every account they have a stake in is listed.
+    // Me: every account they have a stake in is listed, and the "Viewing as" chip names them.
+    await expect(page.getByText('Viewing as Me')).toBeVisible();
     await expect(page.getByText('TFSA 1', { exact: true })).toBeVisible();
     await expect(page.getByText('Checking', { exact: true })).toBeVisible();
     await expect(page.getByText('Mortgage', { exact: true })).toBeVisible();
 
-    // Partner: only the Mortgage (their sole stake) — the Me-only accounts drop out.
+    // Partner: only the Mortgage (their sole stake) — the Me-only accounts drop out, and the
+    // chip updates to reflect the active lens.
     await page.getByRole('combobox', { name: 'View as' }).click();
     await page.getByRole('option', { name: 'Partner', exact: true }).click();
+    await expect(page.getByText('Viewing as Partner')).toBeVisible();
     await expect(page.getByText('Mortgage', { exact: true })).toBeVisible();
     await expect(page.getByText('TFSA 1', { exact: true })).toBeHidden();
     await expect(page.getByText('Checking', { exact: true })).toBeHidden();

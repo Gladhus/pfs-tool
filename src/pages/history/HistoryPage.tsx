@@ -7,12 +7,13 @@ import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
 import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID } from '@/utils/ownership';
+import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/utils/ownership';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
+import { ViewingAsBadge } from '@/components/ViewingAsBadge';
 import { AccountSelect } from './components/AccountSelect';
 import { SeriesToggleBar, type SeriesState } from './components/SeriesToggleBar';
 import { HistoryChart } from './components/HistoryChart';
@@ -243,6 +244,19 @@ export default function HistoryPage() {
     );
   }
 
+  // There's snapshot data, but none of it belongs to the current viewer — so every series
+  // would just plot zero. Surface the filter instead of a misleading all-zero chart.
+  const active = activeAccounts(accounts);
+  if (active.length > 0 && accountsVisibleToViewer(active, viewer).length === 0) {
+    return (
+      <EmptyState
+        icon={<Icon name="user" size={28} />}
+        title={t('viewer_empty_title')}
+        description={t('viewer_empty_body')}
+      />
+    );
+  }
+
   const isOverview = selectedAccount === '';
   const summaryFirst = datesSorted[0];
   const summaryLast = datesSorted[datesSorted.length - 1];
@@ -251,15 +265,18 @@ export default function HistoryPage() {
     <div className="space-y-4">
       {/* Chart section */}
       <div className="rounded-xl bg-surface-1 shadow-sm p-4 space-y-3">
-        <div className="flex items-center justify-end gap-2">
-          <span className="text-xs text-muted">{t('filter_account')}</span>
-          <AccountSelect
-            accounts={accounts}
-            categoryMeta={categoryMeta}
-            value={selectedAccount}
-            onChange={onAccountChange}
-            viewer={viewer}
-          />
+        <div className="flex items-center justify-between gap-2">
+          <ViewingAsBadge />
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted">{t('filter_account')}</span>
+            <AccountSelect
+              accounts={accounts}
+              categoryMeta={categoryMeta}
+              value={selectedAccount}
+              onChange={onAccountChange}
+              viewer={viewer}
+            />
+          </div>
         </div>
 
         {isOverview && (

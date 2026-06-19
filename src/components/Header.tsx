@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
@@ -23,7 +24,19 @@ export default function Header() {
   const currentViewer = useUIStore((s) => s.currentViewer);
   const setCurrentViewer = useUIStore((s) => s.setCurrentViewer);
   const peopleQ = usePeopleQuery();
-  const activePeople = (peopleQ.data ?? []).filter(p => p.active);
+  const activePeople = useMemo(() => (peopleQ.data ?? []).filter(p => p.active), [peopleQ.data]);
+
+  // `currentViewer` is persisted, so it can outlive the person it points to (archived/deleted,
+  // or a different sheet entirely). Left stale, every page filters to someone who owns nothing
+  // and the app looks empty with no obvious way back. Snap it to the primary (or first) active
+  // person whenever it no longer resolves; Household is always valid.
+  useEffect(() => {
+    if (!peopleQ.isSuccess || !activePeople.length) return;
+    if (currentViewer === HOUSEHOLD_VIEWER) return;
+    if (activePeople.some(p => p.id === currentViewer)) return;
+    const fallback = activePeople.find(p => p.primary) ?? activePeople[0];
+    setCurrentViewer(fallback.id);
+  }, [peopleQ.isSuccess, activePeople, currentViewer, setCurrentViewer]);
 
   return (
     <header className="sticky top-0 z-40 bg-header border-b border-white/10 px-4 h-16 md:h-14 flex items-center gap-6">

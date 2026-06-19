@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.5] — 2026-06-19
+
+### Added
+- **"Viewing as" indicator** — the Detail, History, and Entry pages now show a small chip naming the active "View as" viewer (a person or Household), so it's obvious when account filtering is narrowing what you see instead of leaving it a mystery. Shown only when more than one person exists
+- **Viewer-aware empty states** — when the selected viewer owns none of the accounts, the Detail and History pages now show a "No accounts for this view" prompt to switch viewers, matching the Entry page, instead of a misleading "no data" message or an all-zero chart
+
+### Changed
+- **Consolidated the viewer empty-state copy** — the Entry page's viewer-specific empty state now shares a single `viewer_empty_*` string set with Detail and History
+
+### Fixed
+- **Stale viewer stranded the app** — the persisted "View as" selection could outlive the person it referenced (archived/deleted, or a different sheet), silently filtering every page to someone who owns nothing with no obvious way back. It now snaps to the primary (or first) active person whenever it no longer resolves; Household stays valid
+- **Redundant category total on the Detail page** — a multi-account category where the viewer owns only one of its accounts no longer prints a category total that just repeats the single visible line item
+
 ## [2.2.4](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.4) — 2026-06-19
 
 ### Fixed

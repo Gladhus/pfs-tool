@@ -101,6 +101,26 @@ test.describe('Header viewer selector', () => {
     await expect(cashCard.locator('.text-2xl')).toHaveText('$6,000.00');
   });
 
+  // The Entry page lists each account as an input row. Me owns the TFSA and Checking
+  // outright and half the Mortgage; Partner owns only their half of the Mortgage — so the
+  // viewer dropdown should narrow which rows appear, not just rescale numbers.
+  test('switching the viewer filters which accounts the Entry page lists', async ({ page }) => {
+    await page.getByRole('link', { name: 'New entry' }).first().click();
+    await page.waitForURL(/\/entry/);
+
+    // Me: every account they have a stake in is listed.
+    await expect(page.getByText('TFSA 1', { exact: true })).toBeVisible();
+    await expect(page.getByText('Checking', { exact: true })).toBeVisible();
+    await expect(page.getByText('Mortgage', { exact: true })).toBeVisible();
+
+    // Partner: only the Mortgage (their sole stake) — the Me-only accounts drop out.
+    await page.getByRole('combobox', { name: 'View as' }).click();
+    await page.getByRole('option', { name: 'Partner', exact: true }).click();
+    await expect(page.getByText('Mortgage', { exact: true })).toBeVisible();
+    await expect(page.getByText('TFSA 1', { exact: true })).toBeHidden();
+    await expect(page.getByText('Checking', { exact: true })).toBeHidden();
+  });
+
   test('switching the viewer keeps the History page net worth in sync with Overview', async ({ page }) => {
     await page.locator('a[href*="/pfs-tool/portfolio"]').first().click();
     await page.locator('a[href="/pfs-tool/portfolio/history"]').click();

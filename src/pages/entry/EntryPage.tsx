@@ -11,6 +11,7 @@ import { fxMap as buildFxMap, signedMain, rateFor } from '@/utils/currency';
 import { deriveDatesSorted, normalizeDate, prevDate, todayISO } from '@/utils/dates';
 import { snapshotForDate, buildEffectiveBalances, computeNetWorthFromSnapshots } from '@/utils/stats';
 import { activeAccounts, categoriesInOrder, accountsForCategory, projectBalance } from '@/utils/balance';
+import { accountsVisibleToViewer } from '@/utils/ownership';
 import { categoryIcon } from '@/utils/icons';
 import { Icon } from '@/ui/Icon';
 import { Amount } from '@/ui/Amount';
@@ -76,6 +77,10 @@ export default function EntryPage() {
   );
 
   const active = useMemo(() => activeAccounts(accounts), [accounts]);
+  // Accounts the current header viewer ("View as") has a stake in — drives what's shown/counted.
+  // Seeding and saving still use the full `active` list so hidden owners' data is never lost.
+  const visible = useMemo(() => accountsVisibleToViewer(active, viewer), [active, viewer]);
+  const visibleCatIds = useMemo(() => new Set(visible.map(a => a.category)), [visible]);
   const categories = useMemo(
     () => categoriesInOrder(accounts, categoryMeta),
     [accounts, categoryMeta],
@@ -134,7 +139,7 @@ export default function EntryPage() {
     let filled = 0;
     let usingFallback = false;
     const usdCad = rateFor(fxRateMap, date);
-    for (const a of active) {
+    for (const a of visible) {
       const parsed = parseMoney(form[a.id]?.balance ?? '');
       let balance: number;
       if (parsed !== null) { filled++; balance = parsed; }
@@ -144,8 +149,8 @@ export default function EntryPage() {
       byCategory[a.category] = (byCategory[a.category] ?? 0) + signed;
       netWorth += signed;
     }
-    return { byCategory, netWorth, filled, total: active.length, usingFallback };
-  }, [active, form, prevBalances, date, mainCurrency, fxRateMap, viewer]);
+    return { byCategory, netWorth, filled, total: visible.length, usingFallback };
+  }, [visible, form, prevBalances, date, mainCurrency, fxRateMap, viewer]);
 
   const prevNet = useMemo(
     () => (prevD ? computeNetWorthFromSnapshots(snapshots, accounts, prevD, mainCurrency, fxRateMap, viewer) : null),
@@ -158,7 +163,7 @@ export default function EntryPage() {
   }, [date, prevD]);
 
   const balanceInputs = useRef<string[]>([]);
-  balanceInputs.current = active.map(a => a.id);
+  balanceInputs.current = visible.map(a => a.id);
   const focusNext = (id: string) => {
     const ids = balanceInputs.current;
     const idx = ids.indexOf(id);
@@ -273,6 +278,16 @@ export default function EntryPage() {
     );
   }
 
+  if (!visible.length) {
+    return (
+      <EmptyState
+        icon={<Icon name="inbox" size={28} />}
+        title={t('entry_no_accounts_viewer')}
+        description={t('entry_no_accounts_viewer_body')}
+      />
+    );
+  }
+
   return (
     <div>
       {/* Sticky bar: action controls + progress — sticks just below the global header (top-14 = 3.5rem) */}
@@ -352,7 +367,7 @@ export default function EntryPage() {
         {/* Categories + accounts */}
         <div className="space-y-4">
           {categories.map(cat => {
-            const accts = accountsForCategory(accounts, cat.id);
+            const accts = accountsVisibleToViewer(accountsForCategory(accounts, cat.id), viewer);
             if (!accts.length) return null;
             return (
               <section key={cat.id} className="rounded-xl bg-surface-1 p-4 shadow-sm">
@@ -433,7 +448,7 @@ export default function EntryPage() {
             />
           )}
           <div className="space-y-1 border-t border-border pt-3">
-            {categories.map(cat => (
+            {categories.filter(cat => visibleCatIds.has(cat.id)).map(cat => (
               <div key={cat.id} className="flex items-center justify-between text-sm">
                 <span className="text-fg-2">{tr(cat)}</span>
                 <span className="tabular-nums text-fg"><Amount value={totals.byCategory[cat.id] ?? 0} /></span>

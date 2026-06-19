@@ -1,5 +1,14 @@
 import '@testing-library/jest-dom';
 
+// jsdom doesn't implement ResizeObserver, which some components observe for layout.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // Vitest workers with jsdom may not expose localStorage on globalThis in time
 // for Zustand persist stores that initialize at module-load. Provide a shim.
 if (typeof localStorage === 'undefined') {

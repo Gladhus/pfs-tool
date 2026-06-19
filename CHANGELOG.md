@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.2.2] — 2026-06-19
+
+### Changed
+- **Ownership-filtered account lists** — the Detail, History, and Entry pages now only show accounts the current "View as" viewer has a stake in: Detail hides year-over-year rows the viewer owns 0% of, the History account-filter dropdown drops them, and the Entry page lists only the viewer's accounts for balance entry (with the net-worth summary and progress counting just those). Switching the header viewer dropdown re-filters every page consistently
+- **Shared `accountsVisibleToViewer` helper** — centralizes the "viewer owns > 0%" predicate in `utils/ownership.ts`, reused across the filtered pages
+
+### Added
+- **Entry-page empty state for filtered viewers** — when the selected viewer owns no accounts, the Entry page shows a clear prompt to change the "View as" selector instead of a blank form
+- **Regression coverage** — new `DetailPage`/`EntryPage` test suites and `accountsVisibleToViewer` unit tests assert non-owned accounts are hidden (and shown again under "Household"); `e2e/viewer-select.spec.ts` now verifies the Entry page narrows its account rows when switching viewers
+
+### Fixed
+- **Detail page crash on empty state** — restored the missing `Button` import that broke the "Add accounts" action when no data was present
+
 ## [2.2.1] — 2026-06-19
 
 ### Added

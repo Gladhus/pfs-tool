@@ -76,6 +76,8 @@
   "empty_overview_cta": "Go to Entry",
   "empty_overview_no_accounts_body": "Start by adding your accounts — then you can record your first snapshot.",
   "empty_overview_no_accounts_cta": "Add accounts",
+  "entry_no_accounts_viewer": "No accounts for this view",
+  "entry_no_accounts_viewer_body": "Change the \"View as\" selector in the header to enter balances for other people's accounts.",
   "data_as_of": "Data as of {{date}}",
   "allocation_title": "Allocation",
   "series_net": "Net worth",

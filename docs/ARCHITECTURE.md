@@ -153,88 +153,140 @@ view layer. Pages stop aggregating; they pass a **FilterSpec** in and read a
    │  [1] resolveFilterSpec  FilterSpec { viewer, period,       │
    │                          accountId?, view, includeInactive}│
    │  [2] scope        accounts ∩ viewer ∩ active  → Scoped     │
-   │  [3] timebase     datesSorted → filteredDates (period)     │
-   │  [4] value        for each ValuedContributor, per date:    │
-   │                     contribute(date, ctx) → Contribution[] │
-   │  [5] bucketize    BucketStrategy(spec.view) groups them    │
-   │  [6] trim         drop leading viewer-empty dates  (ONCE)  │
+   │  [3] axis     each contributor.checkpointDates(range) →    │
+   │                 merge + dedupe → shared day-level timeline │
+   │  [4] value    each contributor.valuesOver(timeline) →      │
+   │                 Contribution[] per date (owns carry-fwd)   │
+   │  [5] bucketize  BucketStrategy(spec.view) groups them      │
+   │  [6] trim       drop leading viewer-empty dates  (ONCE)    │
    └──────────────────────────────────────────────────────────┘
                               │  Dataset
                               ▼
         page hook (thin adapter) → picks a slice → fmt*/priv*
 ```
 
-Two of those stages are **extension points**, not fixed code: stage [4] iterates a
-list of **`ValuedContributor`s** (a new asset type plugs in here), and stage [5]
-delegates to a **`BucketStrategy`** chosen by `spec.view` (a new way of grouping
-plugs in here). Everything else — scoping, timebase, trim, format — is written
-once and never touched again. These two seams are what the rest of this section
-is about; they are the reason a new feature *implements* rather than *rebuilds*.
+Two of those stages are **extension points**, not fixed code: stages [3]+[4]
+iterate a list of **`ValuedContributor`s** (a new asset type plugs in here), and
+stage [5] delegates to a **`BucketStrategy`** chosen by `spec.view` (a new way of
+grouping plugs in here). Everything else — scoping, axis-merge, trim, format — is
+written once and never touched again. These two seams are what the rest of this
+section is about; they are the reason a new feature *implements* rather than
+*rebuilds*. Note that valuation is **two passes**: first collect every
+contributor's dates and merge them into one axis, then value every contributor on
+that merged axis (see "two questions" below).
 
 ### Seam 1 — `ValuedContributor` (the key to "implement, don't rebuild")
 
-Everything that contributes value to net worth — cash/investment/real-estate
-account snapshots today, stock-option equity today, **and whatever you add next
-(crypto, pensions, a manual asset, a live API price feed)** — implements one
-interface. The pipeline doesn't know or care which kind it is; it just asks each
-contributor for its signed, main-currency values on a given date.
+Everything that contributes value to net worth — account snapshots and
+stock-option equity today, **and whatever you add next (crypto, pensions, a manual
+asset, a live price feed)** — implements one interface. The pipeline never learns
+which kind it is; it asks each contributor **two questions** and merges the
+answers:
+
+- **Q1 — which dates do you put on the timeline?**
+- **Q2 — what are you worth on each date of the merged timeline?**
 
 ```ts
-/** A signed, main-currency amount tagged so any BucketStrategy can group it. */
-interface Contribution {
-  amount: number;            // already converted to main currency + signed (debt < 0)
-  category: string;          // folded category id, e.g. 'investments' | 'equity'
-  ownerId?: string;          // for person view / viewer attribution
-  share: number;             // viewer's share of this contribution (0 trims the date)
-  tags?: string[];           // for group/tag matching
-  sourceId: string;          // account id, company id, … (debugging / drill-down)
-}
-
-interface ValueContext {
-  date: string;              // the snapshot date being valued
-  equityDate: string;        // date to value time-vesting assets at (often `today`)
-  viewer: string;
-  main: Currency;
-  fxRate: number | null;     // resolved once per date by the pipeline
-}
-
 interface ValuedContributor {
-  /** Stable id, for memo keys and feature flags. */
   readonly id: string;
   /** Cheap gate so disabled features cost nothing (e.g. stock_options flag off). */
   isEnabled(spec: FilterSpec): boolean;
-  /** Everything this contributor is worth on `ctx.date`, already scoped + converted. */
-  contribute(ctx: ValueContext): Contribution[];
+
+  /** Q1 — the day-level dates I change on, within the period window. Merged with
+      every other contributor's dates into one shared axis. May return [] for a
+      pure sampler (e.g. a daily price feed) that just rides whatever axis others
+      define. */
+  checkpointDates(range: { start?: string; end: string }): string[];
+
+  /** Q2 — my value at each date of the FINAL merged axis. I own my own
+      carry-forward (accounts = LOCF; equity = vesting step) and seed from the
+      last data point <= axis[0], so period boundaries carry in correctly. */
+  valuesOver(axis: string[], ctx: ValueContext): Contribution[][];   // [dateIndex][contribution]
 }
 ```
 
-A contributor is constructed from the raw models it needs and closes over them:
+**Why two questions, not one "give me everything in this range."** Net worth on
+day D is the sum of *every* contributor valued on D, so all series must share one
+x-axis. But account-entry days and vesting days don't line up. So it's two
+passes: first collect everyone's dates and **merge** them; then value everyone on
+the merged set, each contributor **carrying its last value forward** onto dates it
+has no native point for.
+
+```
+Accounts entered:  Mar-14         Jun-02
+Equity vests:           Apr-15  May-15
+Merged axis:       Mar-14 Apr-15 May-15 Jun-02      ← union of both, day-level
+  accounts →        100    100    100    120         (LOCF between entries)
+  equity   →         20     35     45     45         (step; carries onto Jun-02)
+  net      →        120    135    145    165         (sum each column)
+```
+
+Neither source had a point on every day; the merged axis plus per-contributor
+carry-forward reconciles them. To your "send a delta" instinct: the `range` is
+how the *axis* (Q1) gets proposed; valuation (Q2) then runs on the *merged* axis,
+because a contributor must answer for the *other* contributors' dates too.
+
+**Day granularity, on purpose.** Every date is a full `YYYY-MM-DD` — snapshot
+days, and equity's exact vesting / FMV / exercise days. Equity vesting *amounts*
+step monthly internally, but each step lands on a real calendar day
+(`grantFirstVestDate` / `grantFullyVestedDate` already return full dates), so the
+equity contributor derives **exact vesting days** for `checkpointDates`. Do *not*
+reuse `generateMonthlyDates` (it snaps to the 1st of the month — that's only for
+the vesting chart's sampling and would quietly drop equity to month precision).
+
+**A `Contribution` is a *sample*, not an *event* — so it carries no date.** The
+date is the axis position the pipeline asked about, not data on the row:
 
 ```ts
-makeAccountContributor(accounts, snapshots)   // the snapshot/LOCF path
-makeEquityContributor(companies, grants, fmv, exercises)   // stock options
-// later, with ZERO changes to buildDataset, scope, bucketize, trim, or format:
+interface Contribution {
+  amount: number;        // THIS owner's slice, converted to main currency + signed (debt < 0)
+  category: string;      // folded category id, e.g. 'investments' | 'equity'
+  ownerId: string;       // single owner (see per-owner note below)
+  tags?: string[];       // for group / tag matching
+  sourceId: string;      // account id / company id (drill-down + memo keys)
+}
+
+interface ValueContext {
+  viewer: string;
+  main: Currency;
+  fxRateFor: (date: string) => number | null;  // pipeline resolves per axis date
+  equityDate?: string;   // value time-vesting assets here for the "current" scalar
+                         // (≈ today); along the series each axis date is used
+}
+```
+
+A contributor is built from the raw models it needs and closes over them:
+
+```ts
+makeAccountContributor(accounts, snapshots)                 // snapshot / LOCF path
+makeEquityContributor(companies, grants, fmv, exercises)    // stock options
+// later — with ZERO changes to buildDataset, scope, buckets, trim, or format:
 makeCryptoContributor(holdings, priceFeed)
 makePensionContributor(pensions)
 ```
 
-`buildDataset` takes the list, and stage [4] becomes a single uniform loop —
-no more `if (view === 'category') … else if (view === 'person') …` equity
-branches copy-pasted three times:
+**Per-owner contributions — the refinement that dissolves `share` *and* the
+empty-dates bug.** Accounts can have *fractional, multiple* owners; equity has a
+*single* owner. Instead of a `share` multiplier, a contributor emits **one
+`Contribution` per owner**, each already carrying that owner's sliced amount:
 
-```ts
-for (const c of contributors.filter(c => c.isEnabled(spec))) {
-  for (const contribution of c.contribute(ctx)) { /* accumulate */ }
-}
-```
+- a 50/50 joint account → **two** contributions: (`self`, half) and (`partner`, half)
+- an equity grant → **one** contribution (the single-owner case)
 
-**This is the seam you liked:** adding an asset class is "write a
-`ValuedContributor`, register it" — the funnel, the viewer trim, the FX, the
-formatting, and every page that renders a `Dataset` get the new value for free.
-Critically, `share` and `category`/`tags`/`ownerId` are part of the
-`Contribution`, so viewer-scoping and bucketing apply to new contributors
-automatically — the empty-dates trim and the category/group/person cards "just
-work" for crypto the day you add it.
+Then every downstream concern collapses to "group by `ownerId`":
+
+| Question | How it's answered |
+|----------|-------------------|
+| Household total | sum all owner-contributions |
+| Viewing as one person | keep `ownerId === viewer` |
+| Person-view buckets | group by `ownerId` |
+| "Does this day count for the viewer?" (trim) | any surviving contribution after the viewer filter |
+
+This removes the separate `share` field **and** the parallel `viewerShare(...) > 0`
+check that caused the original leading-empty-dates bug. **This is the seam you
+liked:** adding an asset class is "write a `ValuedContributor`, register it" — the
+axis merge, carry-forward, FX, viewer scoping, trim, bucketing, and every page
+that renders a `Dataset` get the new value for free.
 
 ### Seam 2 — `BucketStrategy` (how contributions are grouped)
 
@@ -320,11 +372,13 @@ a new file that implements an interface, with no edits to the pipeline or pages:
 And the cross-cutting wins come for free because they live in the shared stages:
 
 - **Viewer-empty trim** — fixed once at stage 6; every contributor (incl. future
-  ones) inherits it, because `share` is part of each `Contribution`.
-- **FX + debt sign** — resolved once per date in `ValueContext` / inside each
-  contributor's `contribute`, never re-derived per page.
-- **Testability** — `buildDataset(models, spec)` is pure; contributors and
-  strategies are unit-tested in isolation against tiny fixtures.
+  ones) inherits it, because viewer scoping is just filtering contributions by
+  `ownerId`.
+- **FX + debt sign** — applied inside each contributor's `valuesOver` via
+  `ctx.fxRateFor(date)`, never re-derived per page.
+- **Testability** — `buildDataset(models, spec)` is pure; contributors
+  (`checkpointDates` + `valuesOver`) and strategies are unit-tested in isolation
+  against tiny fixtures.
 
 > **Honest boundary:** this pipeline is the *net-worth-over-time* engine. Features
 > that aren't a slice of that cube — forecasting, goals, raw transaction/cashflow
@@ -333,21 +387,18 @@ And the cross-cutting wins come for free because they live in the shared stages:
 > inputs). Keeping that line explicit is what stops `buildDataset` from rotting
 > into a god-function.
 
-### Suggested sequencing (incremental, low-risk — for later, if you choose)
+### Migration
 
-1. Extract `FilterSpec` + `resolveFilterSpec` (pure rename of existing reads).
-2. Extract `scope.ts` and route the three pages through it.
-3. Define `ValuedContributor` + `Contribution`; wrap **today's** logic as
-   `accountContributor` and `equityContributor` (behaviour-identical, just moved).
-4. Define `BucketStrategy`; lift the category/group/person branches out of
-   `useOverviewStats` into three strategy files.
-5. Land `buildDataset` composing 2–4; migrate **Overview** first (largest
-   aggregator), verify numbers match, then History and Detail.
-6. Delete the now-dead per-page loops; the empty-dates trim collapses to one site.
+The transition is broken into independently shippable, behaviour-preserving
+phases, each with its own unit + e2e coverage. The full plan — phases, file-level
+tasks, the regression-vs-new-behaviour test matrix, and the characterization
+"golden master" strategy — lives in **[`data-layer-migration.md`](data-layer-migration.md)**.
 
-Each step is independently shippable and behaviour-preserving. After step 3 you
-can already prove the seam by adding a throwaway `makeManualAssetContributor` and
-watching it appear in every chart and card with no other change.
+The one-line shape: extract `FilterSpec`/`scope` → land the `ValuedContributor`
+two-phase axis (`checkpointDates` + `valuesOver`) wrapping today's account/equity
+math behaviour-identically → lift category/group/person into `BucketStrategy` →
+compose `buildDataset` and migrate Overview, then History, then Detail → delete
+the dead per-page loops (the empty-dates trim collapses to one site).
 
 ---
 

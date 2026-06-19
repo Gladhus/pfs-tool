@@ -113,15 +113,18 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
 - **Exit:** ✅ behaviour identical — goldens unchanged, full suite 295 green,
   typecheck + lint clean.
 
-### Phase 2 — Contributor types + axis builder
-- `src/core/contributors/types.ts`: `Contribution`, `ValueContext`,
-  `ValuedContributor`.
-- `src/core/axis.ts`: `periodRange(spec, datesSorted)` →`{start?, end}`;
-  `mergeAxis(contributors, range)` → sorted, deduped, **day-level** date array.
-- **Tests:** merge dedupes & sorts; preserves day granularity; `periodRange`
-  matches today's `getDatesForPeriod` window; includes `start` boundary for
-  carry-in.
-- **Exit:** types + axis exist, unused by prod yet.
+### Phase 2 — Contributor types + axis builder ✅ done
+- `src/core/contributors/types.ts`: `Contribution` (date-less per-owner sample),
+  `ValueContext` (viewer/main/`fxRateFor`/`equityDate`), `DateRange`, and the
+  `ValuedContributor` two-question interface (`checkpointDates` + `valuesOver`).
+- `src/core/axis.ts`: `periodRange(period, datesSorted)` → `{start?, end}`;
+  `mergeAxis(dateLists)` → sorted/deduped/day-level; `buildAxis(contributors,
+  spec, range)` merges only enabled contributors' checkpoints.
+- **Tests:** `src/tests/axis.test.ts` — periodRange windows; **range filtering
+  reproduces `getDatesForPeriod` for every period** (no time-window drift);
+  mergeAxis dedupe/sort; buildAxis respects `isEnabled`.
+- **Exit:** ✅ types + axis exist, unused by prod; suite 304 green, typecheck +
+  lint clean.
 
 ### Phase 3 — `accountContributor` (wrap today's math, per-owner) ⚠ highest numeric risk
 - `src/core/contributors/accountContributor.ts`:

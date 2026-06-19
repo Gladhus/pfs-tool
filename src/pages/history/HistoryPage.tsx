@@ -258,6 +258,7 @@ export default function HistoryPage() {
             categoryMeta={categoryMeta}
             value={selectedAccount}
             onChange={onAccountChange}
+            viewer={viewer}
           />
         </div>
 

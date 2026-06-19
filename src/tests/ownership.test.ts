@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseOwnership, serializeOwnership, migrateLegacyOwnership, ownershipFromRow,
-  shareFor, totalShare, viewerShare, ensurePrimaryPerson, ownershipLabel, auditOwnership, HOUSEHOLD_VIEWER,
+  shareFor, totalShare, viewerShare, ensurePrimaryPerson, ownershipLabel, auditOwnership,
+  accountsVisibleToViewer, HOUSEHOLD_VIEWER,
 } from '@/utils/ownership';
 import type { Account, OptionCompany, Person } from '@/types/sheets';
 
@@ -122,6 +123,34 @@ describe('viewerShare', () => {
 
   it('HOUSEHOLD_VIEWER reflects partial combined ownership', () => {
     expect(viewerShare([{ person_id: 'self', share: 0.5 }], HOUSEHOLD_VIEWER)).toBe(0.5);
+  });
+});
+
+describe('accountsVisibleToViewer', () => {
+  const mkAccount = (over: Partial<Account>): Account => ({
+    id: 'a1', type: 'tfsa', name_fr: 'A', name_en: 'A', category: 'investments', kind: 'asset',
+    ownership: [{ person_id: 'self', share: 1 }], active: true, sort_order: 0, tags: [], annual_rate: 0, ...over,
+  });
+
+  it('excludes accounts the viewer has 0% ownership of', () => {
+    const accounts = [
+      mkAccount({ id: 'mine', ownership: [{ person_id: 'self', share: 1 }] }),
+      mkAccount({ id: 'theirs', ownership: [{ person_id: 'partner', share: 1 }] }),
+    ];
+    expect(accountsVisibleToViewer(accounts, 'self').map(a => a.id)).toEqual(['mine']);
+  });
+
+  it('includes accounts with a partial share', () => {
+    const accounts = [mkAccount({ id: 'joint', ownership: [{ person_id: 'self', share: 0.5 }, { person_id: 'partner', share: 0.5 }] })];
+    expect(accountsVisibleToViewer(accounts, 'self').map(a => a.id)).toEqual(['joint']);
+  });
+
+  it('includes every account with any owner for HOUSEHOLD_VIEWER', () => {
+    const accounts = [
+      mkAccount({ id: 'self-owned', ownership: [{ person_id: 'self', share: 1 }] }),
+      mkAccount({ id: 'partner-owned', ownership: [{ person_id: 'partner', share: 1 }] }),
+    ];
+    expect(accountsVisibleToViewer(accounts, HOUSEHOLD_VIEWER).map(a => a.id)).toEqual(['self-owned', 'partner-owned']);
   });
 });
 

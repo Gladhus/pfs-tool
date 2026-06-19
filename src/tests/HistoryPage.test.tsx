@@ -149,4 +149,16 @@ describe('HistoryPage', () => {
     fireEvent.click(trigger);
     expect(screen.getAllByText('overview_option').length).toBeGreaterThan(0);
   });
+
+  it('account select excludes accounts the current viewer has 0% ownership of', () => {
+    (useAccountsQuery as MockFn).mockReturnValue(ok([
+      ...ACCOUNTS,
+      { id: 'a2', name: 'Partner RRSP', name_en: 'Partner RRSP', name_fr: 'REER Partenaire', category: 'investments', kind: 'asset', ownership: [{ person_id: 'partner', share: 1 }], tags: [], active: true, sort_order: 2 },
+    ]));
+    render(<HistoryPage />, { wrapper: Wrapper });
+    const trigger = screen.getByRole('combobox');
+    fireEvent.click(trigger);
+    expect(screen.getByText('TFSA')).toBeTruthy();
+    expect(screen.queryByText('Partner RRSP')).toBeNull();
+  });
 });

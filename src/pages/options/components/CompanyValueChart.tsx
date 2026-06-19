@@ -7,7 +7,7 @@ import { moneyTickFmt } from '@/utils/chartOptions';
 import { TT } from '@/components/ChartTooltip';
 import { privMoney } from '@/utils/privacy';
 import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
-import { generateMonthlyDates, getEffectiveFmv, computeIntrinsicValue, computeUnvestedValue } from '@/utils/options';
+import { buildCompanyValueSeries } from '@/core/options/selectors';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 
@@ -28,36 +28,10 @@ export function CompanyValueChart({
 }: Props) {
   const [containerRef, width] = useContainerWidth();
 
-  const { dates, data } = useMemo(() => {
-    const history = fmv.filter(f => f.company_id === company.id).sort((a, b) => a.date.localeCompare(b.date));
-    if (!history.length) return { dates: [] as string[], data: [] };
-    const allDates = generateMonthlyDates(history[0].date, now);
-    if (allDates.length < 2) return { dates: [] as string[], data: [] };
-
-    const grantedAt = (d: string) => grants.filter(g => g.grant_date.slice(0, 7) <= d.slice(0, 7));
-    const vestedAll = allDates.map(d => {
-      const e = getEffectiveFmv(fmv, company.id, d);
-      const granted = grantedAt(d);
-      if (!e || !granted.length) return null;
-      return granted.reduce((s, g) => s + computeIntrinsicValue(g, exercises, e.fmv, d), 0);
-    });
-    const totalAll = allDates.map((d, i) => {
-      const e = getEffectiveFmv(fmv, company.id, d);
-      const granted = grantedAt(d);
-      if (!e || !granted.length) return null;
-      return (vestedAll[i] ?? 0) + granted.reduce((s, g) => s + computeUnvestedValue(g, e.fmv, d), 0);
-    });
-
-    let trim = 0;
-    while (trim < allDates.length && vestedAll[trim] === null && totalAll[trim] === null) trim++;
-    const dates = allDates.slice(trim);
-    const vested = vestedAll.slice(trim);
-    const total = totalAll.slice(trim);
-    if (dates.length < 2) return { dates: [] as string[], data: [] };
-
-    const data = dates.map((date, di) => ({ date, vested: vested[di], total: total[di] }));
-    return { dates, data };
-  }, [company, grants, fmv, exercises, now]);
+  const { dates, data } = useMemo(
+    () => buildCompanyValueSeries(company, grants, fmv, exercises, now),
+    [company, grants, fmv, exercises, now],
+  );
 
   const { tickSet, xFmt } = useMemo(
     () => buildXAxisTicks(dates, width, locale),

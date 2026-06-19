@@ -4,11 +4,10 @@ import { privShares } from '@/utils/privacy';
 import { Amount } from '@/ui/Amount';
 import { fmtMonth } from '@/utils/dates';
 import {
-  computeVestedShares, computeUnvestedShares,
-  computeIntrinsicValue, computeUnvestedValue,
-  getEffectiveFmv, grantFirstVestDate,
-  exercisableShares, exercisedSharesForGrant,
+  computeVestedShares, computeIntrinsicValue,
+  grantFirstVestDate, exercisableShares, exercisedSharesForGrant,
 } from '@/utils/options';
+import { companyEquitySummary } from '@/core/options/selectors';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SegmentControl } from '@/ui/SegmentControl';
 import { Tooltip } from '@/ui/Tooltip';
@@ -35,17 +34,11 @@ export function CompanyCard({ company, index, grants, fmv, exercises, now, local
   const [chartView, setChartView] = useState<'vesting' | 'value'>('vesting');
 
   // Memoized so the per-company charts don't recreate on unrelated parent re-renders (e.g. period change).
-  const cGrants = useMemo(() => grants.filter(g => g.company_id === company.id), [grants, company.id]);
-  const fmvEntry = getEffectiveFmv(fmv, company.id, now);
-  const fmvVal = fmvEntry?.fmv ?? null;
+  const { cGrants, fmvVal, vestedShares, unvestedShares, vestedVal, unvestedVal, hasFmvHistory } = useMemo(
+    () => companyEquitySummary(company, grants, fmv, exercises, now),
+    [company, grants, fmv, exercises, now],
+  );
   const color = COMPANY_COLORS[index % COMPANY_COLORS.length];
-
-  const vestedShares = cGrants.reduce((s, g) => s + computeVestedShares(g, now), 0);
-  const unvestedShares = cGrants.reduce((s, g) => s + computeUnvestedShares(g, now), 0);
-  const vestedVal = fmvVal !== null ? cGrants.reduce((s, g) => s + computeIntrinsicValue(g, exercises, fmvVal, now), 0) : null;
-  const unvestedVal = fmvVal !== null ? cGrants.reduce((s, g) => s + computeUnvestedValue(g, fmvVal, now), 0) : null;
-
-  const hasFmvHistory = fmv.some(f => f.company_id === company.id);
 
   return (
     <div className="rounded-xl bg-surface-1 p-4 shadow-sm" style={{ borderTop: `3px solid ${color}` }}>

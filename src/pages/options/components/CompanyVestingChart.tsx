@@ -7,7 +7,7 @@ import { sharesTickFmt } from '@/utils/chartOptions';
 import { TT } from '@/components/ChartTooltip';
 import { privShares } from '@/utils/privacy';
 import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
-import { computeVestedShares, grantFullyVestedDate, generateMonthlyDates } from '@/utils/options';
+import { buildVestingSeries } from '@/core/options/selectors';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { GRANT_COLORS } from './charts';
 import type { OptionGrant } from '@/types/sheets';
@@ -22,42 +22,7 @@ interface Props {
 export function CompanyVestingChart({ grants, now, locale, isPrivate }: Props) {
   const [containerRef, width] = useContainerWidth();
 
-  const { dates, data, todayDate, grantValues } = useMemo(() => {
-    if (!grants.length) return { dates: [] as string[], data: [], todayDate: null, grantValues: [] as number[][] };
-
-    const starts = grants.map(g => g.vesting_start || g.grant_date).filter(Boolean).sort();
-    const ends = grants.map(g => grantFullyVestedDate(g)).filter((d): d is string => !!d).sort();
-    if (!starts.length || !ends.length) return { dates: [] as string[], data: [], todayDate: null, grantValues: [] as number[][] };
-    if (ends[ends.length - 1] < starts[0]) return { dates: [] as string[], data: [], todayDate: null, grantValues: [] as number[][] };
-
-    const startDt = new Date(starts[0] + 'T12:00:00');
-    startDt.setMonth(startDt.getMonth() - 1);
-    const endDt = new Date(ends[ends.length - 1] + 'T12:00:00');
-    endDt.setMonth(endDt.getMonth() + 1);
-    const dates = generateMonthlyDates(startDt.toISOString().slice(0, 10), endDt.toISOString().slice(0, 10));
-    if (dates.length < 2) return { dates: [] as string[], data: [], todayDate: null, grantValues: [] as number[][] };
-
-    let todayIdx = -1;
-    for (let i = 0; i < dates.length; i++) if (dates[i] <= now) todayIdx = i;
-
-    const grantValues = grants.map(g => dates.map(d => computeVestedShares(g, d)));
-
-    // g{i}  — raw value for past solid areas (null after todayIdx)
-    // gf{i} — raw value for future dashed areas (null before todayIdx)
-    // Both include todayIdx so the two stacks meet seamlessly.
-    const data = dates.map((date, di) => {
-      const pt: Record<string, number | string | null> = { date };
-      const isPast = todayIdx < 0 ? false : di <= todayIdx;
-      const isFuture = todayIdx < 0 ? true : di >= todayIdx;
-      grants.forEach((_, gi) => {
-        pt[`g${gi}`] = isPast ? grantValues[gi][di] : null;
-        pt[`gf${gi}`] = isFuture ? grantValues[gi][di] : null;
-      });
-      return pt;
-    });
-
-    return { dates, data, todayDate: todayIdx >= 0 ? dates[todayIdx] : null, grantValues };
-  }, [grants, now]);
+  const { dates, data, todayDate, grantValues } = useMemo(() => buildVestingSeries(grants, now), [grants, now]);
 
   const { tickSet, xFmt } = useMemo(
     () => buildXAxisTicks(dates, width, locale),

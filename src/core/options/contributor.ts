@@ -2,7 +2,7 @@ import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/ty
 import { computeCompanyEquityValue } from '@/utils/options';
 import { toMain } from '@/utils/currency';
 import { addMonths } from '@/utils/dates';
-import type { ValuedContributor, ValueContext, Contribution, DateRange } from './types';
+import type { ValuedContributor, ValueContext, Contribution, DateRange } from '../contributors/types';
 
 const INTERVAL_MONTHS: Record<string, number> = { monthly: 1, quarterly: 3, annual: 12 };
 

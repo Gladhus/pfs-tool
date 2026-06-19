@@ -7,9 +7,9 @@ import {
   useOptionFmvQuery, useOptionExercisesQuery,
   useConfigQuery, useFxRatesQuery,
 } from '@/queries/sheetQueries';
-import { computeCompanyEquityValue, computeCompanyUnvestedValue, generateMonthlyDates } from '@/utils/options';
-import { fxMap as buildFxMap, toMain, rateFor } from '@/utils/currency';
-import { getDatesForPeriod, todayISO } from '@/utils/dates';
+import { equityTotals } from '@/core/options/selectors';
+import { fxMap as buildFxMap } from '@/utils/currency';
+import { todayISO } from '@/utils/dates';
 import { ownerVisibleToViewer } from '@/utils/ownership';
 import type { Currency } from '@/types/sheets';
 import { Skeleton } from '@/ui/Skeleton';
@@ -52,9 +52,9 @@ export default function OptionsPage() {
     () => (companiesQ.data ?? []).filter(c => c.active !== false && ownerVisibleToViewer(c.owner, currentViewer)),
     [companiesQ.data, currentViewer],
   );
-  const grants = grantsQ.data ?? [];
+  const grants = useMemo(() => grantsQ.data ?? [], [grantsQ.data]);
   const fmv = useMemo(() => fmvQ.data ?? [], [fmvQ.data]);
-  const exercises = exercisesQ.data ?? [];
+  const exercises = useMemo(() => exercisesQ.data ?? [], [exercisesQ.data]);
 
   const isPending = companiesQ.isPending || grantsQ.isPending || fmvQ.isPending;
   const hasFmv = fmv.length > 0;
@@ -65,43 +65,10 @@ export default function OptionsPage() {
     [hidden],
   );
 
-  // Each company's equity is in its own currency → convert to main before summing.
-  const equityAt = (date: string, kind: 'vested' | 'unvested') => {
-    const usdCad = rateFor(fxRateMap, date);
-    return companies.reduce((s, c) => {
-      if (c.active === false) return s;
-      const v = kind === 'vested'
-        ? computeCompanyEquityValue(c.id, grants, fmv, exercises, date)
-        : computeCompanyUnvestedValue(c.id, grants, fmv, date);
-      return s + toMain(v, c.currency ?? mainCurrency, mainCurrency, usdCad);
-    }, 0);
-  };
-
-  const totalVested = useMemo(
-    () => equityAt(now, 'vested'),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [companies, grants, fmv, exercises, now, mainCurrency, fxRateMap],
+  const { totalVested, totalUnvested, periodStart, delta } = useMemo(
+    () => equityTotals(companies, grants, fmv, exercises, now, period, mainCurrency, fxRateMap),
+    [companies, grants, fmv, exercises, now, period, mainCurrency, fxRateMap],
   );
-  const totalUnvested = useMemo(
-    () => equityAt(now, 'unvested'),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [companies, grants, fmv, now, mainCurrency, fxRateMap],
-  );
-
-  // Period → delta of vested value vs the start of the selected range.
-  const periodStart = useMemo(() => {
-    if (!fmv.length) return null;
-    const firstFmv = [...fmv.map(f => f.date)].sort()[0];
-    const filtered = getDatesForPeriod(generateMonthlyDates(firstFmv, now), period);
-    return filtered.length ? filtered[0] : null;
-  }, [fmv, now, period]);
-
-  const vestedStart = useMemo(
-    () => (periodStart ? equityAt(periodStart, 'vested') : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [periodStart, companies, grants, fmv, exercises, mainCurrency, fxRateMap],
-  );
-  const delta = vestedStart != null ? totalVested - vestedStart : null;
   const periodLabel = t(`period_long_${period}`);
 
   if (isPending) {

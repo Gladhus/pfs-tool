@@ -204,16 +204,23 @@ Moved all Accounts-domain data computation out of the components into
   `computeSeries`/Overview goldens unchanged; History/Detail component tests green.
 - **Exit:** ✅ no Accounts data math in a component; suite 350 green.
 
-### Phase 8 — Stock Options domain selectors
-Move all Stock-Options data computation out of the page components into
+### Phase 8 — Stock Options domain selectors ✅ done
+Moved all Stock-Options data computation out of the page components into
 `src/core/options/` (the domain that owns `equityContributor`).
-- Company value / vesting / summary selectors (vested-unvested shares, vesting
-  schedule series, totals) → pure functions reusing `utils/options` +
-  `equityContributor`.
-- Refactor `OptionsPage` + chart components to consume them and render only.
-- Relocate `equityContributor` under `core/options/`.
-- **Tests:** options selector unit tests; existing `options.spec.ts` e2e green.
-- **Exit:** no Stock-Options data math in a component; both domains fully layered.
+- `core/options/contributor.ts` — relocated `equityContributor`.
+- `core/options/selectors.ts` — `companyEquitySummary`, `buildVestingSeries`,
+  `buildCompanyValueSeries`, `buildSummarySeries`, `equityValueAt`, `equityTotals`
+  (vested/unvested shares, vesting + value series, period totals), reusing
+  `utils/options`.
+- `OptionsPage`, `CompanyCard`, `CompanyValueChart`, `CompanyVestingChart`,
+  `SummaryChart` now call the selectors and render only (recharts/tick/format
+  stay in the components).
+- **Tests:** `src/tests/optionsSelectors.test.ts` (9) — share/value math, vesting
+  monotonicity, summary per-company, `equityValueAt` cross-check vs
+  `computeCompanyEquityValue`. `options.spec.ts` e2e runs in CI.
+- **Exit:** ✅ no Stock-Options data math in a component; both domains fully
+  layered; suite 359 green. `core/contributors/` now holds only `types` (the
+  shared contract).
 
 ---
 

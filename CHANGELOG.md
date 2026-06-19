@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
-## [2.2.1] — 2026-06-19
+## [2.2.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.1) — 2026-06-19
 
 ### Added
 - **Header viewer selector** — a "View as" dropdown in the header lets you switch the net worth and category figures across Overview, History, and Detail between each person and a combined "Household" total, using each account's ownership split; selection persists across reloads

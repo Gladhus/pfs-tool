@@ -169,17 +169,26 @@ Each `src/core/` unit ships with focused tests against tiny hand-built fixtures
 - **Exit:** ✅ grouping logic isolated + unit-tested; suite 338 green;
   `useOverviewStats` not yet changed.
 
-### Phase 6 — `buildDataset` + migrate Overview (the proof) ⚠
-- `src/core/dataset.ts`: `buildDataset(models, spec)` composes scope → axis →
-  value (all contributors) → bucketize → **trim (single site)**; owns `Dataset`.
-- Rewrite `useOverviewStats` to delegate to `buildDataset`, adapting to the
-  existing `OverviewStats` shape so `OverviewPage` is untouched.
-- **Tests:** Phase 0 Overview goldens must pass byte-for-byte; add `buildDataset`
-  specs (net = Σ contributions; prev baseline; trim once; person/household/viewer
-  equivalences); **extensibility proof** — register a tiny test-only
-  `manualAssetContributor` and assert it appears in net + the right bucket with no
-  other change.
-- **Exit:** Overview runs entirely on the new layer; goldens + e2e green.
+### Phase 6 — `buildDataset` + migrate Overview (the proof) ✅ done
+- `src/core/dataset.ts`: `buildDataset(input)` composes value (all enabled
+  contributors) → scope → bucketize via `bucketStrategy(view)` → **trim (single
+  site)**, plus the latest/prev scalars (net, byCategory, group/person values);
+  owns `Dataset`. `today` is injected (no wall-clock read in the engine).
+- `useOverviewStats` rewritten as a thin adapter: build contributors, call
+  `buildDataset`, shape into `OverviewStats`. `OverviewPage` untouched. The
+  duplicated `foldedStatsFor`/`groupStatsFor` loops and the local person palette
+  are gone (palette now in `buckets/person`).
+- Two legacy quirks reproduced for byte-identical output, each documented in
+  `dataset.ts`: zero-seeding `byCategory` for owned-zero categories (card
+  visibility), and viewer-independent bucket `firstSeen` for accounts vs
+  viewer-dependent for equity (leading-null on empty-for-you category lines).
+- **Tests:** Phase 0 Overview goldens pass **byte-for-byte**; `src/tests/dataset.
+  test.ts` — trim, household = Σ persons, buckets partition net, **extensibility
+  proof** (a test-only `manualAssetContributor` flows into net + the cash bucket
+  + byCategory with no pipeline edit; disabled ⇒ no effect).
+- **Exit:** ✅ Overview runs entirely on the new layer; goldens unchanged; suite
+  344 green; typecheck + lint clean. (e2e exact-amount specs run in CI on
+  `sample.xlsx`; account math is golden-verified.)
 
 ### Phase 7 — migrate History + Detail, delete dead code
 - Re-express `computeSeries` and History `cardData` as thin readers over

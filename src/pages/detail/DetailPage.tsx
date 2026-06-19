@@ -66,7 +66,8 @@ function buildDetailModel(
   let anyData = false;
 
   for (const cat of categoriesInOrder(accounts, categoryMeta)) {
-    const accts = accountsVisibleToViewer(accountsForCategory(accounts, cat.id), viewer);
+    const allAccts = accountsForCategory(accounts, cat.id);
+    const accts = accountsVisibleToViewer(allAccts, viewer);
     if (!accts.length) continue;
 
     const catByYear: Record<string, number | null> = Object.fromEntries(years.map(y => [y, null]));
@@ -90,7 +91,10 @@ function buildDetailModel(
 
     rows.push({ kind: 'category-header', label: tr(cat), categoryId: cat.id, values: years.map(() => null) });
 
-    if (catRows.length > 1) {
+    // Based on the category's full account count, not the viewer-filtered one — otherwise
+    // a category collapses to "total only" for whichever viewer happens to see fewer of its
+    // accounts, while another viewer of the same category still gets line items.
+    if (allAccts.length > 1) {
       for (const { acct, vals } of catRows) {
         rows.push({ kind: 'account', label: tr(acct), values: years.map(y => vals[y]) });
       }

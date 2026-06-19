@@ -84,4 +84,28 @@ describe('DetailPage', () => {
     render(<DetailPage />, { wrapper: Wrapper });
     expect(screen.getByText('Partner RRSP')).toBeTruthy();
   });
+
+  // A category with a 50/50 account plus a solely-owned one drops to a single visible row
+  // for whichever viewer doesn't own the solely-owned account. Line items must still show
+  // for that viewer (not collapse to "total only" just because they see fewer of the
+  // category's accounts than someone else does).
+  it('still shows the line item when viewer filtering leaves only one visible account in a multi-account category', () => {
+    (useAccountsQuery as MockFn).mockReturnValue(ok([
+      { id: 'house', name_en: 'House', name_fr: 'Maison', category: 'real_estate', kind: 'asset', ownership: [{ person_id: 'self', share: 0.5 }, { person_id: 'partner', share: 0.5 }], tags: [], active: true, sort_order: 1 },
+      { id: 'mortgage', name_en: 'Mortgage', name_fr: 'Hypothèque', category: 'real_estate', kind: 'debt', ownership: [{ person_id: 'partner', share: 1 }], tags: [], active: true, sort_order: 2 },
+    ]));
+    (useSnapshotsQuery as MockFn).mockReturnValue(ok([
+      { date: '2024-01-15', account_id: 'house', balance_raw: 100000 },
+      { date: '2024-01-15', account_id: 'mortgage', balance_raw: -40000 },
+    ]));
+    (useCategoryMetaQuery as MockFn).mockReturnValue(ok([
+      { id: 'real_estate', name_en: 'Real Estate', name_fr: 'Immobilier', sort_order: 1 },
+    ]));
+
+    // self only owns the house (50%) here — mortgage is filtered out — yet the category
+    // still has 2 accounts overall, so the House line item must still render.
+    render(<DetailPage />, { wrapper: Wrapper });
+    expect(screen.getByText('House')).toBeTruthy();
+    expect(screen.queryByText('Mortgage')).toBeNull();
+  });
 });

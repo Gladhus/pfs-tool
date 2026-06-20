@@ -8,7 +8,7 @@ import { deriveDatesSorted } from '@/utils/dates';
 import { fxMap as buildFxMap } from '@/utils/currency';
 import { resolveFilterSpec } from '@/core/filters';
 import { activeVisibleAccounts, isViewerLockedOut } from '@/core/scope';
-import { getDetailYears, buildDetailModel } from '@/core/accounts/detail';
+import { getDetailYears, buildDetailModel } from '@/features/accounts/data/detail';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, type Period } from '@/ui/PeriodPills';

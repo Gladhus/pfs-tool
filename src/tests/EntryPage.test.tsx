@@ -43,7 +43,7 @@ import {
   useSnapshotsQuery,
   useCategoryMetaQuery,
 } from '@/queries/sheetQueries';
-import EntryPage from '@/pages/entry/EntryPage';
+import EntryPage from '@/features/accounts/entry/EntryPage';
 
 type MockFn = ReturnType<typeof vi.fn>;
 

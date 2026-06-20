@@ -2,7 +2,7 @@ import { privDelta, privPct } from '@/utils/privacy';
 import { Amount } from '@/ui/Amount';
 import { Icon } from '@/ui/Icon';
 import { categoryIcon } from '@/utils/icons';
-import type { DetailRowKind, DetailRow, DetailModel } from '@/core/accounts/detail';
+import type { DetailRowKind, DetailRow, DetailModel } from '@/features/accounts/data/detail';
 
 export type { DetailRowKind, DetailRow, DetailModel };
 

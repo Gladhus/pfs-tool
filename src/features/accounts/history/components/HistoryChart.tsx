@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import type { Account, Snapshot } from '@/types/sheets';
-import { accountBalanceSeries } from '@/core/accounts/history';
+import { accountBalanceSeries } from '@/features/accounts/data/history';
 import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
 import { seriesTooltip } from '@/components/ChartTooltip';

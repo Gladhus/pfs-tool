@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildDataset, type DatasetInput } from '@/core/dataset';
-import { makeAccountContributor } from '@/core/accounts/contributor';
+import { makeAccountContributor } from '@/features/accounts/data/contributor';
 import { makeEquityContributor } from '@/features/options/data/contributor';
 import type { ValuedContributor } from '@/core/contributors/types';
 import type { BucketModels } from '@/core/buckets';

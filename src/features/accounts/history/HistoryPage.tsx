@@ -8,7 +8,7 @@ import { activeAccounts } from '@/utils/balance';
 import { fxMap as buildFxMap } from '@/utils/currency';
 import { resolveFilterSpec } from '@/core/filters';
 import { isViewerLockedOut } from '@/core/scope';
-import { computeSeries, buildHistoryCards } from '@/core/accounts/history';
+import { computeSeries, buildHistoryCards } from '@/features/accounts/data/history';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
 import { EmptyState } from '@/ui/EmptyState';

@@ -1,7 +1,7 @@
 import type { Account, Snapshot } from '@/types/sheets';
 import { buildBalanceSweep } from '@/utils/stats';
 import { toMain } from '@/utils/currency';
-import type { ValuedContributor, ValueContext, Contribution, DateRange } from '../contributors/types';
+import type { ValuedContributor, ValueContext, Contribution, DateRange } from '@/core/contributors/types';
 
 /**
  * The snapshot/LOCF value source: account balances carried forward across the axis,

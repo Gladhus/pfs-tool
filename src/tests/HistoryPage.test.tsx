@@ -22,7 +22,7 @@ vi.mock('@/i18n', () => ({
   tr: (entity: { name_en?: string; name_fr?: string }) => entity.name_en ?? entity.name_fr ?? '',
 }));
 
-vi.mock('@/pages/history/components/HistoryChart', () => ({
+vi.mock('@/features/accounts/history/components/HistoryChart', () => ({
   HistoryChart: () => <div data-testid="history-chart" />,
 }));
 
@@ -43,7 +43,7 @@ import {
   useSnapshotsQuery,
   useCategoryMetaQuery,
 } from '@/queries/sheetQueries';
-import HistoryPage from '@/pages/history/HistoryPage';
+import HistoryPage from '@/features/accounts/history/HistoryPage';
 
 type MockFn = ReturnType<typeof vi.fn>;
 

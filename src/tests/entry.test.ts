@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeEntryTotals, buildEntryRows } from '@/core/accounts/entry';
+import { computeEntryTotals, buildEntryRows } from '@/features/accounts/data/entry';
 import { LEGACY_SELF_ID } from '@/utils/ownership';
 import type { Account, Snapshot } from '@/types/sheets';
 

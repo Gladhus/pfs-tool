@@ -1,4 +1,4 @@
-import { TAG_PALETTE } from '@/utils/colors';
+import { TAG_PALETTE } from '@/shared/utils/colors';
 
 interface Props {
   value: string;

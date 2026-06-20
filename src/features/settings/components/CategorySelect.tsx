@@ -1,5 +1,5 @@
-import { Select, SelectItem, SelectGroup } from '@/ui/Select';
-import { tr } from '@/i18n';
+import { Select, SelectItem, SelectGroup } from '@/shared/ui/Select';
+import { tr } from '@/shared/i18n';
 import type { CategoryMeta } from '@/types/sheets';
 
 export interface OptionItem {

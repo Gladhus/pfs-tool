@@ -1,4 +1,4 @@
-import { Icon } from '@/ui/Icon';
+import { Icon } from '@/shared/ui/Icon';
 
 interface Props {
   /** Stored value, YYYY-MM-DD. */

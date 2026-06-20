@@ -1,12 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 import cfg, { hasValidClientId } from '@/config';
-import { useAuthStore, selectApisReady } from '@/stores/auth.store';
-import { setStatus } from '@/stores/status.store';
+import { useAuthStore, selectApisReady } from '@/shared/stores/auth.store';
+import { setStatus } from '@/shared/stores/status.store';
 import { bootstrapSheet } from './bootstrap';
 import { LS_KEY_USER_HINT } from '@/constants';
 import { classifyApiError } from '@/core/errors';
-import i18n from '@/i18n/index';
-import { useDatasourceStore } from '@/stores/datasource.store';
+import i18n from '@/shared/i18n/index';
+import { useDatasourceStore } from '@/shared/stores/datasource.store';
 
 // Module-level guard: prevents initTokenClient from being called a second time
 // under React StrictMode's double-effect invocation.

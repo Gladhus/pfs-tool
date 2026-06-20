@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAccountRows, parseSnapshotRows } from '@/datasource/parse';
+import { parseAccountRows, parseSnapshotRows } from '@/shared/io/datasource/parse';
 
 // A malicious XLSX/Sheet can name a column `__proto__` (or constructor/prototype).
 // Parsing it must never mutate Object.prototype.

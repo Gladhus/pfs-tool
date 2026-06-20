@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUIStore } from '@/stores/ui.store';
+import { useUIStore } from '@/shared/stores/ui.store';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string, opts?: any) => {
@@ -17,12 +17,12 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: vi.fn() },
 }));
 
-vi.mock('@/i18n', () => ({
+vi.mock('@/shared/i18n', () => ({
   default: { changeLanguage: vi.fn() },
   tr: (entity: { name_en?: string; name_fr?: string }) => entity.name_en ?? entity.name_fr ?? '',
 }));
 
-vi.mock('@/queries/sheetQueries', () => ({
+vi.mock('@/shared/io/queries/sheetQueries', () => ({
   useAccountsQuery: vi.fn(),
   useSnapshotsQuery: vi.fn(),
   useCategoryMetaQuery: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('@/queries/sheetQueries', () => ({
   ] })),
 }));
 
-vi.mock('@/queries/sheetMutations', () => ({
+vi.mock('@/shared/io/queries/sheetMutations', () => ({
   useSaveMonthMutation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
@@ -42,7 +42,7 @@ import {
   useAccountsQuery,
   useSnapshotsQuery,
   useCategoryMetaQuery,
-} from '@/queries/sheetQueries';
+} from '@/shared/io/queries/sheetQueries';
 import EntryPage from '@/features/accounts/entry/EntryPage';
 
 type MockFn = ReturnType<typeof vi.fn>;

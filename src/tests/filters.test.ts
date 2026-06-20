@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveFilterSpec } from '@/core/filters';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 
 const params = (q: string) => new URLSearchParams(q);
 

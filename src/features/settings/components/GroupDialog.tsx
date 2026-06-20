@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dialog } from '@/ui/Dialog';
-import { Button } from '@/ui/Button';
-import { Input } from '@/ui/Input';
-import { Label } from '@/ui/Label';
-import { TAG_PALETTE } from '@/utils/colors';
+import { Dialog } from '@/shared/ui/Dialog';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { Label } from '@/shared/ui/Label';
+import { TAG_PALETTE } from '@/shared/utils/colors';
 import { TagChipInput } from './TagChipInput';
 import { ColorSwatchPicker } from './ColorSwatchPicker';
 import type { Group } from '@/types/sheets';

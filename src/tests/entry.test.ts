@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeEntryTotals, buildEntryRows } from '@/features/accounts/data/entry.selectors';
-import { LEGACY_SELF_ID } from '@/utils/ownership';
+import { LEGACY_SELF_ID } from '@/shared/utils/ownership';
 import type { Account, Snapshot } from '@/types/sheets';
 
 const mkAccount = (id: string, category: string, kind: Account['kind'] = 'asset'): Account => ({

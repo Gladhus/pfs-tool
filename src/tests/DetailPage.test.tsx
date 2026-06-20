@@ -2,19 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUIStore } from '@/stores/ui.store';
+import { useUIStore } from '@/shared/stores/ui.store';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'en' } }),
   initReactI18next: { type: '3rdParty', init: vi.fn() },
 }));
 
-vi.mock('@/i18n', () => ({
+vi.mock('@/shared/i18n', () => ({
   default: { changeLanguage: vi.fn() },
   tr: (entity: { name_en?: string; name_fr?: string }) => entity.name_en ?? entity.name_fr ?? '',
 }));
 
-vi.mock('@/queries/sheetQueries', () => ({
+vi.mock('@/shared/io/queries/sheetQueries', () => ({
   useAccountsQuery: vi.fn(),
   useSnapshotsQuery: vi.fn(),
   useCategoryMetaQuery: vi.fn(),
@@ -30,7 +30,7 @@ import {
   useAccountsQuery,
   useSnapshotsQuery,
   useCategoryMetaQuery,
-} from '@/queries/sheetQueries';
+} from '@/shared/io/queries/sheetQueries';
 import DetailPage from '@/features/accounts/detail/DetailPage';
 
 type MockFn = ReturnType<typeof vi.fn>;

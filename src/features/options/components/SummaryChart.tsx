@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-import { moneyTickFmt } from '@/utils/chartOptions';
-import { buildXAxisTicks } from '@/utils/dates';
-import { seriesTooltip } from '@/components/ChartTooltip';
+import { moneyTickFmt } from '@/shared/utils/chartOptions';
+import { buildXAxisTicks } from '@/shared/utils/dates';
+import { seriesTooltip } from '@/shared/components/ChartTooltip';
 import { buildSummarySeries } from '@/features/options/data/equity.selectors';
-import { useContainerWidth } from '@/hooks/useContainerWidth';
+import { useContainerWidth } from '@/shared/hooks/useContainerWidth';
 import { COMPANY_COLORS } from './charts';
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise, Currency } from '@/types/sheets';
 

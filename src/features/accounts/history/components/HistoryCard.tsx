@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Delta } from '@/ui/Delta';
-import { Icon } from '@/ui/Icon';
-import { Amount } from '@/ui/Amount';
-import { fmtMonth } from '@/utils/dates';
+import { Delta } from '@/shared/ui/Delta';
+import { Icon } from '@/shared/ui/Icon';
+import { Amount } from '@/shared/ui/Amount';
+import { fmtMonth } from '@/shared/utils/dates';
 import type { CardData } from '@/features/accounts/data/history.selectors';
 
 export type { CardData };

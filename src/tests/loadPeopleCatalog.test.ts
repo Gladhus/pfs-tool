@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { loadPeopleCatalog } from '@/api/people';
+import { loadPeopleCatalog } from '@/shared/io/api/people';
 import { DEFAULT_PEOPLE } from '@/constants';
 
 function mockGapi({ getResult, getError }: { getResult?: unknown[][]; getError?: unknown }) {

@@ -1,4 +1,4 @@
-import { addMonths } from '@/utils/dates';
+import { addMonths } from '@/shared/utils/dates';
 import type { FilterSpec, Period } from './filters';
 import type { DateRange, ValuedContributor } from './contributors/types';
 

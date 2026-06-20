@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeDate, normalizeMonth } from '@/utils/dates';
+import { normalizeDate, normalizeMonth } from '@/shared/utils/dates';
 
 describe('normalizeDate', () => {
   it('returns empty string for null', () => expect(normalizeDate(null)).toBe(''));

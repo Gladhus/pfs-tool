@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeNetWorthFromSnapshots, buildBalanceSweep } from '@/utils/stats';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { computeNetWorthFromSnapshots, buildBalanceSweep } from '@/shared/utils/stats';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import type { Account, Snapshot } from '@/types/sheets';
 
 const mkAccount = (partial: Partial<Account> & { id: string; kind: 'asset' | 'debt' }): Account => ({

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseDelimited } from '@/utils/import';
+import { parseDelimited } from '@/shared/utils/import';
 
 describe('parseDelimited', () => {
   it('parses simple comma CSV', () => {

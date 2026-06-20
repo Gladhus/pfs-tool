@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseMoney } from '@/utils/format';
+import { parseMoney } from '@/shared/utils/format';
 
 describe('parseMoney — null / empty', () => {
   it('returns null for null', () => expect(parseMoney(null)).toBeNull());

@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import {
   ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-import { moneyTickFmt } from '@/utils/chartOptions';
-import { buildXAxisTicks } from '@/utils/dates';
-import { seriesTooltip } from '@/components/ChartTooltip';
-import { categoryKey } from '@/utils/icons';
-import { useContainerWidth } from '@/hooks/useContainerWidth';
+import { moneyTickFmt } from '@/shared/utils/chartOptions';
+import { buildXAxisTicks } from '@/shared/utils/dates';
+import { seriesTooltip } from '@/shared/components/ChartTooltip';
+import { categoryKey } from '@/shared/utils/icons';
+import { useContainerWidth } from '@/shared/hooks/useContainerWidth';
 import type { BucketData } from '../useOverviewStats';
 
 interface Props {

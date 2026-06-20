@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { useUIStore } from '@/stores/ui.store';
+import { useUIStore } from '@/shared/stores/ui.store';
 
 // Return the key, appending interpolated values so the resolved {{name}} is assertable
 // (the mock has no real "Viewing as {{name}}" template to substitute into).
@@ -10,12 +10,12 @@ vi.mock('react-i18next', () => ({
   ), i18n: { language: 'en' } }),
 }));
 
-vi.mock('@/queries/sheetQueries', () => ({
+vi.mock('@/shared/io/queries/sheetQueries', () => ({
   usePeopleQuery: vi.fn(),
 }));
 
-import { usePeopleQuery } from '@/queries/sheetQueries';
-import { ViewingAsBadge } from '@/components/ViewingAsBadge';
+import { usePeopleQuery } from '@/shared/io/queries/sheetQueries';
+import { ViewingAsBadge } from '@/shared/components/ViewingAsBadge';
 
 type MockFn = ReturnType<typeof vi.fn>;
 

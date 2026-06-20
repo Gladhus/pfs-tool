@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Icon } from '@/ui/Icon';
+import { Icon } from '@/shared/ui/Icon';
 
 interface Props {
   page: number;

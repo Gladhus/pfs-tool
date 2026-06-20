@@ -1,20 +1,20 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToastStore } from '@/stores/toast.store';
+import { useToastStore } from '@/shared/stores/toast.store';
 import {
   useAccountsQuery, useSnapshotsQuery, useCategoryMetaQuery,
   useAccountTypesQuery, useTagsQuery, useConfigQuery, usePeopleQuery,
-} from '@/queries/sheetQueries';
+} from '@/shared/io/queries/sheetQueries';
 import type { Currency } from '@/types/sheets';
-import { useWriteAccountsMutation, useWriteTagsMutation } from '@/queries/sheetMutations';
-import { ownershipLabel } from '@/utils/ownership';
-import { tr } from '@/i18n';
-import { Amount } from '@/ui/Amount';
-import { allKnownTags } from '@/utils/tags';
-import { categoryIcon } from '@/utils/icons';
-import { Icon } from '@/ui/Icon';
-import { Button } from '@/ui/Button';
-import { Skeleton } from '@/ui/Skeleton';
+import { useWriteAccountsMutation, useWriteTagsMutation } from '@/shared/io/queries/sheetMutations';
+import { ownershipLabel } from '@/shared/utils/ownership';
+import { tr } from '@/shared/i18n';
+import { Amount } from '@/shared/ui/Amount';
+import { allKnownTags } from '@/shared/utils/tags';
+import { categoryIcon } from '@/shared/utils/icons';
+import { Icon } from '@/shared/ui/Icon';
+import { Button } from '@/shared/ui/Button';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import { AccountDialog } from '../components/AccountDialog';
 import type { Account, Snapshot, Tag } from '@/types/sheets';
 

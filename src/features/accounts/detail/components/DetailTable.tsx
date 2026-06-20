@@ -1,7 +1,7 @@
-import { privDelta, privPct } from '@/utils/privacy';
-import { Amount } from '@/ui/Amount';
-import { Icon } from '@/ui/Icon';
-import { categoryIcon } from '@/utils/icons';
+import { privDelta, privPct } from '@/shared/utils/privacy';
+import { Amount } from '@/shared/ui/Amount';
+import { Icon } from '@/shared/ui/Icon';
+import { categoryIcon } from '@/shared/utils/icons';
 import type { DetailRowKind, DetailRow, DetailModel } from '@/features/accounts/data/detail.selectors';
 
 export type { DetailRowKind, DetailRow, DetailModel };

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { useUIStore } from '@/stores/ui.store';
-import { ChipToggle } from '@/ui/ChipToggle';
+import { useUIStore } from '@/shared/stores/ui.store';
+import { ChipToggle } from '@/shared/ui/ChipToggle';
 import type { BucketData } from '../useOverviewStats';
 
 interface SeriesToggleProps {

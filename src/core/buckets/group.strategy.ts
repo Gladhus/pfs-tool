@@ -1,4 +1,4 @@
-import { accountMatchesGroup, groupColor } from '@/utils/colors';
+import { accountMatchesGroup, groupColor } from '@/shared/utils/colors';
 import type { BucketDef, BucketModels, BucketStrategy } from './types';
 
 /**

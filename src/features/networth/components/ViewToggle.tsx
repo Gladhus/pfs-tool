@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { SegmentControl } from '@/ui/SegmentControl';
+import { SegmentControl } from '@/shared/ui/SegmentControl';
 
 export type OvView = 'category' | 'group' | 'person';
 

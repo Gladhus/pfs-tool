@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import '@/i18n';
-import i18n from '@/i18n';
+import '@/shared/i18n';
+import i18n from '@/shared/i18n';
 
 describe('i18n', () => {
   it('initialises with lang en (ui.store default)', () => {

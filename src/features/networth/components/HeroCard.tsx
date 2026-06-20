@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Amount } from '@/ui/Amount';
-import { Delta } from '@/ui/Delta';
+import { Amount } from '@/shared/ui/Amount';
+import { Delta } from '@/shared/ui/Delta';
 
 interface HeroCardProps {
   netWorth: number;

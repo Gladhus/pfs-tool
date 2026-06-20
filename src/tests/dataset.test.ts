@@ -5,8 +5,8 @@ import { makeEquityContributor } from '@/features/options/data/equity.contributo
 import type { ValuedContributor } from '@/core/contributors/types';
 import type { BucketModels } from '@/core/buckets';
 import type { FilterSpec, OverviewView } from '@/core/filters';
-import { rateFor } from '@/utils/currency';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { rateFor } from '@/shared/utils/currency';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import {
   ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN,
   CATEGORY_META, GROUPS, PEOPLE, OPTION_DATA,

@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { computeSeries, buildHistoryCards } from '@/features/accounts/data/history.selectors';
 import { getDetailYears, buildDetailModel } from '@/features/accounts/data/detail.selectors';
-import { computeDateStats, buildEffectiveBalances } from '@/utils/stats';
-import { activeAccounts } from '@/utils/balance';
-import { signedMain, rateFor } from '@/utils/currency';
-import { accountsVisibleToViewer, HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { computeDateStats, buildEffectiveBalances } from '@/shared/utils/stats';
+import { activeAccounts } from '@/shared/utils/balance';
+import { signedMain, rateFor } from '@/shared/utils/currency';
+import { accountsVisibleToViewer, HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import {
   ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN, CATEGORY_META, OPTION_DATA,
 } from '../fixtures/portfolio';

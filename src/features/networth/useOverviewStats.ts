@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { Account, CategoryMeta, Group, Snapshot, Currency, Person } from '@/types/sheets';
-import { buildBalanceSweep } from '@/utils/stats';
-import { todayISO } from '@/utils/dates';
-import { foldCategoryId } from '@/utils/colors';
-import { rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID } from '@/utils/ownership';
-import { tr } from '@/i18n';
+import { buildBalanceSweep } from '@/shared/utils/stats';
+import { todayISO } from '@/shared/utils/dates';
+import { foldCategoryId } from '@/shared/utils/colors';
+import { rateFor } from '@/shared/utils/currency';
+import { LEGACY_SELF_ID } from '@/shared/utils/ownership';
+import { tr } from '@/shared/i18n';
 import { makeAccountContributor } from '@/features/accounts/data/account.contributor';
 import { makeEquityContributor } from '@/features/options/data/equity.contributor';
 import type { ValuedContributor } from '@/core/contributors/types';

@@ -1,6 +1,6 @@
 import type { Account } from '@/types/sheets';
-import { activeAccounts } from '@/utils/balance';
-import { accountsVisibleToViewer } from '@/utils/ownership';
+import { activeAccounts } from '@/shared/utils/balance';
+import { accountsVisibleToViewer } from '@/shared/utils/ownership';
 
 /**
  * Active accounts the viewer holds any stake in — the display/visibility set used

@@ -5,11 +5,11 @@ import {
 } from 'recharts';
 import type { Account, Snapshot } from '@/types/sheets';
 import { accountBalanceSeries } from '@/features/accounts/data/history.selectors';
-import { moneyTickFmt } from '@/utils/chartOptions';
-import { buildXAxisTicks } from '@/utils/dates';
-import { seriesTooltip } from '@/components/ChartTooltip';
-import { tr } from '@/i18n';
-import { useContainerWidth } from '@/hooks/useContainerWidth';
+import { moneyTickFmt } from '@/shared/utils/chartOptions';
+import { buildXAxisTicks } from '@/shared/utils/dates';
+import { seriesTooltip } from '@/shared/components/ChartTooltip';
+import { tr } from '@/shared/i18n';
+import { useContainerWidth } from '@/shared/hooks/useContainerWidth';
 import type { SeriesState } from './SeriesToggleBar';
 
 export interface OverviewSeries {

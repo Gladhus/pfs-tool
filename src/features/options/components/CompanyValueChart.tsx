@@ -3,12 +3,12 @@ import {
   ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   type TooltipContentProps,
 } from 'recharts';
-import { moneyTickFmt } from '@/utils/chartOptions';
-import { TT } from '@/components/ChartTooltip';
-import { privMoney } from '@/utils/privacy';
-import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
+import { moneyTickFmt } from '@/shared/utils/chartOptions';
+import { TT } from '@/shared/components/ChartTooltip';
+import { privMoney } from '@/shared/utils/privacy';
+import { fmtMonth, buildXAxisTicks } from '@/shared/utils/dates';
 import { buildCompanyValueSeries } from '@/features/options/data/equity.selectors';
-import { useContainerWidth } from '@/hooks/useContainerWidth';
+import { useContainerWidth } from '@/shared/hooks/useContainerWidth';
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 
 interface Props {

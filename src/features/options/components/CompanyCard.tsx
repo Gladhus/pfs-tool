@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { privShares } from '@/utils/privacy';
-import { Amount } from '@/ui/Amount';
-import { fmtMonth } from '@/utils/dates';
+import { privShares } from '@/shared/utils/privacy';
+import { Amount } from '@/shared/ui/Amount';
+import { fmtMonth } from '@/shared/utils/dates';
 import {
   computeVestedShares, computeIntrinsicValue,
   grantFirstVestDate, exercisableShares, exercisedSharesForGrant,
-} from '@/utils/options';
+} from '@/shared/utils/options';
 import { companyEquitySummary } from '@/features/options/data/equity.selectors';
-import { ProgressBar } from '@/ui/ProgressBar';
-import { SegmentControl } from '@/ui/SegmentControl';
-import { Tooltip } from '@/ui/Tooltip';
+import { ProgressBar } from '@/shared/ui/ProgressBar';
+import { SegmentControl } from '@/shared/ui/SegmentControl';
+import { Tooltip } from '@/shared/ui/Tooltip';
 import { CompanyValueChart } from './CompanyValueChart';
 import { CompanyVestingChart } from './CompanyVestingChart';
 import { COMPANY_COLORS, GRANT_COLORS } from './charts';

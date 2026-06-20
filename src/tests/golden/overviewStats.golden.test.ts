@@ -3,14 +3,14 @@ import { renderHook } from '@testing-library/react';
 
 // useOverviewStats labels buckets via `tr`; stub it so labels are stable English
 // and importing the i18n module has no init side effects.
-vi.mock('@/i18n', () => ({
+vi.mock('@/shared/i18n', () => ({
   default: { changeLanguage: vi.fn() },
   tr: (e: { name_en?: string; name_fr?: string }) => e.name_en ?? e.name_fr ?? '',
 }));
 
 import { useOverviewStats } from '@/features/networth/useOverviewStats';
 import { overviewParams } from '../fixtures/portfolio';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 
 /**
  * GOLDEN MASTER — these snapshots freeze the numbers the Overview produces today,

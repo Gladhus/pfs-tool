@@ -3,8 +3,8 @@ import {
   companyEquitySummary, buildVestingSeries, buildCompanyValueSeries,
   buildSummarySeries, equityValueAt, equityTotals,
 } from '@/features/options/data/equity.selectors';
-import { computeCompanyEquityValue } from '@/utils/options';
-import { toMain, rateFor } from '@/utils/currency';
+import { computeCompanyEquityValue } from '@/shared/utils/options';
+import { toMain, rateFor } from '@/shared/utils/currency';
 import {
   OPTION_COMPANIES, OPTION_GRANTS, OPTION_FMV, OPTION_EXERCISES, FX_MAP, MAIN,
 } from './fixtures/portfolio';

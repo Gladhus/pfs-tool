@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore, selectIsSignedIn } from '@/stores/auth.store';
-import { useDatasourceStore } from '@/stores/datasource.store';
+import { useAuthStore, selectIsSignedIn } from '@/shared/stores/auth.store';
+import { useDatasourceStore } from '@/shared/stores/datasource.store';
 
 export default function ProtectedLayout() {
   const isSignedIn = useAuthStore(selectIsSignedIn);

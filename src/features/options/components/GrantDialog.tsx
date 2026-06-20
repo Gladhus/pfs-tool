@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dialog } from '@/ui/Dialog';
-import { Button } from '@/ui/Button';
-import { Input } from '@/ui/Input';
-import { Select, SelectItem } from '@/ui/Select';
-import { Label } from '@/ui/Label';
-import { todayISO } from '@/utils/dates';
+import { Dialog } from '@/shared/ui/Dialog';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { Select, SelectItem } from '@/shared/ui/Select';
+import { Label } from '@/shared/ui/Label';
+import { todayISO } from '@/shared/utils/dates';
 import type { OptionGrant } from '@/types/sheets';
 
 interface Props {

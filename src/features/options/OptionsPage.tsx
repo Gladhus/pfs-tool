@@ -1,25 +1,25 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useUIStore } from '@/stores/ui.store';
+import { useUIStore } from '@/shared/stores/ui.store';
 import {
   useOptionCompaniesQuery, useOptionGrantsQuery,
   useOptionFmvQuery, useOptionExercisesQuery,
   useConfigQuery, useFxRatesQuery,
-} from '@/queries/sheetQueries';
+} from '@/shared/io/queries/sheetQueries';
 import { equityTotals } from '@/features/options/data/equity.selectors';
-import { fxMap as buildFxMap } from '@/utils/currency';
-import { todayISO } from '@/utils/dates';
-import { ownerVisibleToViewer } from '@/utils/ownership';
+import { fxMap as buildFxMap } from '@/shared/utils/currency';
+import { todayISO } from '@/shared/utils/dates';
+import { ownerVisibleToViewer } from '@/shared/utils/ownership';
 import type { Currency } from '@/types/sheets';
-import { Skeleton } from '@/ui/Skeleton';
-import { Button } from '@/ui/Button';
-import { Icon } from '@/ui/Icon';
-import { Amount } from '@/ui/Amount';
-import { Delta } from '@/ui/Delta';
-import { EmptyState } from '@/ui/EmptyState';
-import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
-import { ChipToggle } from '@/ui/ChipToggle';
+import { Skeleton } from '@/shared/ui/Skeleton';
+import { Button } from '@/shared/ui/Button';
+import { Icon } from '@/shared/ui/Icon';
+import { Amount } from '@/shared/ui/Amount';
+import { Delta } from '@/shared/ui/Delta';
+import { EmptyState } from '@/shared/ui/EmptyState';
+import { PeriodPills, APP_PERIODS, type Period } from '@/shared/ui/PeriodPills';
+import { ChipToggle } from '@/shared/ui/ChipToggle';
 import { SummaryChart } from './components/SummaryChart';
 import { CompanyCard } from './components/CompanyCard';
 import { COMPANY_COLORS } from './components/charts';

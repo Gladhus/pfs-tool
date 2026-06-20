@@ -1,6 +1,6 @@
 import type { Account, Snapshot, Currency } from '@/types/sheets';
-import { parseMoney } from '@/utils/format';
-import { signedMain, rateFor } from '@/utils/currency';
+import { parseMoney } from '@/shared/utils/format';
+import { signedMain, rateFor } from '@/shared/utils/currency';
 
 export interface EntryFormEntry {
   balance: string;

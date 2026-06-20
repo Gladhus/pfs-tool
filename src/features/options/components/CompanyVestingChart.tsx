@@ -3,12 +3,12 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine,
   type TooltipContentProps,
 } from 'recharts';
-import { sharesTickFmt } from '@/utils/chartOptions';
-import { TT } from '@/components/ChartTooltip';
-import { privShares } from '@/utils/privacy';
-import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
+import { sharesTickFmt } from '@/shared/utils/chartOptions';
+import { TT } from '@/shared/components/ChartTooltip';
+import { privShares } from '@/shared/utils/privacy';
+import { fmtMonth, buildXAxisTicks } from '@/shared/utils/dates';
 import { buildVestingSeries } from '@/features/options/data/equity.selectors';
-import { useContainerWidth } from '@/hooks/useContainerWidth';
+import { useContainerWidth } from '@/shared/hooks/useContainerWidth';
 import { GRANT_COLORS } from './charts';
 import type { OptionGrant } from '@/types/sheets';
 

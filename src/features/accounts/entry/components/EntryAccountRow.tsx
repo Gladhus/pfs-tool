@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { tr } from '@/i18n';
-import { fmtMoney, parseMoney } from '@/utils/format';
-import { Amount } from '@/ui/Amount';
-import { ownershipLabel } from '@/utils/ownership';
+import { tr } from '@/shared/i18n';
+import { fmtMoney, parseMoney } from '@/shared/utils/format';
+import { Amount } from '@/shared/ui/Amount';
+import { ownershipLabel } from '@/shared/utils/ownership';
 import type { Account, Currency, Person } from '@/types/sheets';
 
 interface Props {

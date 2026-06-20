@@ -1,8 +1,8 @@
 import type { Account, Group, Currency } from '@/types/sheets';
-import { foldCategoryId, accountMatchesGroup } from '@/utils/colors';
-import { signedMain, toMain, rateFor } from '@/utils/currency';
-import { computeCompanyEquityValue } from '@/utils/options';
-import { LEGACY_SELF_ID, shareFor, ownerVisibleToViewer } from '@/utils/ownership';
+import { foldCategoryId, accountMatchesGroup } from '@/shared/utils/colors';
+import { signedMain, toMain, rateFor } from '@/shared/utils/currency';
+import { computeCompanyEquityValue } from '@/shared/utils/options';
+import { LEGACY_SELF_ID, shareFor, ownerVisibleToViewer } from '@/shared/utils/ownership';
 import type { EquityData } from './options/selectors';
 
 /**

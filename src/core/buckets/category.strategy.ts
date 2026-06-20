@@ -1,4 +1,4 @@
-import { foldCategoryId } from '@/utils/colors';
+import { foldCategoryId } from '@/shared/utils/colors';
 import type { BucketDef, BucketModels, BucketStrategy } from './types';
 
 /**

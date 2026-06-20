@@ -3,9 +3,9 @@ import {
   computeVestedShares, computeUnvestedShares, computeIntrinsicValue, computeUnvestedValue,
   computeCompanyEquityValue, computeCompanyUnvestedValue,
   getEffectiveFmv, grantFullyVestedDate, generateMonthlyDates,
-} from '@/utils/options';
-import { toMain, rateFor } from '@/utils/currency';
-import { getDatesForPeriod } from '@/utils/dates';
+} from '@/shared/utils/options';
+import { toMain, rateFor } from '@/shared/utils/currency';
+import { getDatesForPeriod } from '@/shared/utils/dates';
 
 /**
  * Stock-Options domain selectors. Pure data for the Options page; the components

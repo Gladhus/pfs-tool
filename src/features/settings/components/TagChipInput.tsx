@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
-import { Icon } from '@/ui/Icon';
-import { tagColor } from '@/utils/colors';
+import { Icon } from '@/shared/ui/Icon';
+import { tagColor } from '@/shared/utils/colors';
 
 interface Props {
   value: string[];

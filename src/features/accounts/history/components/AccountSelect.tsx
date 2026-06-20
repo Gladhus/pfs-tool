@@ -1,8 +1,8 @@
-import { Select, SelectItem, SelectGroup } from '@/ui/Select';
+import { Select, SelectItem, SelectGroup } from '@/shared/ui/Select';
 import type { Account, CategoryMeta } from '@/types/sheets';
-import { tr } from '@/i18n';
-import { activeAccounts } from '@/utils/balance';
-import { accountsVisibleToViewer, LEGACY_SELF_ID } from '@/utils/ownership';
+import { tr } from '@/shared/i18n';
+import { activeAccounts } from '@/shared/utils/balance';
+import { accountsVisibleToViewer, LEGACY_SELF_ID } from '@/shared/utils/ownership';
 import { useTranslation } from 'react-i18next';
 
 interface Props {

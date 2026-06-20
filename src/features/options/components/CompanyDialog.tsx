@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dialog } from '@/ui/Dialog';
-import { Button } from '@/ui/Button';
-import { Input } from '@/ui/Input';
-import { Select, SelectItem } from '@/ui/Select';
-import { Checkbox } from '@/ui/Checkbox';
-import { Label } from '@/ui/Label';
+import { Dialog } from '@/shared/ui/Dialog';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { Select, SelectItem } from '@/shared/ui/Select';
+import { Checkbox } from '@/shared/ui/Checkbox';
+import { Label } from '@/shared/ui/Label';
 import { TagChipInput } from '@/features/settings/components/TagChipInput';
 import type { OptionCompany, Currency, Person } from '@/types/sheets';
 

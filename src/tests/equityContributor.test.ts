@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { makeEquityContributor } from '@/features/options/data/equity.contributor';
 import type { ValueContext } from '@/core/contributors/types';
-import { computeDateStats } from '@/utils/stats';
-import { rateFor } from '@/utils/currency';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { computeDateStats } from '@/shared/utils/stats';
+import { rateFor } from '@/shared/utils/currency';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import type { Contribution, OptionGrant } from '@/types/sheets';
 import {
   ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN,

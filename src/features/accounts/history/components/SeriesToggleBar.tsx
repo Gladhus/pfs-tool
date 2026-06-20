@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ChipToggle } from '@/ui/ChipToggle';
+import { ChipToggle } from '@/shared/ui/ChipToggle';
 
 export interface SeriesState {
   investments: boolean;

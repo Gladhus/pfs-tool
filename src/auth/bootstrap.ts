@@ -1,10 +1,10 @@
-import { verifySheet, findSheetByName, createSheet, seedNewSheet } from '@/api/drive';
-import { useAuthStore } from '@/stores/auth.store';
-import { setStatus } from '@/stores/status.store';
-import { queryClient } from '@/lib/queryClient';
+import { verifySheet, findSheetByName, createSheet, seedNewSheet } from '@/shared/io/api/drive';
+import { useAuthStore } from '@/shared/stores/auth.store';
+import { setStatus } from '@/shared/stores/status.store';
+import { queryClient } from '@/shared/io/queryClient';
 import { SHEET_TITLE, LS_KEY_SHEET_ID } from '@/constants';
-import { SheetsDatasource } from '@/datasource/sheets';
-import { useDatasourceStore } from '@/stores/datasource.store';
+import { SheetsDatasource } from '@/shared/io/datasource/sheets';
+import { useDatasourceStore } from '@/shared/stores/datasource.store';
 
 let _bootstrapping = false;
 

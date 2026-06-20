@@ -2,8 +2,8 @@ import type {
   Account, Snapshot, CategoryMeta, Group, Person, FxRate,
   OptionCompany, OptionGrant, OptionFmv, OptionExercise, Currency,
 } from '@/types/sheets';
-import { deriveDatesSorted } from '@/utils/dates';
-import { fxMap as buildFxMap } from '@/utils/currency';
+import { deriveDatesSorted } from '@/shared/utils/dates';
+import { fxMap as buildFxMap } from '@/shared/utils/currency';
 import type { EquityData } from '@/features/options/data/equity.selectors';
 
 /**

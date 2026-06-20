@@ -1,4 +1,4 @@
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 
 /** A time window for the series/table. Owned by the data layer; the PeriodPills UI re-exports it. */
 export type Period = '3m' | '6m' | '1y' | '2y' | '3y' | '5y' | 'ytd' | 'all';

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { activeVisibleAccounts, isViewerLockedOut } from '@/core/scope';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import type { Account } from '@/types/sheets';
 
 const mk = (id: string, owners: Array<[string, number]>, active = true): Account => ({

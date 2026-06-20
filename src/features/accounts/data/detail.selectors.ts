@@ -1,8 +1,8 @@
 import type { Account, CategoryMeta, Snapshot, Currency } from '@/types/sheets';
-import { buildEffectiveBalances } from '@/utils/stats';
-import { categoriesInOrder, accountsForCategory } from '@/utils/balance';
-import { signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/utils/ownership';
+import { buildEffectiveBalances } from '@/shared/utils/stats';
+import { categoriesInOrder, accountsForCategory } from '@/shared/utils/balance';
+import { signedMain, rateFor } from '@/shared/utils/currency';
+import { LEGACY_SELF_ID, accountsVisibleToViewer } from '@/shared/utils/ownership';
 
 /**
  * Accounts-domain selectors for the Detail (year-over-year) page. Pure data — the

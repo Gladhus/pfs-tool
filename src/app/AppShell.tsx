@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Header from '@/components/Header';
-import StatusBar from '@/components/StatusBar';
-import BottomTabBar from '@/components/BottomTabBar';
-import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useSyncPreferencesFromConfig } from '@/hooks/useSyncPreferencesFromConfig';
-import { useFxAutoFill } from '@/hooks/useFxAutoFill';
-import { useDatasourceStore } from '@/stores/datasource.store';
-import { XlsxDatasource } from '@/datasource/xlsx';
-import { Icon } from '@/ui/Icon';
-import { Dialog } from '@/ui/Dialog';
+import Header from '@/shared/components/Header';
+import StatusBar from '@/shared/components/StatusBar';
+import BottomTabBar from '@/shared/components/BottomTabBar';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
+import { useSyncPreferencesFromConfig } from '@/shared/hooks/useSyncPreferencesFromConfig';
+import { useFxAutoFill } from '@/shared/hooks/useFxAutoFill';
+import { useDatasourceStore } from '@/shared/stores/datasource.store';
+import { XlsxDatasource } from '@/shared/io/datasource/xlsx';
+import { Icon } from '@/shared/ui/Icon';
+import { Dialog } from '@/shared/ui/Dialog';
 
 function XlsxBanner() {
   const { t } = useTranslation();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { periodRange, mergeAxis, buildAxis } from '@/core/axis';
-import { getDatesForPeriod } from '@/utils/dates';
+import { getDatesForPeriod } from '@/shared/utils/dates';
 import { resolveFilterSpec } from '@/core/filters';
-import type { Period } from '@/ui/PeriodPills';
+import type { Period } from '@/shared/ui/PeriodPills';
 import type { ValuedContributor, DateRange } from '@/core/contributors/types';
 
 const DATES = ['2021-03-15', '2022-02-01', '2023-05-10', '2024-06-01'];

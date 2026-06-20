@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseMonthLabel } from '@/utils/dates';
+import { parseMonthLabel } from '@/shared/utils/dates';
 
 describe('parseMonthLabel', () => {
   it('returns null for empty input', () => {

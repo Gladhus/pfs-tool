@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useUIStore } from '@/stores/ui.store';
+import { useUIStore } from '@/shared/stores/ui.store';
 import {
   useAccountsQuery,
   useSnapshotsQuery,
@@ -13,14 +13,14 @@ import {
   useOptionExercisesQuery,
   useFxRatesQuery,
   usePeopleQuery,
-} from '@/queries/sheetQueries';
-import { deriveDatesSorted, getDatesForPeriod } from '@/utils/dates';
-import { fxMap as buildFxMap } from '@/utils/currency';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+} from '@/shared/io/queries/sheetQueries';
+import { deriveDatesSorted, getDatesForPeriod } from '@/shared/utils/dates';
+import { fxMap as buildFxMap } from '@/shared/utils/currency';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import { resolveFilterSpec } from '@/core/filters';
 import type { Currency } from '@/types/sheets';
-import { Skeleton } from '@/ui/Skeleton';
-import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
+import { Skeleton } from '@/shared/ui/Skeleton';
+import { PeriodPills, APP_PERIODS, type Period } from '@/shared/ui/PeriodPills';
 import { useOverviewStats } from './useOverviewStats';
 import { HeroCard } from './components/HeroCard';
 import { OverviewChart } from './components/OverviewChart';
@@ -28,7 +28,7 @@ import { StatCardGrid } from './components/StatCardGrid';
 import { SeriesToggle } from './components/SeriesToggle';
 import { ViewToggle } from './components/ViewToggle';
 import { EmptyOverviewState } from './components/EmptyOverviewState';
-import { categoryKey } from '@/utils/icons';
+import { categoryKey } from '@/shared/utils/icons';
 import { useMemo } from 'react';
 
 const DEFAULT_PERIOD: Period = 'all';

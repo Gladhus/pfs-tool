@@ -1,17 +1,17 @@
 import { useMemo } from 'react';
 import type { Account, CategoryMeta, Group } from '@/types/sheets';
-import { StatCard } from '@/ui/StatCard';
-import { Delta } from '@/ui/Delta';
+import { StatCard } from '@/shared/ui/StatCard';
+import { Delta } from '@/shared/ui/Delta';
 import { Sparkline } from './Sparkline';
 import { EmptyGroupsState } from './EmptyGroupsState';
 import type { PersonStat } from '../useOverviewStats';
 import type { EquityData } from '@/features/options/data/equity.selectors';
-import { groupColor } from '@/utils/colors';
-import { categoryKey } from '@/utils/icons';
-import { LEGACY_SELF_ID } from '@/utils/ownership';
+import { groupColor } from '@/shared/utils/colors';
+import { categoryKey } from '@/shared/utils/icons';
+import { LEGACY_SELF_ID } from '@/shared/utils/ownership';
 import { categorySparkline, groupSparkline, personSparkline, equitySparkline } from '@/features/networth/sparklines';
 import type { Currency } from '@/types/sheets';
-import { tr } from '@/i18n';
+import { tr } from '@/shared/i18n';
 import { useTranslation } from 'react-i18next';
 
 interface GroupStat {

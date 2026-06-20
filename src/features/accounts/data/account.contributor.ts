@@ -1,6 +1,6 @@
 import type { Account, Snapshot } from '@/types/sheets';
-import { buildBalanceSweep } from '@/utils/stats';
-import { toMain } from '@/utils/currency';
+import { buildBalanceSweep } from '@/shared/utils/stats';
+import { toMain } from '@/shared/utils/currency';
 import type { ValuedContributor, ValueContext, Contribution, DateRange } from '@/core/contributors/types';
 
 /**

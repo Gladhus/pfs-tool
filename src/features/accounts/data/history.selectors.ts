@@ -1,8 +1,8 @@
 import type { Account, Snapshot, Currency } from '@/types/sheets';
-import { buildBalanceSweep } from '@/utils/stats';
-import { activeAccounts } from '@/utils/balance';
-import { signedMain, rateFor } from '@/utils/currency';
-import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { buildBalanceSweep } from '@/shared/utils/stats';
+import { activeAccounts } from '@/shared/utils/balance';
+import { signedMain, rateFor } from '@/shared/utils/currency';
+import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import { makeAccountContributor } from './account.contributor';
 
 /**

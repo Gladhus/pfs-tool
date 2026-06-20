@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToastStore } from '@/stores/toast.store';
-import { useGroupsQuery, useAccountsQuery, useTagsQuery } from '@/queries/sheetQueries';
-import { useWriteGroupsMutation, useWriteTagsMutation } from '@/queries/sheetMutations';
-import { allKnownTags, mergeTagNames } from '@/utils/tags';
-import { groupColor } from '@/utils/colors';
-import { Icon } from '@/ui/Icon';
-import { Button } from '@/ui/Button';
-import { Skeleton } from '@/ui/Skeleton';
+import { useToastStore } from '@/shared/stores/toast.store';
+import { useGroupsQuery, useAccountsQuery, useTagsQuery } from '@/shared/io/queries/sheetQueries';
+import { useWriteGroupsMutation, useWriteTagsMutation } from '@/shared/io/queries/sheetMutations';
+import { allKnownTags, mergeTagNames } from '@/shared/utils/tags';
+import { groupColor } from '@/shared/utils/colors';
+import { Icon } from '@/shared/ui/Icon';
+import { Button } from '@/shared/ui/Button';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import { GroupDialog } from '../components/GroupDialog';
 import type { Group } from '@/types/sheets';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { signedMain } from '@/utils/currency';
-import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { signedMain } from '@/shared/utils/currency';
+import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import type { Account } from '@/types/sheets';
 
 const mkAccount = (partial: Partial<Account> & { id: string; kind: 'asset' | 'debt' }): Account => ({

@@ -9,19 +9,19 @@ vi.mock('react-i18next', () => ({
 }));
 
 // Mock useBreakpoint so tests control desktop vs mobile
-vi.mock('@/hooks/useBreakpoint', () => ({
+vi.mock('@/shared/hooks/useBreakpoint', () => ({
   useBreakpoint: vi.fn(),
 }));
 
 // Mock useConfigQuery so tests control the stock_options_enabled flag
-vi.mock('@/queries/sheetQueries', () => ({
+vi.mock('@/shared/io/queries/sheetQueries', () => ({
   useConfigQuery: vi.fn(),
 }));
 
-import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { useConfigQuery } from '@/queries/sheetQueries';
-import NavTabs from '@/components/NavTabs';
-import BottomTabBar from '@/components/BottomTabBar';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useConfigQuery } from '@/shared/io/queries/sheetQueries';
+import NavTabs from '@/shared/components/NavTabs';
+import BottomTabBar from '@/shared/components/BottomTabBar';
 
 const mockBreakpoint = useBreakpoint as ReturnType<typeof vi.fn>;
 const mockConfigQuery = useConfigQuery as ReturnType<typeof vi.fn>;

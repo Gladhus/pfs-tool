@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToastStore } from '@/stores/toast.store';
+import { useToastStore } from '@/shared/stores/toast.store';
 import {
   useOptionCompaniesQuery, useOptionGrantsQuery,
   useOptionFmvQuery, useOptionExercisesQuery,
   useAccountsQuery, useTagsQuery, useConfigQuery, usePeopleQuery,
-} from '@/queries/sheetQueries';
-import { allKnownTags, mergeTagNames } from '@/utils/tags';
-import { LEGACY_SELF_ID } from '@/utils/ownership';
+} from '@/shared/io/queries/sheetQueries';
+import { allKnownTags, mergeTagNames } from '@/shared/utils/tags';
+import { LEGACY_SELF_ID } from '@/shared/utils/ownership';
 import type { Currency } from '@/types/sheets';
 import {
   useWriteOptionCompaniesMutation, useWriteOptionGrantsMutation,
   useWriteOptionFmvMutation, useWriteOptionExercisesMutation,
   useWriteTagsMutation,
-} from '@/queries/sheetMutations';
-import { Amount } from '@/ui/Amount';
-import { Button } from '@/ui/Button';
-import { Icon } from '@/ui/Icon';
-import { Skeleton } from '@/ui/Skeleton';
+} from '@/shared/io/queries/sheetMutations';
+import { Amount } from '@/shared/ui/Amount';
+import { Button } from '@/shared/ui/Button';
+import { Icon } from '@/shared/ui/Icon';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import { CompanyDialog } from './components/CompanyDialog';
 import { GrantDialog } from './components/GrantDialog';
 import { FmvDialog } from './components/FmvDialog';

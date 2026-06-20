@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dialog } from '@/ui/Dialog';
-import { Button } from '@/ui/Button';
-import { Input } from '@/ui/Input';
-import { Select, SelectItem } from '@/ui/Select';
-import { Checkbox } from '@/ui/Checkbox';
-import { Label } from '@/ui/Label';
-import { tr } from '@/i18n';
+import { Dialog } from '@/shared/ui/Dialog';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { Select, SelectItem } from '@/shared/ui/Select';
+import { Checkbox } from '@/shared/ui/Checkbox';
+import { Label } from '@/shared/ui/Label';
+import { tr } from '@/shared/i18n';
 import { KINDS } from '@/constants';
-import { migrateLegacyOwnership, shareFor } from '@/utils/ownership';
+import { migrateLegacyOwnership, shareFor } from '@/shared/utils/ownership';
 import { TagChipInput } from './TagChipInput';
 import type { Account, AccountType, CategoryMeta, Currency, OwnershipEntry, Person } from '@/types/sheets';
 

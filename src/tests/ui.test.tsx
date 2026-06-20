@@ -2,13 +2,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
-import i18n from '@/i18n';
-import { Button } from '@/ui/Button';
-import { Delta } from '@/ui/Delta';
-import { StatCard } from '@/ui/StatCard';
-import { ConfirmDialog } from '@/ui/ConfirmDialog';
-import { SegmentControl } from '@/ui/SegmentControl';
-import { ToastHost } from '@/ui/ToastHost';
+import i18n from '@/shared/i18n';
+import { Button } from '@/shared/ui/Button';
+import { Delta } from '@/shared/ui/Delta';
+import { StatCard } from '@/shared/ui/StatCard';
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
+import { SegmentControl } from '@/shared/ui/SegmentControl';
+import { ToastHost } from '@/shared/ui/ToastHost';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <I18nextProvider i18n={i18n}>{children}</I18nextProvider>

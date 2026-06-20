@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToastStore } from '@/stores/toast.store';
-import { usePeopleQuery, useAccountsQuery, useOptionCompaniesQuery } from '@/queries/sheetQueries';
-import { useWritePeopleMutation } from '@/queries/sheetMutations';
-import { personHasActiveClaims, auditOwnership, type OwnershipIssue } from '@/utils/ownership';
-import { tr } from '@/i18n';
-import { Icon } from '@/ui/Icon';
-import { Button } from '@/ui/Button';
-import { Skeleton } from '@/ui/Skeleton';
+import { useToastStore } from '@/shared/stores/toast.store';
+import { usePeopleQuery, useAccountsQuery, useOptionCompaniesQuery } from '@/shared/io/queries/sheetQueries';
+import { useWritePeopleMutation } from '@/shared/io/queries/sheetMutations';
+import { personHasActiveClaims, auditOwnership, type OwnershipIssue } from '@/shared/utils/ownership';
+import { tr } from '@/shared/i18n';
+import { Icon } from '@/shared/ui/Icon';
+import { Button } from '@/shared/ui/Button';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import { PersonDialog } from '../components/PersonDialog';
 import type { Account, OptionCompany, Person } from '@/types/sheets';
 

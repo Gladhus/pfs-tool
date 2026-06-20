@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { EmptyState } from '@/ui/EmptyState';
-import { Icon } from '@/ui/Icon';
-import { Button } from '@/ui/Button';
+import { EmptyState } from '@/shared/ui/EmptyState';
+import { Icon } from '@/shared/ui/Icon';
+import { Button } from '@/shared/ui/Button';
 
 export function EmptyGroupsState() {
   const { t } = useTranslation();

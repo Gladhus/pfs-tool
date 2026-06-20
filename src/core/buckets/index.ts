@@ -1,13 +1,13 @@
 import type { OverviewView } from '../filters';
 import type { BucketModels, BucketStrategy } from './types';
-import { categoryStrategy } from './category';
-import { groupStrategy } from './group';
-import { personStrategy } from './person';
+import { categoryStrategy } from './category.strategy';
+import { groupStrategy } from './group.strategy';
+import { personStrategy } from './person.strategy';
 
 export type { BucketDef, BucketAssignment, BucketModels, BucketStrategy } from './types';
-export { categoryStrategy } from './category';
-export { groupStrategy } from './group';
-export { personStrategy, personColor } from './person';
+export { categoryStrategy } from './category.strategy';
+export { groupStrategy } from './group.strategy';
+export { personStrategy, personColor } from './person.strategy';
 
 const STRATEGIES: Record<OverviewView, (m: BucketModels) => BucketStrategy> = {
   category: categoryStrategy,

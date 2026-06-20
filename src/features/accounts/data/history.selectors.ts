@@ -3,7 +3,7 @@ import { buildBalanceSweep } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { signedMain, rateFor } from '@/utils/currency';
 import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/utils/ownership';
-import { makeAccountContributor } from './contributor';
+import { makeAccountContributor } from './account.contributor';
 
 /**
  * Accounts-domain selectors for the History page. Pure data — the page renders

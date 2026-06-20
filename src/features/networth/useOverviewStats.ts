@@ -6,14 +6,14 @@ import { foldCategoryId } from '@/utils/colors';
 import { rateFor } from '@/utils/currency';
 import { LEGACY_SELF_ID } from '@/utils/ownership';
 import { tr } from '@/i18n';
-import { makeAccountContributor } from '@/features/accounts/data/contributor';
-import { makeEquityContributor } from '@/features/options/data/contributor';
+import { makeAccountContributor } from '@/features/accounts/data/account.contributor';
+import { makeEquityContributor } from '@/features/options/data/equity.contributor';
 import type { ValuedContributor } from '@/core/contributors/types';
 import { personColor } from '@/core/buckets';
 import type { BucketModels } from '@/core/buckets';
 import { buildDataset } from '@/core/dataset';
 import type { FilterSpec } from '@/core/filters';
-import type { EquityData } from '@/features/options/data/selectors';
+import type { EquityData } from '@/features/options/data/equity.selectors';
 
 export type { EquityData };
 

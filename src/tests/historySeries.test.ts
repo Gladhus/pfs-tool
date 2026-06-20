@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSeries } from '@/features/accounts/data/history';
+import { computeSeries } from '@/features/accounts/data/history.selectors';
 import type { Account, Snapshot } from '@/types/sheets';
 
 const mk = (id: string, person: string): Account => ({

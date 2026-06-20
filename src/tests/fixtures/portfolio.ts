@@ -4,7 +4,7 @@ import type {
 } from '@/types/sheets';
 import { deriveDatesSorted } from '@/utils/dates';
 import { fxMap as buildFxMap } from '@/utils/currency';
-import type { EquityData } from '@/features/options/data/selectors';
+import type { EquityData } from '@/features/options/data/equity.selectors';
 
 /**
  * One realistic portfolio that exercises every edge the data layer must preserve

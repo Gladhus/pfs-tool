@@ -5,7 +5,7 @@ import { Delta } from '@/ui/Delta';
 import { Sparkline } from './Sparkline';
 import { EmptyGroupsState } from './EmptyGroupsState';
 import type { PersonStat } from '../useOverviewStats';
-import type { EquityData } from '@/features/options/data/selectors';
+import type { EquityData } from '@/features/options/data/equity.selectors';
 import { groupColor } from '@/utils/colors';
 import { categoryKey } from '@/utils/icons';
 import { LEGACY_SELF_ID } from '@/utils/ownership';

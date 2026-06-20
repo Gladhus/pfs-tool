@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   companyEquitySummary, buildVestingSeries, buildCompanyValueSeries,
   buildSummarySeries, equityValueAt, equityTotals,
-} from '@/features/options/data/selectors';
+} from '@/features/options/data/equity.selectors';
 import { computeCompanyEquityValue } from '@/utils/options';
 import { toMain, rateFor } from '@/utils/currency';
 import {

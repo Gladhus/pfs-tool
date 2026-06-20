@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeSeries, buildHistoryCards } from '@/features/accounts/data/history';
-import { getDetailYears, buildDetailModel } from '@/features/accounts/data/detail';
+import { computeSeries, buildHistoryCards } from '@/features/accounts/data/history.selectors';
+import { getDetailYears, buildDetailModel } from '@/features/accounts/data/detail.selectors';
 import { computeDateStats, buildEffectiveBalances } from '@/utils/stats';
 import { activeAccounts } from '@/utils/balance';
 import { signedMain, rateFor } from '@/utils/currency';

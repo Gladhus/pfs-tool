@@ -5,7 +5,7 @@ import {
 import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
 import { seriesTooltip } from '@/components/ChartTooltip';
-import { buildSummarySeries } from '@/features/options/data/selectors';
+import { buildSummarySeries } from '@/features/options/data/equity.selectors';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { COMPANY_COLORS } from './charts';
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise, Currency } from '@/types/sheets';

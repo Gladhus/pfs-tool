@@ -5,7 +5,7 @@ import { Delta } from '@/ui/Delta';
 import { Icon } from '@/ui/Icon';
 import { Amount } from '@/ui/Amount';
 import { fmtMonth } from '@/utils/dates';
-import type { CardData } from '@/features/accounts/data/history';
+import type { CardData } from '@/features/accounts/data/history.selectors';
 
 export type { CardData };
 

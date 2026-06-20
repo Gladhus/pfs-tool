@@ -1,9 +1,15 @@
 # Data-layer migration plan
 
 How we move from the per-page aggregation funnel (described in
-[`ARCHITECTURE.md`](ARCHITECTURE.md) §2) to the `src/core/` data layer
-(§3) **without regressions**, and with the new code tested well enough that future
-contributors/filters are cheap and safe to add.
+[`ARCHITECTURE.md`](ARCHITECTURE.md) §2) to the data layer **without regressions**,
+and with the new code tested well enough that future contributors/filters are
+cheap and safe to add.
+
+> **Note:** this is the historical phase log. Phases 0–8 first built the layer
+> under `src/core/`; a final feature-first restructure then moved each domain's
+> data + views into `features/<domain>/`, the shared kernel into `core/`, and infra
+> into `shared/`. Paths below reflect where files lived *during* a phase, not the
+> final tree — see `ARCHITECTURE.md` for the current layout.
 
 ## Guardrails
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildDataset, type DatasetInput } from '@/core/dataset';
 import { makeAccountContributor } from '@/features/accounts/data/account.contributor';
 import { makeEquityContributor } from '@/features/options/data/equity.contributor';
-import type { ValuedContributor } from '@/core/contracts';
+import type { ValuedContributor } from '@/core/contributor.contract';
 import type { BucketModels } from '@/core/buckets';
 import type { FilterSpec, OverviewView } from '@/core/filters';
 import { rateFor } from '@/shared/utils/currency';

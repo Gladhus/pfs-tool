@@ -8,7 +8,7 @@ import { LEGACY_SELF_ID } from '@/shared/utils/ownership';
 import { tr } from '@/shared/i18n';
 import { makeAccountContributor } from '@/features/accounts/data/account.contributor';
 import { makeEquityContributor } from '@/features/options/data/equity.contributor';
-import type { ValuedContributor } from '@/core/contracts';
+import type { ValuedContributor } from '@/core/contributor.contract';
 import { personColor } from '@/core/buckets';
 import type { BucketModels } from '@/core/buckets';
 import { buildDataset } from '@/core/dataset';

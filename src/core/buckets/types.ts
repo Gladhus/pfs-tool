@@ -1,5 +1,5 @@
 import type { CategoryMeta, Group, Person } from '@/types/sheets';
-import type { Contribution } from '../contracts';
+import type { Contribution } from '../contributor.contract';
 
 /** A series/legend entry: stable key, display label, optional colour + ids for the UI. */
 export interface BucketDef {

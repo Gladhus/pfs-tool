@@ -1,8 +1,10 @@
 # Data Architecture — How data flows through PFS Tool
 
-> Status: descriptive audit + target pattern. Nothing here changes behaviour;
-> it documents how data is handled today and proposes a distinct data layer so
-> new filters/views can be added in one place instead of five.
+> Status: **implemented.** Sections 1–2 are the original audit (the "before" — a
+> funnel hand-rolled per page); section 3 is the design, now realized as a
+> feature-first data layer (`core/` kernel + `features/<domain>/data/`). For the
+> current layout jump to *§3 → The governing principle*. Phase-by-phase history is
+> in [`data-layer-migration.md`](data-layer-migration.md).
 
 PFS Tool is a privacy-first net-worth tracker with **no backend**. All data lives
 in either a Google Sheet or an in-memory XLSX workbook, and every derived number
@@ -382,44 +384,51 @@ And the cross-cutting wins come for free because they live in the shared stages:
 
 ### The governing principle: data layer owns data, views render
 
-`src/core/` is **the data layer** — it owns *all* data computation. Pages and
-components are the **view layer**: they call a selector and render its output, with
-no aggregation, valuation, or scoping of their own. **No data logic in a
-component** is the invariant that holds everywhere.
+The codebase is organized **feature-first**: a domain is one folder holding both
+its **data** (`data/`) and its **views**. The data layer owns *all* computation —
+`core/` (the shared kernel) plus each feature's `data/`; the view files render a
+selector's output with no aggregation, valuation, or scoping of their own. **No
+data logic in a component** is the invariant that holds everywhere.
 
-The layer is organized by **domain**. A domain is a kind of financial thing the
-app tracks; today there are two: **Accounts** and **Stock Options**. Each domain
-owns two things:
+A domain is a kind of financial thing the app tracks; today there are two:
+**Accounts** and **Stock Options**. Each owns a `ValuedContributor` (how it feeds
+net worth) **and** its own detail selectors (shapes the net-worth `Dataset` can't).
 
-1. **A `ValuedContributor`** — how the domain contributes to net worth (its Tier-1
-   interface into the engine).
-2. **Detail selectors** — pure functions for the domain's own pages, exposing
-   shapes the net-worth `Dataset` can't.
-
-| Domain | Contributor (→ net worth) | Detail selectors (its pages) |
+| Domain (`features/<x>/`) | Contributor (→ net worth) | Detail selectors + views |
 |--------|---------------------------|------------------------------|
-| **Accounts** | `accountContributor` | History (chart + card model), Detail (year-over-year), Entry (per-date totals + row builder) |
-| **Stock Options** | `equityContributor` | Options (vested/unvested shares, vesting schedule, summary) |
+| **accounts** | `data/account.contributor.ts` | `data/{history,detail,entry}.selectors.ts` → History · Detail · Entry |
+| **options** | `data/equity.contributor.ts` | `data/equity.selectors.ts` → Options page (vested/unvested, vesting, summary) |
 
-**Overview is not a domain** — it's the **cross-domain roll-up**: `buildDataset`
-combines every domain's contributor into one net-worth view. That's the only place
-the domains meet (History/Detail use accounts only; the Options page uses equity
-only; Overview uses both).
+**Overview is not a domain** — it's the **cross-domain roll-up** (`features/networth/`):
+`buildDataset` combines every domain's contributor into one net-worth view. That's
+the only place the domains meet (History/Detail use accounts only; the Options page
+uses equity only; Overview uses both).
 
 ```
-src/core/
-  filters · scope · axis · buckets · dataset   ← cross-domain net-worth engine
-  contributors/types                            ← the ValuedContributor contract
-  accounts/   contributor + history + detail + entry   ← Accounts domain
-  options/    contributor + vesting + summary          ← Stock Options domain
+src/
+  app/        shell · router · auth · providers · main.tsx
+  shared/     ui · components · utils · stores · hooks · i18n · io/(api · datasource · queries)
+  core/       the shared data KERNEL (imports no feature):
+                contributor.contract.ts            ← the ValuedContributor contract
+                filters · scope · axis · dataset   ← cross-domain engine
+                buckets/  {category,group,person}.strategy.ts
+  features/
+    networth/  OverviewPage · components · useOverviewStats · sparklines   (cross-domain view)
+    accounts/  data/  +  history/ · detail/ · entry/
+    options/   data/  +  OptionsPage · OptionsManagePage · components/
+    settings/
+  types/
 ```
+
+File-naming follows the existing `*.store.ts` convention: a file says what it *is*
+— `*.contributor.ts`, `*.selectors.ts`, `*.strategy.ts`, `*.store.ts`.
 
 > **Why a domain owns both halves:** the Options page needs "504 vested / 396
-> unvested shares," which is not a net-worth slice — so it lives in the Stock
-> Options domain's detail selectors, beside the `equityContributor` that feeds
-> Overview. Same math (`utils/options`), two shapes. A future domain (crypto,
-> pensions, a cashflow ledger) is added the same way: one contributor + its own
-> detail selectors, never a branch inside `buildDataset`.
+> unvested shares," which is not a net-worth slice — so it lives in the options
+> domain's selectors, beside the `equity.contributor` that feeds Overview. Same
+> math (`shared/utils/options`), two shapes. A future domain (crypto, pensions, a
+> cashflow ledger) is added the same way: a new `features/<domain>/` with one
+> contributor + its own selectors, never a branch inside `buildDataset`.
 
 ### Migration
 
@@ -440,13 +449,16 @@ the dead per-page loops (the empty-dates trim collapses to one site).
 
 | Stage | Files |
 |-------|-------|
-| Persistence | `datasource/{types,sheets,xlsx,parse}.ts`, `api/*` |
-| Fetch/cache | `queries/sheetQueries.ts`, `queries/keys.ts`, `hooks/useSheetData.ts` |
-| Working sets | `utils/dates.ts` (`getDatesForPeriod`, `deriveDatesSorted`), `utils/balance.ts` (`activeAccounts`), `utils/ownership.ts` (`accountsVisibleToViewer`) |
-| Aggregate | `utils/stats.ts`, `pages/overview/hooks/useOverviewStats.ts`, `pages/history/HistoryPage.tsx`, `pages/detail/DetailPage.tsx` |
-| Money math | `utils/currency.ts` (`signedMain`, `toMain`, `rateFor`) |
-| Scoping primitives | `utils/ownership.ts` (`viewerShare`, `shareFor`, `ownerVisibleToViewer`) |
-| Present | `utils/format.ts`, `utils/privacy.ts`, `components/ChartTooltip.tsx` |
-| Filter state | `stores/ui.store.ts` (viewer/view), URL params (period/account) |
+| Persistence (IO) | `shared/io/datasource/{types,sheets,xlsx,parse}.ts`, `shared/io/api/*` |
+| Fetch/cache | `shared/io/queries/{sheetQueries,keys}.ts`, `shared/hooks/useSheetData.ts` |
+| Contract | `core/contributor.contract.ts` (`ValuedContributor`, `Contribution`, `ValueContext`) |
+| Engine (cross-domain) | `core/{filters,scope,axis,dataset}.ts`, `core/buckets/*.strategy.ts` |
+| Accounts data | `features/accounts/data/{account.contributor,history.selectors,detail.selectors,entry.selectors}.ts` |
+| Options data | `features/options/data/{equity.contributor,equity.selectors}.ts` |
+| Overview roll-up | `features/networth/{useOverviewStats,sparklines}.ts` |
+| Money math | `shared/utils/currency.ts` (`signedMain`, `toMain`, `rateFor`), `shared/utils/stats.ts` |
+| Scoping primitives | `shared/utils/ownership.ts` (`viewerShare`, `shareFor`, `ownerVisibleToViewer`) |
+| Present | `shared/utils/{format,privacy}.ts`, `shared/components/ChartTooltip.tsx` |
+| Filter state | `shared/stores/ui.store.ts` (viewer/view), URL params (period/account) |
 </content>
 </invoke>

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeEquityContributor } from '@/features/options/data/equity.contributor';
-import type { ValueContext } from '@/core/contracts';
+import type { ValueContext } from '@/core/contributor.contract';
 import { computeDateStats } from '@/shared/utils/stats';
 import { rateFor } from '@/shared/utils/currency';
 import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';

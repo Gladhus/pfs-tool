@@ -4,9 +4,8 @@ import { accountsVisibleToViewer } from '@/shared/utils/ownership';
 
 /**
  * Active accounts the viewer holds any stake in — the display/visibility set used
- * by the Detail table and the viewer empty-state checks. (Aggregation paths still
- * scope per-viewer internally via signedMain; that unifies onto this in a later
- * phase — see docs/data-layer-migration.md.)
+ * by the Detail table and the viewer empty-state checks. (The aggregation paths
+ * scope per-owner inside the contributors instead.)
  */
 export function activeVisibleAccounts(accounts: Account[], viewer: string): Account[] {
   return accountsVisibleToViewer(activeAccounts(accounts), viewer);

@@ -3,8 +3,7 @@
 > Status: **implemented.** Sections 1–2 are the original audit (the "before" — a
 > funnel hand-rolled per page); section 3 is the design, now realized as a
 > feature-first data layer (`core/` kernel + `features/<domain>/data/`). For the
-> current layout jump to *§3 → The governing principle*. Phase-by-phase history is
-> in [`data-layer-migration.md`](data-layer-migration.md).
+> current layout jump to *§3 → The governing principle*.
 
 PFS Tool is a privacy-first net-worth tracker with **no backend**. All data lives
 in either a Google Sheet or an in-memory XLSX workbook, and every derived number
@@ -430,12 +429,14 @@ File-naming follows the existing `*.store.ts` convention: a file says what it *i
 > cashflow ledger) is added the same way: a new `features/<domain>/` with one
 > contributor + its own selectors, never a branch inside `buildDataset`.
 
-### Migration
+### How it was verified
 
-The transition is broken into independently shippable, behaviour-preserving
-phases, each with its own unit + e2e coverage. The full plan — phases, file-level
-tasks, the regression-vs-new-behaviour test matrix, and the characterization
-"golden master" strategy — lives in **[`data-layer-migration.md`](data-layer-migration.md)**.
+The transition was done in small, behaviour-preserving slices guarded by a
+**golden master** — `renderHook(useOverviewStats)` and the `computeSeries` /
+`buildDetailModel` selectors frozen against a rich fixture (`src/tests/fixtures/
+portfolio.ts`) — so every refactor had to reproduce the numbers exactly. Backed by
+the contributor cross-checks (account/equity valuation proven equal to the legacy
+`computeDateStats`), the unit suite, and the Playwright e2e specs.
 
 The one-line shape: extract `FilterSpec`/`scope` → land the `ValuedContributor`
 two-phase axis (`checkpointDates` + `valuesOver`) wrapping today's account/equity

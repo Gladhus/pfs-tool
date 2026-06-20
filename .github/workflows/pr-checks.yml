@@ -25,7 +25,7 @@ jobs:
         run: npm run lint
         continue-on-error: true
       - id: typecheck
-        run: npx tsc --noEmit -p .
+        run: npm run typecheck
         continue-on-error: true
       - id: unit
         run: npm test

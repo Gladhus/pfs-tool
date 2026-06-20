@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { categorySparkline, groupSparkline, personSparkline, equitySparkline } from '@/core/sparklines';
+import { categorySparkline, groupSparkline, personSparkline, equitySparkline } from '@/features/networth/sparklines';
 import { buildBalanceSweep } from '@/utils/stats';
 import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
 import { ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN, GROUPS, OPTION_DATA } from './fixtures/portfolio';

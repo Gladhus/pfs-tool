@@ -17,7 +17,7 @@ vi.mock('@/i18n', () => ({
 }));
 
 // OverviewChart uses Chart.js + canvas — stub the whole component at the page level
-vi.mock('@/pages/overview/components/OverviewChart', () => ({
+vi.mock('@/features/networth/components/OverviewChart', () => ({
   OverviewChart: () => <div data-testid="overview-chart" />,
 }));
 
@@ -48,7 +48,7 @@ import {
   useOptionExercisesQuery,
 } from '@/queries/sheetQueries';
 
-import OverviewPage from '@/pages/overview/OverviewPage';
+import OverviewPage from '@/features/networth/OverviewPage';
 
 type MockFn = ReturnType<typeof vi.fn>;
 

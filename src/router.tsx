@@ -10,7 +10,7 @@ import SignedOutScreen from '@/components/SignedOutScreen';
 import SectionLayout from '@/components/SectionLayout';
 import SettingsSectionLayout from '@/components/SettingsSectionLayout';
 import type { SubNavLink } from '@/components/SubNav';
-import OverviewPage from '@/pages/overview/OverviewPage';
+import OverviewPage from '@/features/networth/OverviewPage';
 import HistoryPage from '@/features/accounts/history/HistoryPage';
 import DetailPage from '@/features/accounts/detail/DetailPage';
 import EntryPage from '@/features/accounts/entry/EntryPage';

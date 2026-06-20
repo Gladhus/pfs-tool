@@ -8,7 +8,7 @@ vi.mock('@/i18n', () => ({
   tr: (e: { name_en?: string; name_fr?: string }) => e.name_en ?? e.name_fr ?? '',
 }));
 
-import { useOverviewStats } from '@/pages/overview/hooks/useOverviewStats';
+import { useOverviewStats } from '@/features/networth/useOverviewStats';
 import { overviewParams } from '../fixtures/portfolio';
 import { HOUSEHOLD_VIEWER } from '@/utils/ownership';
 

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '@/stores/ui.store';
 import { ChipToggle } from '@/ui/ChipToggle';
-import type { BucketData } from '../hooks/useOverviewStats';
+import type { BucketData } from '../useOverviewStats';
 
 interface SeriesToggleProps {
   netColor: string;

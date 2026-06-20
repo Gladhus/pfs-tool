@@ -7,7 +7,7 @@ import { buildXAxisTicks } from '@/utils/dates';
 import { seriesTooltip } from '@/components/ChartTooltip';
 import { categoryKey } from '@/utils/icons';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
-import type { BucketData } from '../hooks/useOverviewStats';
+import type { BucketData } from '../useOverviewStats';
 
 interface Props {
   dates: string[];

@@ -21,7 +21,7 @@ import { resolveFilterSpec } from '@/core/filters';
 import type { Currency } from '@/types/sheets';
 import { Skeleton } from '@/ui/Skeleton';
 import { PeriodPills, APP_PERIODS, type Period } from '@/ui/PeriodPills';
-import { useOverviewStats } from './hooks/useOverviewStats';
+import { useOverviewStats } from './useOverviewStats';
 import { HeroCard } from './components/HeroCard';
 import { OverviewChart } from './components/OverviewChart';
 import { StatCardGrid } from './components/StatCardGrid';

@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.3.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.3.0) — 2026-06-20
+
+### Changed
+- **Reorganized into a domain-oriented data layer (no behaviour change).** All data computation — valuation, viewer-scoping, aggregation, the leading-empty-dates trim — moved out of the page components into a shared net-worth engine (`ValuedContributor` → `buildDataset` → `BucketStrategy`) plus per-domain selectors. Pages are now pure views that call a selector and render. The same funnel had been hand-rolled in ~5 places; it now lives in one tested place, so adding an asset type or filter is an additive change instead of a five-site edit
+- **Feature-first project structure.** `src/` is now `app/` (shell/router), `shared/` (ui · components · utils · stores · io), `core/` (the shared data kernel), and `features/<domain>/` (accounts, options, networth, settings) — each domain owning its data and its views together. Data files are named by role (`*.contributor.ts`, `*.selectors.ts`, `*.strategy.ts`), matching the existing `*.store.ts` convention
+- **Locked behaviour with a golden-master test suite.** A rich fixture freezes the Overview/History/Detail output so the refactor (and future changes) can't silently drift the numbers; the account and equity valuation paths are cross-checked against the previous aggregators. Unit suite grew to 363 tests, with Playwright e2e and the production build green throughout
+
 ## [2.2.6](https://github.com/Gladhus/pfs-tool/releases/tag/v2.2.6) — 2026-06-19
 
 ### Fixed

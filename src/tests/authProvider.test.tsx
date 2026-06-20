@@ -3,10 +3,10 @@ import { render, act } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth.store';
-import { AuthProvider } from '@/auth/AuthProvider';
+import { useAuthStore } from '@/shared/stores/auth.store';
+import { AuthProvider } from '@/app/auth/AuthProvider';
 
-vi.mock('@/auth/bootstrap', () => ({
+vi.mock('@/app/auth/bootstrap', () => ({
   bootstrapSheet: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -15,7 +15,7 @@ vi.mock('@/config', () => ({
   hasValidClientId: () => true,
 }));
 
-import { bootstrapSheet } from '@/auth/bootstrap';
+import { bootstrapSheet } from '@/app/auth/bootstrap';
 
 const mockInitTokenClient = vi.fn().mockReturnValue({ requestAccessToken: vi.fn() });
 

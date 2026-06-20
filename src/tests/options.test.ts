@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeVestedShares, exercisableShares } from '@/utils/options';
+import { computeVestedShares, exercisableShares } from '@/shared/utils/options';
 import type { OptionGrant, OptionExercise } from '@/types/sheets';
 
 const GRANT: OptionGrant = {

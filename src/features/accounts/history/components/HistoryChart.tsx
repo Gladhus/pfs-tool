@@ -1,0 +1,157 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from 'recharts';
+import type { Account, Snapshot } from '@/types/sheets';
+import { accountBalanceSeries } from '@/features/accounts/data/history.selectors';
+import { moneyTickFmt } from '@/shared/utils/chartOptions';
+import { buildXAxisTicks } from '@/shared/utils/dates';
+import { seriesTooltip } from '@/shared/components/ChartTooltip';
+import { tr } from '@/shared/i18n';
+import { useContainerWidth } from '@/shared/hooks/useContainerWidth';
+import type { SeriesState } from './SeriesToggleBar';
+
+export interface OverviewSeries {
+  dates: string[];
+  investments: (number | null)[];
+  realEstateNet: (number | null)[];
+  other: (number | null)[];
+}
+
+interface Props {
+  filteredDates: string[];
+  snapshots: Snapshot[];
+  series: OverviewSeries;
+  seriesVisible: SeriesState;
+  hasOtherData: boolean;
+  /** '' = stacked overview; account ID = single-account line */
+  selectedAccount: string;
+  accounts: Account[];
+  locale: string;
+  currency: string;
+  isPrivate: boolean;
+}
+
+/** A row in either the stacked-overview shape or the single-account shape. */
+type ChartPoint = {
+  date: string;
+  investments?: number | null;
+  realEstate?: number | null;
+  other?: number | null;
+  value?: number;
+};
+
+export function HistoryChart({
+  filteredDates, snapshots, series, seriesVisible, hasOtherData, selectedAccount, accounts, locale, currency, isPrivate,
+}: Props) {
+  const { t } = useTranslation();
+  const [containerRef, width] = useContainerWidth();
+  const isOverview = selectedAccount === '';
+
+  const { data, chartDates } = useMemo<{ data: ChartPoint[]; chartDates: string[] }>(() => {
+    if (isOverview) {
+      const dates = series.dates;
+      return {
+        chartDates: dates,
+        data: dates.map((date, i) => ({
+          date,
+          investments: series.investments[i],
+          realEstate: series.realEstateNet[i],
+          other: series.other[i],
+        })),
+      };
+    }
+    const pts = accountBalanceSeries(snapshots, filteredDates, selectedAccount);
+    return { data: pts, chartDates: pts.map(p => p.date) };
+  }, [isOverview, series, filteredDates, snapshots, selectedAccount]);
+
+  const { tickSet, xFmt } = useMemo(
+    () => buildXAxisTicks(chartDates, width, locale),
+    [chartDates, width, locale],
+  );
+  const xTicks = useMemo(() => chartDates.filter((_, i) => tickSet.has(i)), [chartDates, tickSet]);
+  const tickFmt = useMemo(() => moneyTickFmt({ isPrivate }), [isPrivate]);
+
+  const acct = !isOverview ? accounts.find(a => a.id === selectedAccount) : undefined;
+  const acctColor = acct?.kind === 'debt' ? 'var(--cat-debts)' : 'var(--accent)';
+
+  const renderTooltip = seriesTooltip({ locale, currency, isPrivate, hideZero: true });
+
+  return (
+    <div ref={containerRef} className="h-[280px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <defs>
+            {isOverview ? (
+              <>
+                <linearGradient id="hc-invest-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cat-investments)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--cat-investments)" stopOpacity={0.05} />
+                </linearGradient>
+                <linearGradient id="hc-re-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cat-real-estate)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--cat-real-estate)" stopOpacity={0.05} />
+                </linearGradient>
+                <linearGradient id="hc-other-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cat-cash)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--cat-cash)" stopOpacity={0.05} />
+                </linearGradient>
+              </>
+            ) : (
+              <linearGradient id="hc-acct-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={acctColor} stopOpacity={0.18} />
+                <stop offset="100%" stopColor={acctColor} stopOpacity={0} />
+              </linearGradient>
+            )}
+          </defs>
+          <CartesianGrid stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
+          <XAxis
+            dataKey="date"
+            ticks={xTicks}
+            tickFormatter={(d: string) => xFmt(new Date(d + 'T12:00:00'))}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={tickFmt}
+            tick={{ fill: 'var(--subtle)', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickCount={6}
+            width={55}
+          />
+          <Tooltip
+            content={renderTooltip}
+            cursor={{ stroke: 'var(--subtle)', strokeWidth: 1, strokeOpacity: 0.4 }}
+          />
+          {isOverview ? (
+            <>
+              {seriesVisible.investments && (
+                <Area dataKey="investments" name={t('show_investments')} type="monotone" stackId="s"
+                  stroke="var(--cat-investments)" strokeWidth={2} fill="url(#hc-invest-grad)"
+                  dot={false} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+              )}
+              {seriesVisible.realEstate && (
+                <Area dataKey="realEstate" name={t('show_real_estate')} type="monotone" stackId="s"
+                  stroke="var(--cat-real-estate)" strokeWidth={2} fill="url(#hc-re-grad)"
+                  dot={false} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+              )}
+              {hasOtherData && seriesVisible.other && (
+                <Area dataKey="other" name={t('show_other')} type="monotone" stackId="s"
+                  stroke="var(--cat-cash)" strokeWidth={2} fill="url(#hc-other-grad)"
+                  dot={false} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+              )}
+            </>
+          ) : (
+            <Area dataKey="value" name={acct ? tr(acct) : selectedAccount} type="monotone"
+              stroke={acctColor} strokeWidth={2} fill="url(#hc-acct-grad)"
+              dot={false} activeDot={{ r: 5, fill: acctColor, stroke: '#fff', strokeWidth: 2 }}
+              isAnimationActive={false} />
+          )}
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

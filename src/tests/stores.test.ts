@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useAuthStore } from '@/stores/auth.store';
-import { useUIStore } from '@/stores/ui.store';
-import { useDialogStore } from '@/stores/dialog.store';
-import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/utils/ownership';
+import { useAuthStore } from '@/shared/stores/auth.store';
+import { useUIStore } from '@/shared/stores/ui.store';
+import { useDialogStore } from '@/shared/stores/dialog.store';
+import { LEGACY_SELF_ID, HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 
 beforeEach(() => {
   useAuthStore.setState({

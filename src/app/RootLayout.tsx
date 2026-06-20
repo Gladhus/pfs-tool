@@ -1,12 +1,12 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import { AuthProvider } from '@/auth/AuthProvider';
-import { ToastHost } from '@/ui/ToastHost';
-import { useTheme } from '@/hooks/useTheme';
-import { useAppLang } from '@/hooks/useAppLang';
-import { useAuthStore } from '@/stores/auth.store';
-import { useUIStore } from '@/stores/ui.store';
-import { queryClient } from '@/lib/queryClient';
+import { AuthProvider } from '@/app/auth/AuthProvider';
+import { ToastHost } from '@/shared/ui/ToastHost';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useAppLang } from '@/shared/hooks/useAppLang';
+import { useAuthStore } from '@/shared/stores/auth.store';
+import { useUIStore } from '@/shared/stores/ui.store';
+import { queryClient } from '@/shared/io/queryClient';
 
 const TAB_ROUTE_MAP: Record<string, string> = {
   overview: '/overview',

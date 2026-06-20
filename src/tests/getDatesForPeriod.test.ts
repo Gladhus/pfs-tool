@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getDatesForPeriod } from '@/utils/dates';
+import { getDatesForPeriod } from '@/shared/utils/dates';
 
 const DATES = [
   '2022-03-01', '2022-06-01', '2022-09-01', '2022-12-01',

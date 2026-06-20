@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUIStore } from '@/stores/ui.store';
+import { useUIStore } from '@/shared/stores/ui.store';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string, opts?: any) => {
@@ -17,16 +17,16 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: vi.fn() },
 }));
 
-vi.mock('@/i18n', () => ({
+vi.mock('@/shared/i18n', () => ({
   default: { changeLanguage: vi.fn() },
   tr: (entity: { name_en?: string; name_fr?: string }) => entity.name_en ?? entity.name_fr ?? '',
 }));
 
-vi.mock('@/pages/history/components/HistoryChart', () => ({
+vi.mock('@/features/accounts/history/components/HistoryChart', () => ({
   HistoryChart: () => <div data-testid="history-chart" />,
 }));
 
-vi.mock('@/queries/sheetQueries', () => ({
+vi.mock('@/shared/io/queries/sheetQueries', () => ({
   useAccountsQuery: vi.fn(),
   useSnapshotsQuery: vi.fn(),
   useCategoryMetaQuery: vi.fn(),
@@ -42,8 +42,8 @@ import {
   useAccountsQuery,
   useSnapshotsQuery,
   useCategoryMetaQuery,
-} from '@/queries/sheetQueries';
-import HistoryPage from '@/pages/history/HistoryPage';
+} from '@/shared/io/queries/sheetQueries';
+import HistoryPage from '@/features/accounts/history/HistoryPage';
 
 type MockFn = ReturnType<typeof vi.fn>;
 

@@ -2,21 +2,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, renderHook, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUIStore } from '@/stores/ui.store';
-import { useTheme } from '@/hooks/useTheme';
-import { useAppLang } from '@/hooks/useAppLang';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useUIStore } from '@/shared/stores/ui.store';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useAppLang } from '@/shared/hooks/useAppLang';
+import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
 
-vi.mock('@/queries/sheetQueries', () => ({
+vi.mock('@/shared/io/queries/sheetQueries', () => ({
   useConfigQuery: vi.fn(),
 }));
 
-vi.mock('@/i18n', () => ({
+vi.mock('@/shared/i18n', () => ({
   default: { changeLanguage: vi.fn() },
 }));
 
-import { useConfigQuery } from '@/queries/sheetQueries';
-import i18n from '@/i18n';
+import { useConfigQuery } from '@/shared/io/queries/sheetQueries';
+import i18n from '@/shared/i18n';
 
 // ---------------------------------------------------------------------------
 // Shared setup
@@ -46,7 +46,7 @@ beforeEach(() => {
 
 describe('dispatchShortcut', () => {
   it('returns correct actions for navigation keys', async () => {
-    const { dispatchShortcut } = await import('@/utils/shortcuts');
+    const { dispatchShortcut } = await import('@/shared/utils/shortcuts');
     const ctx = { stockOptEnabled: true, saveEnabled: false, onEntryTab: false };
     expect(dispatchShortcut('1', ctx)).toBe('tab:overview');
     expect(dispatchShortcut(',', ctx)).toBe('tab:settings');
@@ -57,7 +57,7 @@ describe('dispatchShortcut', () => {
   });
 
   it('suppresses options shortcut when stockOptEnabled is false', async () => {
-    const { dispatchShortcut } = await import('@/utils/shortcuts');
+    const { dispatchShortcut } = await import('@/shared/utils/shortcuts');
     const ctx = { stockOptEnabled: false, saveEnabled: false, onEntryTab: false };
     expect(dispatchShortcut('4', ctx)).toBeNull();
   });

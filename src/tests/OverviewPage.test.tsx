@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUIStore } from '@/stores/ui.store';
+import { useUIStore } from '@/shared/stores/ui.store';
 
 // react-i18next: return keys as-is so assertions are stable and readable
 vi.mock('react-i18next', () => ({
@@ -11,18 +11,18 @@ vi.mock('react-i18next', () => ({
 }));
 
 // i18n module: stub tr() for CategoryMeta
-vi.mock('@/i18n', () => ({
+vi.mock('@/shared/i18n', () => ({
   default: { changeLanguage: vi.fn() },
   tr: (entity: { name_en?: string; name_fr?: string }) => entity.name_en ?? entity.name_fr ?? '',
 }));
 
 // OverviewChart uses Chart.js + canvas — stub the whole component at the page level
-vi.mock('@/pages/overview/components/OverviewChart', () => ({
+vi.mock('@/features/networth/components/OverviewChart', () => ({
   OverviewChart: () => <div data-testid="overview-chart" />,
 }));
 
 // Mock all sheet queries
-vi.mock('@/queries/sheetQueries', () => ({
+vi.mock('@/shared/io/queries/sheetQueries', () => ({
   useAccountsQuery: vi.fn(),
   useSnapshotsQuery: vi.fn(),
   useCategoryMetaQuery: vi.fn(),
@@ -46,9 +46,9 @@ import {
   useOptionGrantsQuery,
   useOptionFmvQuery,
   useOptionExercisesQuery,
-} from '@/queries/sheetQueries';
+} from '@/shared/io/queries/sheetQueries';
 
-import OverviewPage from '@/pages/overview/OverviewPage';
+import OverviewPage from '@/features/networth/OverviewPage';
 
 type MockFn = ReturnType<typeof vi.fn>;
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { gapiCall, setGapiTokenClient } from '@/api/sheets';
+import { gapiCall, setGapiTokenClient } from '@/shared/io/api/sheets';
 
 function gapiThenable<T>(resolveValue?: T, rejectValue?: unknown) {
   return {

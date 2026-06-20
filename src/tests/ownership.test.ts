@@ -3,7 +3,7 @@ import {
   parseOwnership, serializeOwnership, migrateLegacyOwnership, ownershipFromRow,
   shareFor, totalShare, viewerShare, ensurePrimaryPerson, ownershipLabel, auditOwnership,
   accountsVisibleToViewer, HOUSEHOLD_VIEWER,
-} from '@/utils/ownership';
+} from '@/shared/utils/ownership';
 import type { Account, OptionCompany, Person } from '@/types/sheets';
 
 describe('parseOwnership', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsePeopleRows, serializePeople, parseAccountRows, serializeAccounts } from '@/datasource/parse';
+import { parsePeopleRows, serializePeople, parseAccountRows, serializeAccounts } from '@/shared/io/datasource/parse';
 import type { Person, Account } from '@/types/sheets';
 
 describe('parsePeopleRows / serializePeople', () => {

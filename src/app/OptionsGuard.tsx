@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useConfigQuery } from '@/queries/sheetQueries';
-import { Skeleton } from '@/ui';
+import { useConfigQuery } from '@/shared/io/queries/sheetQueries';
+import { Skeleton } from '@/shared/ui';
 
 export default function OptionsGuard() {
   const configQuery = useConfigQuery();

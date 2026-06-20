@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeNetWorthFromSnapshots } from '@/utils/stats';
+import { computeNetWorthFromSnapshots } from '@/shared/utils/stats';
 import type { Account, Snapshot } from '@/types/sheets';
 
 const mkAccount = (id: string, selfShare: number | null | undefined): Account => ({

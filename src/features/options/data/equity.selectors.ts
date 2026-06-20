@@ -36,6 +36,7 @@ export function companyEquitySummary(
   return {
     cGrants,
     fmvVal,
+    fmvDate: fmvEntry?.date ?? null,
     vestedShares: cGrants.reduce((s, g) => s + computeVestedShares(g, now), 0),
     unvestedShares: cGrants.reduce((s, g) => s + computeUnvestedShares(g, now), 0),
     vestedVal: fmvVal !== null ? cGrants.reduce((s, g) => s + computeIntrinsicValue(g, exercises, fmvVal, now), 0) : null,

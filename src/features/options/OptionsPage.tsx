@@ -65,7 +65,7 @@ export default function OptionsPage() {
     [hidden],
   );
 
-  const { totalVested, totalUnvested, periodStart, delta } = useMemo(
+  const { totalVested, totalUnvested, periodStart, vestedStart, delta } = useMemo(
     () => equityTotals(companies, grants, fmv, exercises, now, period, mainCurrency, fxRateMap),
     [companies, grants, fmv, exercises, now, period, mainCurrency, fxRateMap],
   );

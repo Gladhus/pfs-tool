@@ -3,7 +3,7 @@ import { foldCategoryId, accountMatchesGroup } from '@/shared/utils/colors';
 import { signedMain, toMain, rateFor } from '@/shared/utils/currency';
 import { computeCompanyEquityValue } from '@/shared/utils/options';
 import { LEGACY_SELF_ID, shareFor, ownerVisibleToViewer } from '@/shared/utils/ownership';
-import type { EquityData } from './options/selectors';
+import type { EquityData } from '@/features/options/data/equity.selectors';
 
 /**
  * Sparkline series for the Overview allocation cards. Cross-domain (account

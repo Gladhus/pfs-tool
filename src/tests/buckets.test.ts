@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { categoryStrategy, groupStrategy, personStrategy, bucketStrategy } from '@/core/buckets';
 import type { BucketModels } from '@/core/buckets';
-import type { Contribution, Group } from '@/types/sheets';
+import type { Group } from '@/types/sheets';
+import type { Contribution } from '@/core/contract.contributor';
 import { CATEGORY_META, GROUPS, PEOPLE } from './fixtures/portfolio';
 
 const models = (over: Partial<BucketModels> = {}): BucketModels => ({

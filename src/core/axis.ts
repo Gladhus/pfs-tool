@@ -18,7 +18,7 @@ const PERIOD_MONTHS: Record<string, number> = {
 export function periodRange(period: Period, datesSorted: string[]): DateRange {
   if (!datesSorted.length) return { end: '' };
   const end = datesSorted[datesSorted.length - 1];
-  if (period === 'ytd' || period === 'YTD') return { start: `${end.slice(0, 4)}-01-01`, end };
+  if (period === 'ytd' || (period as string) === 'YTD') return { start: `${end.slice(0, 4)}-01-01`, end };
   const n = PERIOD_MONTHS[period as string];
   if (!n) return { end };
   return { start: addMonths(new Date(end), -n).toISOString().slice(0, 10), end };

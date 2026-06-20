@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeEquityContributor } from '@/core/options/contributor';
+import { makeEquityContributor } from '@/features/options/data/contributor';
 import type { ValueContext } from '@/core/contributors/types';
 import { computeDateStats } from '@/utils/stats';
 import { rateFor } from '@/utils/currency';

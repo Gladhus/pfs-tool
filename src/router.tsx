@@ -19,8 +19,8 @@ import { PreferencesSection } from '@/pages/settings/sections/PreferencesSection
 import { GroupsSection } from '@/pages/settings/sections/GroupsSection';
 import { PeopleSection } from '@/pages/settings/sections/PeopleSection';
 import { ImportSection } from '@/pages/settings/sections/ImportSection';
-import OptionsPage from '@/pages/options/OptionsPage';
-import OptionsManagePage from '@/pages/options/OptionsManagePage';
+import OptionsPage from '@/features/options/OptionsPage';
+import OptionsManagePage from '@/features/options/OptionsManagePage';
 
 const ACCOUNTS_LINKS: SubNavLink[] = [
   { to: '/portfolio/history', label: 'History', icon: 'calendar' },

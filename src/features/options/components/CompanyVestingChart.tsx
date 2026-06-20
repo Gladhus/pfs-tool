@@ -7,7 +7,7 @@ import { sharesTickFmt } from '@/utils/chartOptions';
 import { TT } from '@/components/ChartTooltip';
 import { privShares } from '@/utils/privacy';
 import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
-import { buildVestingSeries } from '@/core/options/selectors';
+import { buildVestingSeries } from '@/features/options/data/selectors';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { GRANT_COLORS } from './charts';
 import type { OptionGrant } from '@/types/sheets';

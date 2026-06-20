@@ -7,7 +7,7 @@ import {
   useOptionFmvQuery, useOptionExercisesQuery,
   useConfigQuery, useFxRatesQuery,
 } from '@/queries/sheetQueries';
-import { equityTotals } from '@/core/options/selectors';
+import { equityTotals } from '@/features/options/data/selectors';
 import { fxMap as buildFxMap } from '@/utils/currency';
 import { todayISO } from '@/utils/dates';
 import { ownerVisibleToViewer } from '@/utils/ownership';

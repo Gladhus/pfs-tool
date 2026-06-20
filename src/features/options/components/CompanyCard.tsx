@@ -7,7 +7,7 @@ import {
   computeVestedShares, computeIntrinsicValue,
   grantFirstVestDate, exercisableShares, exercisedSharesForGrant,
 } from '@/utils/options';
-import { companyEquitySummary } from '@/core/options/selectors';
+import { companyEquitySummary } from '@/features/options/data/selectors';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SegmentControl } from '@/ui/SegmentControl';
 import { Tooltip } from '@/ui/Tooltip';

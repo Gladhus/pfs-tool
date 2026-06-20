@@ -7,7 +7,7 @@ import { moneyTickFmt } from '@/utils/chartOptions';
 import { TT } from '@/components/ChartTooltip';
 import { privMoney } from '@/utils/privacy';
 import { fmtMonth, buildXAxisTicks } from '@/utils/dates';
-import { buildCompanyValueSeries } from '@/core/options/selectors';
+import { buildCompanyValueSeries } from '@/features/options/data/selectors';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import type { OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
 

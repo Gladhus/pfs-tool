@@ -176,7 +176,7 @@ export default function EntryPage() {
       active, form, dayComment, snapshots, date, existingBalances: existing.balances,
     });
     if (!rows.length) { addToast(t('nothing_to_save'), 'warn'); return; }
-    if (deleted.length) { setPendingDelete({ names: deleted.map(tr), rows }); return; }
+    if (deleted.length) { setPendingDelete({ names: deleted.map(a => tr(a)), rows }); return; }
     doSave(rows);
   };
 

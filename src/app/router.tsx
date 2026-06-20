@@ -5,6 +5,7 @@ import RootLayout from '@/app/RootLayout';
 import ProtectedLayout from '@/app/ProtectedLayout';
 import AppShell from '@/app/AppShell';
 import NotFound from '@/app/NotFound';
+import RouteError from '@/app/RouteError';
 import OptionsGuard from '@/app/OptionsGuard';
 import SignedOutScreen from '@/shared/components/SignedOutScreen';
 import SectionLayout from '@/shared/components/SectionLayout';
@@ -46,6 +47,7 @@ export const router = createBrowserRouter(
     {
       path: '/',
       element: <RootLayout />,
+      errorElement: <RouteError />,
       children: [
         { index: true, element: <RootIndex /> },
         {

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { makeAccountContributor } from '@/features/accounts/data/account.contributor';
-import type { ValueContext } from '@/core/contract.contributor';
+import type { ValueContext, Contribution } from '@/core/contract.contributor';
 import { computeDateStats, computeNetWorthFromSnapshots } from '@/shared/utils/stats';
 import { rateFor } from '@/shared/utils/currency';
 import { foldCategoryId } from '@/shared/utils/colors';
 import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
-import type { Contribution, Snapshot, Account } from '@/types/sheets';
+import type { Snapshot, Account } from '@/types/sheets';
 import { ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN } from './fixtures/portfolio';
 
 const ctx = (): ValueContext => ({

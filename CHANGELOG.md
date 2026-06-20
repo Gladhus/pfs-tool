@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.3.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.3.1) — 2026-06-20
+
+### Fixed
+- **Stock Options page crashed with "Can't find variable: vestedStart".** The page referenced a value it never destructured from its selector; a second, latent crash (`fmvEntry`) lurked in the company card. Both are fixed
+- **The `typecheck` script silently checked nothing.** It ran `tsc -p .` against the root solution config (`files: []` + project references), so it matched zero files — which let the two crashes above plus ~9 other type errors (wrong import paths, a dead comparison, a mistyped callback) reach production, because the Vite build transpiles without type-checking. `typecheck` and `build` now run `tsc -b tsconfig.app.json`, type-checking the whole `src/` tree (tests included) so a type error once again blocks the build/deploy
+
+### Added
+- **Graceful error screen.** Unexpected render errors now show a branded "Something went wrong" page (with a reassurance that data is safe, collapsible technical details, and Reload / Go-to-Overview actions) instead of React Router's developer-facing default. The underlying error is still logged to the console for debugging
+
 ## [2.3.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.3.0) — 2026-06-20
 
 ### Changed

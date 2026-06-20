@@ -34,7 +34,7 @@ export function CompanyCard({ company, index, grants, fmv, exercises, now, local
   const [chartView, setChartView] = useState<'vesting' | 'value'>('vesting');
 
   // Memoized so the per-company charts don't recreate on unrelated parent re-renders (e.g. period change).
-  const { cGrants, fmvVal, vestedShares, unvestedShares, vestedVal, unvestedVal, hasFmvHistory } = useMemo(
+  const { cGrants, fmvVal, fmvDate, vestedShares, unvestedShares, vestedVal, unvestedVal, hasFmvHistory } = useMemo(
     () => companyEquitySummary(company, grants, fmv, exercises, now),
     [company, grants, fmv, exercises, now],
   );
@@ -54,7 +54,7 @@ export function CompanyCard({ company, index, grants, fmv, exercises, now, local
             {fmvVal !== null ? (
               <span className="text-fg-2">
                 {t('opt_last_fmv')} <Amount value={fmvVal} currency={currency} sensitive={false} />
-                <span className="ml-1 text-muted">{fmtMonth(fmvEntry!.date.slice(0, 7), { locale, style: 'short' })}</span>
+                <span className="ml-1 text-muted">{fmtMonth(fmvDate!.slice(0, 7), { locale, style: 'short' })}</span>
               </span>
             ) : (
               <span className="text-muted">{t('opt_no_fmv')}</span>

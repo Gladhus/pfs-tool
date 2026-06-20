@@ -1,5 +1,5 @@
 import type { Currency } from '@/types/sheets';
-import type { FilterSpec } from '../filters';
+import type { FilterSpec } from './filters';
 
 /**
  * A signed, main-currency amount for ONE owner on a date the pipeline asked about.

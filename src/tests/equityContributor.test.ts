@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { makeEquityContributor } from '@/features/options/data/equity.contributor';
-import type { ValueContext } from '@/core/contract.contributor';
+import type { ValueContext, Contribution } from '@/core/contract.contributor';
 import { computeDateStats } from '@/shared/utils/stats';
 import { rateFor } from '@/shared/utils/currency';
 import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
-import type { Contribution, OptionGrant } from '@/types/sheets';
+import type { OptionGrant } from '@/types/sheets';
 import {
   ACCOUNTS, SNAPSHOTS, DATES_SORTED, FX_MAP, MAIN,
   OPTION_COMPANIES, OPTION_GRANTS, OPTION_FMV, OPTION_EXERCISES, OPTION_DATA,

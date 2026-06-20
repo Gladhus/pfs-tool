@@ -3,7 +3,7 @@ import { periodRange, mergeAxis, buildAxis } from '@/core/axis';
 import { getDatesForPeriod } from '@/shared/utils/dates';
 import { resolveFilterSpec } from '@/core/filters';
 import type { Period } from '@/shared/ui/PeriodPills';
-import type { ValuedContributor, DateRange } from '@/core/contributors/types';
+import type { ValuedContributor, DateRange } from '@/core/contracts';
 
 const DATES = ['2021-03-15', '2022-02-01', '2023-05-10', '2024-06-01'];
 const PERIODS: Period[] = ['all', 'ytd', '3m', '6m', '1y', '2y', '3y', '5y'];

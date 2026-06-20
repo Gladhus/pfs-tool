@@ -2,7 +2,7 @@ import type { Currency } from '@/types/sheets';
 import { foldCategoryId } from '@/shared/utils/colors';
 import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import type { FilterSpec } from './filters';
-import type { Contribution, ValuedContributor } from './contributors/types';
+import type { Contribution, ValuedContributor } from './contracts';
 import {
   bucketStrategy, groupStrategy, personStrategy,
   type BucketDef, type BucketModels, type BucketStrategy,

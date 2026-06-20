@@ -90,6 +90,21 @@ export function computeSeries(
   };
 }
 
+/** Raw balance of a single account across the given dates — the History drill-down line. */
+export function accountBalanceSeries(
+  snapshots: Snapshot[],
+  dates: string[],
+  accountId: string,
+): { date: string; value: number }[] {
+  const sweep = buildBalanceSweep(snapshots, dates);
+  const out: { date: string; value: number }[] = [];
+  for (let i = 0; i < dates.length; i++) {
+    const bal = sweep[i]?.[accountId];
+    if (bal !== undefined) out.push({ date: dates[i], value: bal });
+  }
+  return out;
+}
+
 /**
  * The History card list: one card per month (newest first), each with the month's
  * latest totals, the prior month's net for the delta, an incomplete-data flag, and

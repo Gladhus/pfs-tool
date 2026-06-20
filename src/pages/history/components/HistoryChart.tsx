@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import type { Account, Snapshot } from '@/types/sheets';
-import { buildBalanceSweep } from '@/utils/stats';
+import { accountBalanceSeries } from '@/core/accounts/history';
 import { moneyTickFmt } from '@/utils/chartOptions';
 import { buildXAxisTicks } from '@/utils/dates';
 import { seriesTooltip } from '@/components/ChartTooltip';
@@ -62,12 +62,7 @@ export function HistoryChart({
         })),
       };
     }
-    const sweep = buildBalanceSweep(snapshots, filteredDates);
-    const pts: { date: string; value: number }[] = [];
-    for (let i = 0; i < filteredDates.length; i++) {
-      const bal = sweep[i]?.[selectedAccount];
-      if (bal !== undefined) pts.push({ date: filteredDates[i], value: bal });
-    }
+    const pts = accountBalanceSeries(snapshots, filteredDates, selectedAccount);
     return { data: pts, chartDates: pts.map(p => p.date) };
   }, [isOverview, series, filteredDates, snapshots, selectedAccount]);
 

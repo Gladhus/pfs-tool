@@ -14,11 +14,11 @@ import OverviewPage from '@/features/networth/OverviewPage';
 import HistoryPage from '@/features/accounts/history/HistoryPage';
 import DetailPage from '@/features/accounts/detail/DetailPage';
 import EntryPage from '@/features/accounts/entry/EntryPage';
-import { AccountsSection } from '@/pages/settings/sections/AccountsSection';
-import { PreferencesSection } from '@/pages/settings/sections/PreferencesSection';
-import { GroupsSection } from '@/pages/settings/sections/GroupsSection';
-import { PeopleSection } from '@/pages/settings/sections/PeopleSection';
-import { ImportSection } from '@/pages/settings/sections/ImportSection';
+import { AccountsSection } from '@/features/settings/sections/AccountsSection';
+import { PreferencesSection } from '@/features/settings/sections/PreferencesSection';
+import { GroupsSection } from '@/features/settings/sections/GroupsSection';
+import { PeopleSection } from '@/features/settings/sections/PeopleSection';
+import { ImportSection } from '@/features/settings/sections/ImportSection';
 import OptionsPage from '@/features/options/OptionsPage';
 import OptionsManagePage from '@/features/options/OptionsManagePage';
 

@@ -6,7 +6,7 @@ import { Input } from '@/ui/Input';
 import { Select, SelectItem } from '@/ui/Select';
 import { Checkbox } from '@/ui/Checkbox';
 import { Label } from '@/ui/Label';
-import { TagChipInput } from '@/pages/settings/components/TagChipInput';
+import { TagChipInput } from '@/features/settings/components/TagChipInput';
 import type { OptionCompany, Currency, Person } from '@/types/sheets';
 
 const CURRENCIES: Currency[] = ['CAD', 'USD'];

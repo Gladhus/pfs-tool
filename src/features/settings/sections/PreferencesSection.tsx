@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/shared/stores/ui.store';
 import { useAppLang } from '@/shared/hooks/useAppLang';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/app/auth/AuthProvider';
 import { useAuthStore } from '@/shared/stores/auth.store';
 import { useDatasourceStore } from '@/shared/stores/datasource.store';
 import { useConfigQuery } from '@/shared/io/queries/sheetQueries';

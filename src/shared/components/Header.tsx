@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/app/auth/AuthProvider';
 import { useDatasourceStore } from '@/shared/stores/datasource.store';
 import { useUIStore } from '@/shared/stores/ui.store';
 import { usePeopleQuery } from '@/shared/io/queries/sheetQueries';

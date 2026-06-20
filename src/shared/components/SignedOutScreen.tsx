@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/app/auth/AuthProvider';
 import { Icon } from '@/shared/ui/Icon';
 import { XlsxDatasource } from '@/shared/io/datasource/xlsx';
 import { useDatasourceStore } from '@/shared/stores/datasource.store';

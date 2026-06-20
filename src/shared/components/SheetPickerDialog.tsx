@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { listSheets } from '@/shared/io/api/drive';
 import { useAuthStore } from '@/shared/stores/auth.store';
 import { setStatus } from '@/shared/stores/status.store';
-import { bootstrapSheet } from '@/auth/bootstrap';
+import { bootstrapSheet } from '@/app/auth/bootstrap';
 
 interface Props {
   open: boolean;

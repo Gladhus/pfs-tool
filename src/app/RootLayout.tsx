@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import { AuthProvider } from '@/auth/AuthProvider';
+import { AuthProvider } from '@/app/auth/AuthProvider';
 import { ToastHost } from '@/shared/ui/ToastHost';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useAppLang } from '@/shared/hooks/useAppLang';

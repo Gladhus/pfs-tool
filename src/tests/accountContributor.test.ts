@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeAccountContributor } from '@/features/accounts/data/account.contributor';
-import type { ValueContext } from '@/core/contributor.contract';
+import type { ValueContext } from '@/core/contract.contributor';
 import { computeDateStats, computeNetWorthFromSnapshots } from '@/shared/utils/stats';
 import { rateFor } from '@/shared/utils/currency';
 import { foldCategoryId } from '@/shared/utils/colors';

@@ -409,7 +409,7 @@ src/
   app/        shell · router · auth · providers · main.tsx
   shared/     ui · components · utils · stores · hooks · i18n · io/(api · datasource · queries)
   core/       the shared data KERNEL (imports no feature):
-                contributor.contract.ts            ← the ValuedContributor contract
+                contract.contributor.ts            ← the ValuedContributor contract
                 filters · scope · axis · dataset   ← cross-domain engine
                 buckets/  {category,group,person}.strategy.ts
   features/
@@ -451,7 +451,7 @@ the dead per-page loops (the empty-dates trim collapses to one site).
 |-------|-------|
 | Persistence (IO) | `shared/io/datasource/{types,sheets,xlsx,parse}.ts`, `shared/io/api/*` |
 | Fetch/cache | `shared/io/queries/{sheetQueries,keys}.ts`, `shared/hooks/useSheetData.ts` |
-| Contract | `core/contributor.contract.ts` (`ValuedContributor`, `Contribution`, `ValueContext`) |
+| Contract | `core/contract.contributor.ts` (`ValuedContributor`, `Contribution`, `ValueContext`) |
 | Engine (cross-domain) | `core/{filters,scope,axis,dataset}.ts`, `core/buckets/*.strategy.ts` |
 | Accounts data | `features/accounts/data/{account.contributor,history.selectors,detail.selectors,entry.selectors}.ts` |
 | Options data | `features/options/data/{equity.contributor,equity.selectors}.ts` |

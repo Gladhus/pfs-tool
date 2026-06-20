@@ -1,6 +1,6 @@
 import { addMonths } from '@/shared/utils/dates';
 import type { FilterSpec, Period } from './filters';
-import type { DateRange, ValuedContributor } from './contributor.contract';
+import type { DateRange, ValuedContributor } from './contract.contributor';
 
 // Mirrors getDatesForPeriod's month windows so a range-then-merge over account
 // snapshot dates reproduces the legacy filtered date list (proven in axis.test.ts).

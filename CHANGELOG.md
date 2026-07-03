@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.4.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.4.0) — 2026-07-03
+
+### Added
+- **Browse Google Drive to pick a shared sheet.** The "Choose a sheet" dialog listed spreadsheets via Drive's `files.list`, which under the app's `drive.file` OAuth scope only returns files this app itself created or previously opened — a sheet merely shared by another Google account (e.g. a partner) never showed up there, even though it's visible in the user's own Drive. A new "Browse Google Drive…" option opens Google's Picker restricted to the Spreadsheets view; Picker is exempt from the `drive.file` restriction, so it can browse the whole Drive and grants the app access to whichever file gets picked
+
 ## [2.3.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.3.1) — 2026-06-20
 
 ### Fixed

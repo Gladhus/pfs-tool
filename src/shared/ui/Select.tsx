@@ -1,5 +1,5 @@
 import * as RadixSelect from '@radix-ui/react-select';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 
 const triggerCls =
   'h-8 w-full rounded border border-border bg-surface-1 px-2.5 text-sm text-fg ' +
@@ -18,10 +18,12 @@ const headerTriggerCls =
   'data-[placeholder]:text-white/60';
 
 const contentCls =
-  'z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg ' +
+  'z-50 min-w-[var(--radix-select-trigger-width)] max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-lg ' +
   'border border-border bg-surface-3 shadow-lg ' +
   'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 ' +
   'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95';
+
+const scrollButtonCls = 'flex items-center justify-center py-1 text-muted';
 
 const itemCls =
   'relative flex cursor-pointer select-none items-center px-3 py-1.5 text-sm text-fg ' +
@@ -56,9 +58,15 @@ export function Select({ value, onValueChange, defaultValue, disabled, placehold
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
         <RadixSelect.Content className={contentCls} position="popper" sideOffset={4}>
-          <RadixSelect.Viewport className="p-1">
+          <RadixSelect.ScrollUpButton className={scrollButtonCls}>
+            <ChevronUp size={14} />
+          </RadixSelect.ScrollUpButton>
+          <RadixSelect.Viewport className="p-1 max-h-[inherit] overflow-y-auto">
             {children}
           </RadixSelect.Viewport>
+          <RadixSelect.ScrollDownButton className={scrollButtonCls}>
+            <ChevronDown size={14} />
+          </RadixSelect.ScrollDownButton>
         </RadixSelect.Content>
       </RadixSelect.Portal>
     </RadixSelect.Root>

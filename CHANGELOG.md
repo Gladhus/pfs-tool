@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.4.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.4.1) — 2026-07-03
+
+### Fixed
+- **Dropdowns couldn't scroll to reach items past the viewport edge.** The shared `Select` component's list had no bounded height, so a long list (like the account-creation dialog's ~40-option Account type dropdown) simply overflowed past the bottom of the screen with no way to reach the rest. The dropdown now clamps to the space actually available around it and scrolls, with up/down arrow buttons when there's more to see
+
 ## [2.4.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.4.0) — 2026-07-03
 
 ### Added

@@ -55,6 +55,7 @@
   "choose_sheet": "Choose a sheet",
   "choose_sheet_hint": "Select an existing sheet",
   "no_sheets_found": "No sheets found",
+  "browse_drive": "Browse Google Drive…",
   "sheet_linked": "Sheet linked.",
   "manage_label": "Manage",
   "accounts_label": "Accounts",

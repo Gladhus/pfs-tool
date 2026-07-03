@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listSheets } from '@/shared/io/api/drive';
+import { openSheetPicker } from '@/shared/io/api/picker';
 import { useAuthStore } from '@/shared/stores/auth.store';
 import { setStatus } from '@/shared/stores/status.store';
 import { bootstrapSheet } from '@/app/auth/bootstrap';
@@ -48,6 +49,13 @@ export default function SheetPickerDialog({ open, onClose }: Props) {
     await bootstrapSheet();
   };
 
+  const handleBrowse = async () => {
+    const accessToken = useAuthStore.getState().accessToken;
+    if (!accessToken) return;
+    const picked = await openSheetPicker(accessToken);
+    if (picked) await handlePick(picked);
+  };
+
   return (
     <dialog
       ref={dialogRef}
@@ -80,7 +88,13 @@ export default function SheetPickerDialog({ open, onClose }: Props) {
         ))}
       </div>
 
-      <div className="p-3 border-t border-border flex justify-end">
+      <div className="p-3 border-t border-border flex items-center justify-between gap-2">
+        <button
+          onClick={() => void handleBrowse()}
+          className="text-sm px-3 py-1.5 rounded bg-surface-2 hover:bg-surface-3 text-fg-2 transition-colors"
+        >
+          {t('browse_drive')}
+        </button>
         <button
           onClick={onClose}
           className="text-sm px-3 py-1.5 rounded bg-surface-2 hover:bg-surface-3 text-fg-2 transition-colors"

@@ -63,6 +63,36 @@ interface Gapi {
   client: GapiClient;
 }
 
+interface PickerDocument {
+  id: string;
+  name: string;
+}
+
+interface PickerResponseObject {
+  action: string;
+  docs?: PickerDocument[];
+}
+
+interface PickerView {
+  setMimeTypes(mimeTypes: string): PickerView;
+}
+
+interface PickerBuilder {
+  addView(view: PickerView): PickerBuilder;
+  setOAuthToken(token: string): PickerBuilder;
+  setAppId(appId: string): PickerBuilder;
+  setTitle(title: string): PickerBuilder;
+  setCallback(callback: (data: PickerResponseObject) => void): PickerBuilder;
+  build(): { setVisible(visible: boolean): void };
+}
+
+interface GooglePicker {
+  ViewId: { SPREADSHEETS: string };
+  Action: { PICKED: string; CANCEL: string };
+  DocsView: new (viewId: string) => PickerView;
+  PickerBuilder: new () => PickerBuilder;
+}
+
 interface TokenClientConfig {
   client_id: string;
   scope: string;
@@ -97,6 +127,7 @@ interface PFSConfig {
         revoke(token: string, callback: () => void): void;
       };
     };
+    picker: GooglePicker;
   };
 }
 

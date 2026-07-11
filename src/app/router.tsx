@@ -7,6 +7,7 @@ import AppShell from '@/app/AppShell';
 import NotFound from '@/app/NotFound';
 import RouteError from '@/app/RouteError';
 import OptionsGuard from '@/app/OptionsGuard';
+import SpendingGuard from '@/app/SpendingGuard';
 import SignedOutScreen from '@/shared/components/SignedOutScreen';
 import SectionLayout from '@/shared/components/SectionLayout';
 import SettingsSectionLayout from '@/shared/components/SettingsSectionLayout';
@@ -22,6 +23,9 @@ import { PeopleSection } from '@/features/settings/sections/PeopleSection';
 import { ImportSection } from '@/features/settings/sections/ImportSection';
 import OptionsPage from '@/features/options/OptionsPage';
 import OptionsManagePage from '@/features/options/OptionsManagePage';
+import SpendingOverviewPage from '@/features/spending/SpendingOverviewPage';
+import SpendingEntriesPage from '@/features/spending/SpendingEntriesPage';
+import SpendingManagePage from '@/features/spending/SpendingManagePage';
 
 const ACCOUNTS_LINKS: SubNavLink[] = [
   { to: '/portfolio/history', label: 'History', icon: 'calendar' },
@@ -33,6 +37,12 @@ const ACCOUNTS_LINKS: SubNavLink[] = [
 const OPTIONS_LINKS: SubNavLink[] = [
   { to: '/options', label: 'Overview', icon: 'dashboard', end: true },
   { to: '/options/manage', label: 'Manage', icon: 'settings' },
+];
+
+const SPENDING_LINKS: SubNavLink[] = [
+  { to: '/spending', label: 'Overview', icon: 'dashboard', end: true },
+  { to: '/spending/entries', label: 'Entries', icon: 'calendar' },
+  { to: '/spending/manage', label: 'Manage', icon: 'settings' },
 ];
 
 function RootIndex() {
@@ -96,6 +106,22 @@ export const router = createBrowserRouter(
                       children: [
                         { index: true, element: <OptionsPage /> },
                         { path: 'manage', element: <OptionsManagePage /> },
+                      ],
+                    },
+                  ],
+                },
+
+                // Spending section (gated by the feature flag)
+                {
+                  element: <SpendingGuard />,
+                  children: [
+                    {
+                      path: 'spending',
+                      element: <SectionLayout links={SPENDING_LINKS} />,
+                      children: [
+                        { index: true, element: <SpendingOverviewPage /> },
+                        { path: 'entries', element: <SpendingEntriesPage /> },
+                        { path: 'manage', element: <SpendingManagePage /> },
                       ],
                     },
                   ],

@@ -19,11 +19,13 @@ export default function NavTabs() {
   const { t } = useTranslation();
   const configQuery = useConfigQuery();
   const stockOptionsEnabled = configQuery.data?.stock_options_enabled;
+  const spendingEnabled = configQuery.data?.spending_enabled;
 
   return (
     <nav aria-label="Main navigation" className="no-scrollbar flex h-full items-stretch gap-1 overflow-x-auto">
       <Tab to="/overview" label={t('tab_overview')} />
       <Tab to="/portfolio" label={t('tab_portfolio')} />
+      {spendingEnabled && <Tab to="/spending" label={t('tab_spending')} />}
       {stockOptionsEnabled && <Tab to="/options" label={t('tab_stock_options')} />}
     </nav>
   );

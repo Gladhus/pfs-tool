@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Datasource } from './types';
-import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise, SpendingCategory, Spending, SpendingRecurrence } from '@/types/sheets';
 import { loadAccounts, loadSnapshots } from '@/shared/io/api/accounts';
 import { loadConfig, writeConfig } from '@/shared/io/api/config';
 import { loadTagsCatalog, writeTagsCatalog } from '@/shared/io/api/tags';
@@ -8,6 +8,10 @@ import { loadGroupsCatalog, writeGroupsCatalog } from '@/shared/io/api/groups';
 import { loadPeopleCatalog, writePeopleCatalog } from '@/shared/io/api/people';
 import { loadFxRates, writeFxRates } from '@/shared/io/api/fx';
 import { loadOptionCompanies, loadOptionGrants, loadOptionFmv, loadOptionExercises } from '@/shared/io/api/options';
+import {
+  loadSpendingCategories, loadSpendings, loadSpendingRecurrences,
+  writeSpendingCategories, writeSpendings, writeSpendingRecurrences,
+} from '@/shared/io/api/spending';
 import { safeWriteTab } from '@/shared/io/api/sheets';
 import { HEADERS } from '@/constants';
 import { qk } from '@/shared/io/queries/keys';
@@ -36,6 +40,9 @@ export class SheetsDatasource implements Datasource {
   loadOptionGrants()    { return loadOptionGrants(this.id); }
   loadOptionFmv()       { return loadOptionFmv(this.id); }
   loadOptionExercises() { return loadOptionExercises(this.id); }
+  loadSpendingCategories()  { return loadSpendingCategories(this.id); }
+  loadSpendings()           { return loadSpendings(this.id); }
+  loadSpendingRecurrences() { return loadSpendingRecurrences(this.id); }
 
   async writeAccounts(accounts: Account[]): Promise<void> {
     const rows = serializeAccounts(accounts);
@@ -97,5 +104,17 @@ export class SheetsDatasource implements Datasource {
       ? [HEADERS.option_exercises as unknown as string[], ...items.map(e => HEADERS.option_exercises.map(h => (e as unknown as Record<string, unknown>)[h] ?? ''))]
       : [HEADERS.option_exercises as unknown as string[]];
     await safeWriteTab(this.id, 'option_exercises', rows, this.prev(qk.optExercises(this.id)));
+  }
+
+  async writeSpendingCategories(items: SpendingCategory[]): Promise<void> {
+    await writeSpendingCategories(this.id, items, this.prev(qk.spendingCategories(this.id)));
+  }
+
+  async writeSpendings(items: Spending[]): Promise<void> {
+    await writeSpendings(this.id, items, this.prev(qk.spendings(this.id)));
+  }
+
+  async writeSpendingRecurrences(items: SpendingRecurrence[]): Promise<void> {
+    await writeSpendingRecurrences(this.id, items, this.prev(qk.spendingRecurrences(this.id)));
   }
 }

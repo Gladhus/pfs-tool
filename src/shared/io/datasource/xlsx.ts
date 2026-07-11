@@ -1,15 +1,17 @@
 import * as XLSX from 'xlsx';
 import type { Datasource } from './types';
-import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
-import { HEADERS, DEFAULT_PEOPLE } from '@/constants';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise, SpendingCategory, Spending, SpendingRecurrence } from '@/types/sheets';
+import { HEADERS, DEFAULT_PEOPLE, DEFAULT_SPENDING_CATEGORIES } from '@/constants';
 import { ensurePrimaryPerson } from '@/shared/utils/ownership';
 import {
   parseAccountRows, parseSnapshotRows, parseConfigRows,
   parseTagRows, parseGroupRows, parsePeopleRows, parseFxRateRows,
   parseOptionCompanyRows, parseOptionGrantRows, parseOptionFmvRows, parseOptionExerciseRows,
+  parseSpendingCategoryRows, parseSpendingRows, parseSpendingRecurrenceRows,
   serializeAccounts, serializeSnapshots,
   serializeTags, serializeGroups, serializePeople, serializeFxRates,
   serializeOptionCompanies, serializeOptionGrants, serializeOptionFmv, serializeOptionExercises,
+  serializeSpendingCategories, serializeSpendings, serializeSpendingRecurrences,
 } from './parse';
 
 function sheetToAoa(wb: XLSX.WorkBook, name: string): unknown[][] {
@@ -74,12 +76,16 @@ export class XlsxDatasource implements Datasource {
       ['option_grants',    HEADERS.option_grants],
       ['option_fmv',       HEADERS.option_fmv],
       ['option_exercises', HEADERS.option_exercises],
+      ['spending_categories',  HEADERS.spending_categories],
+      ['spendings',            HEADERS.spendings],
+      ['spending_recurrences', HEADERS.spending_recurrences],
     ];
     for (const [name, headers] of tabs) {
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[...headers]]), name);
     }
     const ds = new XlsxDatasource(wb, filename);
     ds.write('people', serializePeople(DEFAULT_PEOPLE));
+    ds.write('spending_categories', serializeSpendingCategories(DEFAULT_SPENDING_CATEGORIES));
     return ds;
   }
 
@@ -117,6 +123,14 @@ export class XlsxDatasource implements Datasource {
   loadOptionGrants()    { return Promise.resolve(parseOptionGrantRows(this.read('option_grants'))); }
   loadOptionFmv()       { return Promise.resolve(parseOptionFmvRows(this.read('option_fmv'))); }
   loadOptionExercises() { return Promise.resolve(parseOptionExerciseRows(this.read('option_exercises'))); }
+  loadSpendingCategories() {
+    const categories = parseSpendingCategoryRows(this.read('spending_categories'));
+    if (categories.length) return Promise.resolve(categories);
+    this.write('spending_categories', serializeSpendingCategories(DEFAULT_SPENDING_CATEGORIES));
+    return Promise.resolve(DEFAULT_SPENDING_CATEGORIES);
+  }
+  loadSpendings()           { return Promise.resolve(parseSpendingRows(this.read('spendings'))); }
+  loadSpendingRecurrences() { return Promise.resolve(parseSpendingRecurrenceRows(this.read('spending_recurrences'))); }
 
   async writeAccounts(accounts: Account[])         { this.write('accounts', serializeAccounts(accounts)); }
   async writeSnapshots(snapshots: Snapshot[])     { this.write('snapshots', serializeSnapshots(snapshots)); }
@@ -128,6 +142,9 @@ export class XlsxDatasource implements Datasource {
   async writeOptionGrants(items: OptionGrant[])   { this.write('option_grants', serializeOptionGrants(items)); }
   async writeOptionFmv(items: OptionFmv[])        { this.write('option_fmv', serializeOptionFmv(items)); }
   async writeOptionExercises(items: OptionExercise[]) { this.write('option_exercises', serializeOptionExercises(items)); }
+  async writeSpendingCategories(items: SpendingCategory[]) { this.write('spending_categories', serializeSpendingCategories(items)); }
+  async writeSpendings(items: Spending[])             { this.write('spendings', serializeSpendings(items)); }
+  async writeSpendingRecurrences(items: SpendingRecurrence[]) { this.write('spending_recurrences', serializeSpendingRecurrences(items)); }
 
   async writeConfig(key: keyof AppConfig, value: string): Promise<void> {
     const rows = this.read('config');

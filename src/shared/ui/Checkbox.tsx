@@ -8,9 +8,10 @@ interface CheckboxProps {
   disabled?: boolean;
   label?: React.ReactNode;
   className?: string;
+  'aria-label'?: string;
 }
 
-export function Checkbox({ id, checked, onCheckedChange, disabled, label, className = '' }: CheckboxProps) {
+export function Checkbox({ id, checked, onCheckedChange, disabled, label, className = '', 'aria-label': ariaLabel }: CheckboxProps) {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <RadixCheckbox.Root
@@ -18,6 +19,7 @@ export function Checkbox({ id, checked, onCheckedChange, disabled, label, classN
         checked={checked}
         onCheckedChange={v => onCheckedChange?.(v === true)}
         disabled={disabled}
+        aria-label={ariaLabel}
         className={[
           'h-4 w-4 shrink-0 rounded border border-border bg-surface-1',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',

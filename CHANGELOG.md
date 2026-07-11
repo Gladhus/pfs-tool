@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Version
 
 ---
 
+## [2.5.0](https://github.com/Gladhus/pfs-tool/releases/tag/v2.5.0) — 2026-07-11
+
+### Added
+- **Spending tracker (optional).** A new, self-contained section — enabled by a checkbox in **Settings → Preferences**, exactly like Stock Options — for recording expenses, completely separate from net worth (it isn't a `ValuedContributor` and never touches the net-worth engine, so the golden masters are unchanged). Each spending has a **category** and an **owner split** (per-person %, reusing the account-ownership model), and **recurring rules** (weekly/biweekly/monthly/yearly with an interval and optional end date) are entered once and expanded in the browser on read — no stored occurrences, no background job. The section has three pages: a per-month **Overview** (total spent with a by-category and by-person breakdown), an **Entries** ledger (add/edit/delete one-offs; recurring occurrences shown inline), and a **Manage** page for categories and rules. Multi-currency spendings convert to the main currency via the existing `fx_rates`. Three new sheet tabs (`spending_categories`, `spendings`, `spending_recurrences`) and one config key (`spending_enabled`); all created lazily and absent-tolerant, so existing sheets need no migration. Budgets are a designed, additive Phase 2 (see [`docs/SPENDING.md`](docs/SPENDING.md))
+
 ## [2.4.1](https://github.com/Gladhus/pfs-tool/releases/tag/v2.4.1) — 2026-07-03
 
 ### Fixed

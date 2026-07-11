@@ -93,3 +93,20 @@ export function useOptionFmvQuery() {
 export function useOptionExercisesQuery() {
   return useDatasourceQuery(qk.optExercises, ds => ds.loadOptionExercises(), { extraEnabled: useOptionsEnabled() });
 }
+
+function useSpendingEnabled() {
+  const configQuery = useConfigQuery();
+  return configQuery.isSuccess && configQuery.data?.spending_enabled === true;
+}
+
+export function useSpendingCategoriesQuery() {
+  return useDatasourceQuery(qk.spendingCategories, ds => ds.loadSpendingCategories(), { extraEnabled: useSpendingEnabled() });
+}
+
+export function useSpendingsQuery() {
+  return useDatasourceQuery(qk.spendings, ds => ds.loadSpendings(), { extraEnabled: useSpendingEnabled() });
+}
+
+export function useSpendingRecurrencesQuery() {
+  return useDatasourceQuery(qk.spendingRecurrences, ds => ds.loadSpendingRecurrences(), { extraEnabled: useSpendingEnabled() });
+}

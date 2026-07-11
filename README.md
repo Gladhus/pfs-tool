@@ -1,6 +1,6 @@
 # PFS Tool — Personal Financial Statement
 
-![Version](https://img.shields.io/badge/version-2.4.1-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.5.0-6366f1?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
 ![Deploy](https://img.shields.io/github/actions/workflow/status/Gladhus/pfs-tool/deploy.yml?style=flat-square&label=deploy)
 
@@ -40,6 +40,13 @@ PFS Tool lets you record snapshots of your accounts over time and watch your net
 - Per-account balance inputs with previous-value hints and direction arrows
 - Live net worth total using carry-forward for unfilled accounts
 - Sticky totals bar, confirm-before-leaving guard, and copy-previous-entry shortcut
+
+### Spending tracker *(optional)*
+- Enable from **Settings → Preferences** — a self-contained section, separate from net worth
+- Record expenses with a **category** and an **owner split** (per-person %, like account ownership)
+- **Recurring rules** — rent, subscriptions, etc. entered once and counted automatically every period
+- Monthly **overview** — total spent with a by-category and by-person breakdown
+- Multi-currency spendings converted to your main currency
 
 ### Stock options *(optional)*
 - Track equity grants across multiple companies (ISO, NSO, RSU, SAR)
@@ -81,6 +88,9 @@ All data lives in your Google Sheet (or XLSX file). Nothing is stored on any ext
 | `option_grants` | One row per grant — type, dates, shares, strike, vesting schedule |
 | `option_fmv` | FMV history per company |
 | `option_exercises` | Exercise log per grant |
+| `spending_categories` | Spending-category catalog — name, color, icon |
+| `spendings` | One row per expense — date, amount, category, owner split |
+| `spending_recurrences` | Recurring-spending rules, expanded in the browser |
 
 Derived totals — net worth, category sums, MoM/YoY deltas — are computed in the browser and never written back.
 

@@ -23,6 +23,8 @@ function TabItem({ to, label, icon, grow = 1 }: { to: string; label: string; ico
 export default function BottomTabBar() {
   const configQuery = useConfigQuery();
   const stockOptionsEnabled = configQuery.data?.stock_options_enabled;
+  const spendingEnabled = configQuery.data?.spending_enabled;
+  const extraTabs = (stockOptionsEnabled ? 1 : 0) + (spendingEnabled ? 1 : 0);
   const onEntry = useLocation().pathname.startsWith('/entry');
 
   return (
@@ -44,9 +46,10 @@ export default function BottomTabBar() {
         </span>
       </Link>
 
+      {spendingEnabled && <TabItem to="/spending" label="Spending" icon="cash" />}
       {stockOptionsEnabled && <TabItem to="/options" label="Stock Options" icon="trendingUp" />}
-      {/* When Stock Options is hidden, Settings fills the right half so the + stays centered. */}
-      <TabItem to="/settings" label="Settings" icon="settings" grow={stockOptionsEnabled ? 1 : 2} />
+      {/* With no optional sections, Settings fills the right half so the + stays centered. */}
+      <TabItem to="/settings" label="Settings" icon="settings" grow={extraTabs === 0 ? 2 : 1} />
     </nav>
   );
 }

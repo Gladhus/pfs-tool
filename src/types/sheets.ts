@@ -88,7 +88,55 @@ export interface AppConfig {
   schema_version: string;
   last_imported_at?: string;
   stock_options_enabled?: boolean;
+  spending_enabled?: boolean;
   theme?: 'system' | 'light' | 'dark';
+}
+
+/** A user-defined spending category. Independent of the asset/debt net-worth categories. */
+export interface SpendingCategory {
+  id: string;
+  name_fr: string;
+  name_en: string;
+  /** Hex color for the category chip + chart series. */
+  color: string;
+  /** Optional Lucide icon name (display only). */
+  icon?: string;
+  sort_order: number;
+  active: boolean;
+}
+
+/** One recorded expense. Split across owners like an account (shares sum to 1). */
+export interface Spending {
+  id: string;
+  date: string;
+  /** Gross amount as entered — always positive. */
+  amount: number;
+  /** Native currency. Absent → main currency. */
+  currency?: Currency;
+  category_id: string;
+  ownership: OwnershipEntry[];
+  comment?: string;
+  entered_at?: string;
+}
+
+export type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+
+/** A recurring-spending rule. Occurrences are expanded on read, never stored. */
+export interface SpendingRecurrence {
+  id: string;
+  label: string;
+  amount: number;
+  currency?: Currency;
+  category_id: string;
+  ownership: OwnershipEntry[];
+  frequency: RecurrenceFrequency;
+  /** Every N units of `frequency` (≥ 1). */
+  interval: number;
+  start_date: string;
+  /** Last date (inclusive). Absent → open-ended. */
+  end_date?: string;
+  active: boolean;
+  comment?: string;
 }
 
 export interface OptionCompany {

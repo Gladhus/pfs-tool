@@ -17,11 +17,23 @@ const OPTIONS_LINK: SubNavLink = {
   external: true,
 };
 
+const SPENDING_LINK: SubNavLink = {
+  to: '/spending/manage',
+  label: 'Manage spending',
+  icon: 'cash',
+  external: true,
+};
+
 export default function SettingsSectionLayout() {
   const configQ = useConfigQuery();
   const stockOptionsEnabled = configQ.data?.stock_options_enabled === true;
+  const spendingEnabled = configQ.data?.spending_enabled === true;
 
-  const links = stockOptionsEnabled ? [...BASE_LINKS, OPTIONS_LINK] : BASE_LINKS;
+  const links = [
+    ...BASE_LINKS,
+    ...(spendingEnabled ? [SPENDING_LINK] : []),
+    ...(stockOptionsEnabled ? [OPTIONS_LINK] : []),
+  ];
 
   return (
     <div className="md:flex md:gap-6">

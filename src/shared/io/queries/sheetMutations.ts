@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDatasourceStore } from '@/shared/stores/datasource.store';
 import { qk } from './keys';
-import type { Account, Snapshot, Tag, Group, Person, AppConfig, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, Tag, Group, Person, AppConfig, OptionCompany, OptionGrant, OptionFmv, OptionExercise, SpendingCategory, Spending, SpendingRecurrence } from '@/types/sheets';
 
 function useDatasource() {
   return useDatasourceStore(s => s.datasource)!;
@@ -175,6 +175,34 @@ export function useWriteOptionExercisesMutation() {
   return useMutation({
     mutationFn: (items: OptionExercise[]) => ds.writeOptionExercises(items),
     onSuccess: () => void qc.invalidateQueries({ queryKey: qk.optExercises(ds.id) }),
+  });
+}
+
+// ── Spending ────────────────────────────────────────────────────────────
+export function useWriteSpendingCategoriesMutation() {
+  const qc = useQueryClient();
+  const ds = useDatasource();
+  return useMutation({
+    mutationFn: (items: SpendingCategory[]) => ds.writeSpendingCategories(items),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.spendingCategories(ds.id) }),
+  });
+}
+
+export function useWriteSpendingsMutation() {
+  const qc = useQueryClient();
+  const ds = useDatasource();
+  return useMutation({
+    mutationFn: (items: Spending[]) => ds.writeSpendings(items),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.spendings(ds.id) }),
+  });
+}
+
+export function useWriteSpendingRecurrencesMutation() {
+  const qc = useQueryClient();
+  const ds = useDatasource();
+  return useMutation({
+    mutationFn: (items: SpendingRecurrence[]) => ds.writeSpendingRecurrences(items),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.spendingRecurrences(ds.id) }),
   });
 }
 

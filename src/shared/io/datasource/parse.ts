@@ -1,7 +1,14 @@
-import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise, SpendingCategory, Spending, SpendingRecurrence, RecurrenceFrequency } from '@/types/sheets';
 import { HEADERS } from '@/constants';
 import { normalizeDate } from '@/shared/utils/dates';
 import { LEGACY_SELF_ID, ownershipFromRow, serializeOwnership } from '@/shared/utils/ownership';
+
+const RECURRENCE_FREQUENCIES: RecurrenceFrequency[] = ['weekly', 'biweekly', 'monthly', 'yearly'];
+
+function parseCurrency(v: unknown): 'CAD' | 'USD' | undefined {
+  const cur = String(v).toUpperCase();
+  return cur === 'USD' || cur === 'CAD' ? cur : undefined;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -91,6 +98,9 @@ export function parseConfigRows(rows: unknown[][]): Partial<AppConfig> {
     stock_options_enabled:
       map.stock_options_enabled === '1' ? true :
       map.stock_options_enabled === '0' ? false : undefined,
+    spending_enabled:
+      map.spending_enabled === '1' ? true :
+      map.spending_enabled === '0' ? false : undefined,
     theme: (theme === 'system' || theme === 'light' || theme === 'dark') ? theme : undefined,
   };
 }
@@ -219,6 +229,73 @@ export function parseOptionExerciseRows(rows: unknown[][]): OptionExercise[] {
   }).filter((x): x is OptionExercise => x !== null);
 }
 
+export function parseSpendingCategoryRows(rows: unknown[][]): SpendingCategory[] {
+  if (rows.length < 2) return [];
+  const hs = rows[0] as string[];
+  return (rows.slice(1) as unknown[][]).map(r => {
+    const obj = toObj(hs, r);
+    if (!obj.id) return null;
+    return {
+      id: String(obj.id).trim(),
+      name_fr: String(obj.name_fr ?? '').trim(),
+      name_en: String(obj.name_en ?? '').trim(),
+      color: String(obj.color ?? '').trim(),
+      icon: obj.icon ? String(obj.icon).trim() : undefined,
+      sort_order: parseNum(obj.sort_order, 0),
+      // Default to active unless explicitly FALSE (blank/missing → active).
+      active: obj.active === true || String(obj.active).toUpperCase() !== 'FALSE',
+    } as SpendingCategory;
+  }).filter((x): x is SpendingCategory => x !== null);
+}
+
+export function parseSpendingRows(rows: unknown[][]): Spending[] {
+  if (rows.length < 2) return [];
+  const hs = rows[0] as string[];
+  return (rows.slice(1) as unknown[][]).map(r => {
+    const obj = toObj(hs, r);
+    if (!obj.id) return null;
+    const date = normalizeDate(obj.date as string);
+    if (!date) return null;
+    return {
+      id: String(obj.id).trim(),
+      date,
+      amount: parseNum(obj.amount, 0),
+      currency: parseCurrency(obj.currency),
+      category_id: String(obj.category_id ?? '').trim(),
+      ownership: ownershipFromRow(obj),
+      comment: obj.comment ? String(obj.comment) : undefined,
+      entered_at: obj.entered_at ? String(obj.entered_at) : undefined,
+    } as Spending;
+  }).filter((x): x is Spending => x !== null);
+}
+
+export function parseSpendingRecurrenceRows(rows: unknown[][]): SpendingRecurrence[] {
+  if (rows.length < 2) return [];
+  const hs = rows[0] as string[];
+  return (rows.slice(1) as unknown[][]).map(r => {
+    const obj = toObj(hs, r);
+    if (!obj.id) return null;
+    const start = normalizeDate(obj.start_date as string);
+    if (!start) return null;
+    const freq = String(obj.frequency ?? '').toLowerCase();
+    const end = normalizeDate(obj.end_date as string);
+    return {
+      id: String(obj.id).trim(),
+      label: String(obj.label ?? '').trim(),
+      amount: parseNum(obj.amount, 0),
+      currency: parseCurrency(obj.currency),
+      category_id: String(obj.category_id ?? '').trim(),
+      ownership: ownershipFromRow(obj),
+      frequency: (RECURRENCE_FREQUENCIES as string[]).includes(freq) ? (freq as RecurrenceFrequency) : 'monthly',
+      interval: Math.max(1, parseNum(obj.interval, 1)),
+      start_date: start,
+      end_date: end || undefined,
+      active: obj.active === true || String(obj.active).toUpperCase() !== 'FALSE',
+      comment: obj.comment ? String(obj.comment) : undefined,
+    } as SpendingRecurrence;
+  }).filter((x): x is SpendingRecurrence => x !== null);
+}
+
 // ── Serialize (typed → AOA) ───────────────────────────────────────────────────
 
 export function serializeAccounts(accounts: Account[]): unknown[][] {
@@ -247,7 +324,7 @@ export function serializeConfig(config: Partial<AppConfig>): unknown[][] {
     ...Object.entries(config)
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => {
-        if (k === 'stock_options_enabled') return [k, v === true ? '1' : '0'];
+        if (k === 'stock_options_enabled' || k === 'spending_enabled') return [k, v === true ? '1' : '0'];
         return [k, String(v)];
       }),
   ];
@@ -303,4 +380,25 @@ export function serializeOptionFmv(items: OptionFmv[]): unknown[][] {
 
 export function serializeOptionExercises(items: OptionExercise[]): unknown[][] {
   return serializeByHeaders(['id', 'grant_id', 'date', 'shares_exercised', 'price_paid', 'note'], items as unknown as Record<string, unknown>[]);
+}
+
+export function serializeSpendingCategories(items: SpendingCategory[]): unknown[][] {
+  return [
+    [...HEADERS.spending_categories],
+    ...items.map(c => [c.id, c.name_fr, c.name_en, c.color, c.icon ?? '', c.sort_order, c.active ? 'TRUE' : 'FALSE']),
+  ];
+}
+
+export function serializeSpendings(items: Spending[]): unknown[][] {
+  return [
+    [...HEADERS.spendings],
+    ...items.map(s => [s.id, s.date, s.amount, s.currency ?? '', s.category_id, serializeOwnership(s.ownership), s.comment ?? '', s.entered_at ?? '']),
+  ];
+}
+
+export function serializeSpendingRecurrences(items: SpendingRecurrence[]): unknown[][] {
+  return [
+    [...HEADERS.spending_recurrences],
+    ...items.map(r => [r.id, r.label, r.amount, r.currency ?? '', r.category_id, serializeOwnership(r.ownership), r.frequency, r.interval, r.start_date, r.end_date ?? '', r.active ? 'TRUE' : 'FALSE', r.comment ?? '']),
+  ];
 }

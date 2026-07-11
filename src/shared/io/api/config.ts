@@ -18,6 +18,9 @@ export async function loadConfig(sheetId: string): Promise<AppConfig> {
     stock_options_enabled:
       map.stock_options_enabled === '1' ? true :
       map.stock_options_enabled === '0' ? false : undefined,
+    spending_enabled:
+      map.spending_enabled === '1' ? true :
+      map.spending_enabled === '0' ? false : undefined,
     theme: (theme === 'system' || theme === 'light' || theme === 'dark') ? theme : undefined,
   };
 }

@@ -1,11 +1,18 @@
 # Spending Tracker — Feature Design
 
-> Status: **design.** This document specifies a new, self-contained domain — a
-> **spending tracker** — added the way the handbook's *Recipe D* prescribes: a
+> Status: **implemented** (v2.5.0). This document specifies a self-contained domain —
+> a **spending tracker** — added the way the handbook's *Recipe D* prescribes: a
 > flag-gated top-level section (`features/spending/`) with its own tabs,
 > selectors, and pages. It reuses existing seams (config flag, per-owner
 > `OwnershipEntry`, currency conversion) and **touches nothing in the net-worth
 > engine** (`core/`, `buildDataset`, the `ValuedContributor` contract).
+>
+> **Shipped in v1:** categories, one-off spendings, recurring rules (expanded at
+> read time), owner splits, per-month Overview (total + by-category + by-person),
+> the Entries ledger, and the Manage page. Budgets remain the deferred Phase 2
+> (§8). Files: `features/spending/{data/spending.selectors.ts, data/useSpendingData.ts,
+> SpendingOverviewPage, SpendingEntriesPage, SpendingManagePage, components/*}`,
+> `app/SpendingGuard.tsx`, `shared/io/api/spending.ts`, plus the IO wiring in §7.
 
 ---
 

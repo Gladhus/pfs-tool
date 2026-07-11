@@ -1,6 +1,6 @@
 # Google Sheet Schema
 
-The app manages a single Google Sheet with up to ten tabs. The schema is designed for long-format storage so adding, renaming, or disabling accounts never breaks historical data.
+The app manages a single Google Sheet with up to thirteen tabs. The schema is designed for long-format storage so adding, renaming, or disabling accounts never breaks historical data.
 
 Derived totals (net worth, category sums, MoM/YoY deltas) are computed in the browser — never stored in the sheet.
 
@@ -58,6 +58,7 @@ Key-value settings. Two columns: `key` and `value`.
 | `last_imported_at` | ISO 8601 | Timestamp of the last CSV import. |
 | `theme` | `light` \| `dark` \| `system` | UI theme preference. |
 | `stock_options_enabled` | `1` \| `0` | Whether the Stock Options tab is visible. |
+| `spending_enabled` | `1` \| `0` | Whether the Spending tracker tab is visible. |
 
 ---
 
@@ -165,6 +166,66 @@ Log of option exercises per grant.
 | `shares_exercised` | number | Number of shares exercised. Must not exceed exercisable shares as of that date. |
 | `price_paid` | number | Total price paid (typically `shares × strike_price`). |
 | `note` | string | Optional note. |
+
+---
+
+## Tab: `spending_categories`
+
+User-defined spending categories. Independent of the asset/debt net-worth categories.
+Seeded with a starter set (Groceries, Dining, …) the first time the tab is empty.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | string | Stable internal key (e.g. `groceries`). |
+| `name_fr` | string | French display label. |
+| `name_en` | string | English display label. |
+| `color` | string | Hex color for the category chip + chart series. |
+| `icon` | string | Optional Lucide icon name (display only). |
+| `sort_order` | integer | Display order. |
+| `active` | boolean | `FALSE` hides it from new entries but preserves history. |
+
+---
+
+## Tab: `spendings`
+
+One row per recorded expense. Split across owners like an account.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | string | Stable internal key. |
+| `date` | string | `YYYY-MM-DD`. |
+| `amount` | number | Gross amount as entered — always positive. |
+| `currency` | string | `CAD` \| `USD`. Absent → main currency. Converted via `fx_rates`. |
+| `category_id` | string | FK to `spending_categories.id`. |
+| `ownership` | JSON | `[{ "person_id": "self", "share": 0.6 }, …]` — shares sum to 1. Same encoding as `accounts`. |
+| `comment` | string | Optional note. |
+| `entered_at` | ISO 8601 | Timestamp written by the app when the row is saved. |
+
+A stored row whose `id` is `recur:<ruleId>:<date>` overrides the generated occurrence
+of that recurring rule for that date (reserved for a future per-occurrence edit; not
+produced by the app today).
+
+---
+
+## Tab: `spending_recurrences`
+
+One row per recurring-spending rule. Occurrences are expanded in the browser on read —
+never stored.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | string | Stable internal key. |
+| `label` | string | Display name (e.g. `Rent`). |
+| `amount` | number | Per-occurrence amount. |
+| `currency` | string | `CAD` \| `USD`. Absent → main currency. |
+| `category_id` | string | FK to `spending_categories.id`. |
+| `ownership` | JSON | Owner split — same encoding as `spendings`. |
+| `frequency` | string | `weekly` \| `biweekly` \| `monthly` \| `yearly`. |
+| `interval` | integer | Every N units of `frequency` (≥ 1). |
+| `start_date` | string | `YYYY-MM-DD`, first occurrence. |
+| `end_date` | string | Optional last date (inclusive). Blank = open-ended. |
+| `active` | boolean | `FALSE` stops future expansion, keeps history. |
+| `comment` | string | Optional note. |
 
 ---
 

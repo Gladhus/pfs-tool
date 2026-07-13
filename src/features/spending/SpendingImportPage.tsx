@@ -15,16 +15,20 @@ import { extractPdf } from './import/pdf';
 import { detectImporter } from './import/registry';
 import type { RawTxn, SpendingImporter } from './import/types';
 import {
-  summarize, expenseTxns, distinct, assignImportIds, suggestCategory, slugCategoryId, buildSpendings,
+  summarize, resolvedExpenses, distinct, assignImportIds, suggestCategory, slugCategoryId, buildSpendings,
+  uncertainCategories, uncertainSummary,
 } from './import/prepare';
-import { loadAccountMap, saveAccountMap, loadCategoryMap, saveCategoryMap } from './import/mappings';
+import {
+  loadAccountMap, saveAccountMap, loadCategoryMap, saveCategoryMap,
+  loadKindMap, saveKindMap, type KindDecision,
+} from './import/mappings';
 import { ownershipToSplit, splitToOwnership, splitInvalid, type OwnerSplitValue } from './components/OwnerSplitField';
 import { ImportAccountsStep } from './components/import/ImportAccountsStep';
 import { ImportCategoriesStep, NEW_CATEGORY } from './components/import/ImportCategoriesStep';
+import { ImportUncertainStep } from './components/import/ImportUncertainStep';
 import { ImportReviewStep } from './components/import/ImportReviewStep';
 
-type Step = 'upload' | 'accounts' | 'categories' | 'review' | 'done';
-const STEPS: Step[] = ['upload', 'accounts', 'categories', 'review'];
+type Step = 'upload' | 'uncertain' | 'accounts' | 'categories' | 'review' | 'done';
 
 export default function SpendingImportPage() {
   const { t } = useTranslation();
@@ -40,13 +44,23 @@ export default function SpendingImportPage() {
   const [raw, setRaw] = useState<RawTxn[]>([]);
   const [acctSplit, setAcctSplit] = useState<Record<string, OwnerSplitValue>>({});
   const [catChoice, setCatChoice] = useState<Record<string, string>>({});
+  const [kindChoice, setKindChoice] = useState<Record<string, KindDecision>>({});
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [result, setResult] = useState<{ imported: number; duplicates: number; newCats: number } | null>(null);
 
   const activePeople = useMemo(() => people.filter(p => p.active), [people]);
   const primaryId = people.find(p => p.primary)?.id ?? activePeople[0]?.id ?? '';
 
-  const expenses = useMemo(() => expenseTxns(raw), [raw]);
+  const uncertainCats = useMemo(() => uncertainCategories(raw), [raw]);
+  const rememberedKindKeys = useMemo(() => new Set(Object.keys(importer ? loadKindMap(importer.id) : {})), [importer]);
+  const orderedUncertain = useMemo(
+    () => [...uncertainCats].sort((a, b) => Number(rememberedKindKeys.has(a)) - Number(rememberedKindKeys.has(b))),
+    [uncertainCats, rememberedKindKeys]);
+  const includeUncertain = useMemo(
+    () => new Set(Object.entries(kindChoice).filter(([, d]) => d === 'include').map(([c]) => c)),
+    [kindChoice]);
+
+  const expenses = useMemo(() => resolvedExpenses(raw, includeUncertain), [raw, includeUncertain]);
   const keyed = useMemo(() => assignImportIds(expenses), [expenses]);
   const accounts = useMemo(() => distinct(expenses, x => x.account), [expenses]);
   const bankCats = useMemo(() => distinct(expenses, x => x.category), [expenses]);
@@ -64,10 +78,19 @@ export default function SpendingImportPage() {
     () => [...bankCats].sort((a, b) => Number(rememberedCatKeys.has(a)) - Number(rememberedCatKeys.has(b))),
     [bankCats, rememberedCatKeys]);
 
-  // Seed the account/category maps from remembered choices + name suggestions.
+  // Seed the account/category/kind maps from remembered choices + name suggestions.
   useEffect(() => {
     if (!importer || !raw.length) return;
-    const exp = expenseTxns(raw);
+
+    // Kind decisions for uncertain categories (default: skip).
+    const rKind = loadKindMap(importer.id);
+    const seededKind: Record<string, KindDecision> = {};
+    for (const c of uncertainCategories(raw)) seededKind[c] = rKind[c] ?? 'exclude';
+    setKindChoice(seededKind);
+
+    // Accounts + categories over every potentially-importable row (so a later
+    // "include" decision already has its account/category seeded).
+    const exp = resolvedExpenses(raw, new Set(uncertainCategories(raw)));
     const rAcct = loadAccountMap(importer.id);
     const seededAcct: Record<string, OwnerSplitValue> = {};
     for (const a of distinct(exp, x => x.account)) {
@@ -87,6 +110,13 @@ export default function SpendingImportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importer, raw]);
 
+  // The wizard's step sequence — the "uncertain" step only appears when needed.
+  const steps = useMemo<Step[]>(
+    () => ['upload', ...(uncertainCats.length ? ['uncertain' as const] : []), 'accounts', 'categories', 'review'],
+    [uncertainCats]);
+  const goNext = () => { const i = steps.indexOf(step); if (i >= 0 && i < steps.length - 1) setStep(steps[i + 1]); };
+  const goBack = () => { const i = steps.indexOf(step); if (i > 0) setStep(steps[i - 1]); };
+
   async function onFile(file: File | undefined) {
     if (!file) return;
     setError(''); setBusy(true); setImporter(null); setRaw([]); setExcluded(new Set());
@@ -95,7 +125,8 @@ export default function SpendingImportPage() {
       const imp = detectImporter(src);
       if (!imp) { setError(t('sp_imp_unrecognized')); return; }
       const parsed = imp.parse(src);
-      if (!expenseTxns(parsed).length) { setError(t('sp_imp_empty')); return; }
+      // "Importable" = certain expenses + any uncertain rows the user might include.
+      if (!resolvedExpenses(parsed, new Set(uncertainCategories(parsed))).length) { setError(t('sp_imp_empty')); return; }
       setImporter(imp);
       setRaw(parsed);
     } catch (e) {
@@ -150,6 +181,7 @@ export default function SpendingImportPage() {
     const finish = () => {
       saveCategoryMap(importer.id, catTarget);
       saveAccountMap(importer.id, acctOwn);
+      if (uncertainCats.length) saveKindMap(importer.id, Object.fromEntries(uncertainCats.map(c => [c, kindChoice[c] ?? 'exclude'])));
       setResult({ imported: toAdd.length, duplicates, newCats: newCats.length });
       setStep('done');
     };
@@ -166,18 +198,18 @@ export default function SpendingImportPage() {
 
   if (isPending) return <div className="space-y-3">{Array.from({ length: 3 }, (_, i) => <Skeleton key={i} variant="card" className="h-24" />)}</div>;
 
-  const stepIndex = STEPS.indexOf(step);
+  const stepIndex = steps.indexOf(step);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       {/* Stepper */}
       {step !== 'done' && (
-        <div className="flex items-center gap-2 text-xs">
-          {STEPS.map((s, i) => (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {steps.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <span className={`flex h-6 w-6 items-center justify-center rounded-full ${i <= stepIndex ? 'bg-accent text-accent-fg' : 'bg-surface-2 text-muted'}`}>{i + 1}</span>
               <span className={i === stepIndex ? 'font-medium text-fg' : 'text-muted'}>{t(`sp_imp_step_${s}`)}</span>
-              {i < STEPS.length - 1 && <Icon name="chevronRight" size={12} className="text-muted" />}
+              {i < steps.length - 1 && <Icon name="chevronRight" size={12} className="text-muted" />}
             </div>
           ))}
         </div>
@@ -204,16 +236,37 @@ export default function SpendingImportPage() {
               <p className="text-sm font-medium text-fg">{t('sp_imp_detected', { name: importer.label })}</p>
               <ul className="mt-2 space-y-1 text-sm text-fg-2">
                 <li>✓ {t('sp_imp_found_expenses', { count: summary.expenses })}</li>
+                {summary.uncertain > 0 && <li className="text-fg-2">? {t('sp_imp_found_uncertain', { count: summary.uncertain })}</li>}
                 <li className="text-muted">{t('sp_imp_skipped', { income: summary.income, transfers: summary.transfers, pending: summary.pending })}</li>
               </ul>
               <div className="mt-3 flex justify-end">
-                <Button variant="primary" size="sm" onClick={() => setStep('accounts')} disabled={!summary.expenses}>
+                <Button variant="primary" size="sm" onClick={goNext} disabled={!summary.expenses && !summary.uncertain}>
                   {t('sp_imp_continue')} <Icon name="chevronRight" size={14} />
                 </Button>
               </div>
             </div>
           )}
         </div>
+      )}
+
+      {/* Uncertain */}
+      {step === 'uncertain' && (
+        <>
+          <ImportUncertainStep
+            categories={orderedUncertain}
+            rememberedKeys={rememberedKindKeys}
+            value={kindChoice}
+            summaryFor={cat => uncertainSummary(raw, cat)}
+            mainCurrency={mainCurrency}
+            onChange={(c, d) => setKindChoice(prev => ({ ...prev, [c]: d }))}
+          />
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={goBack}>{t('sp_imp_back')}</Button>
+            <Button variant="primary" size="sm" onClick={goNext}>
+              {t('sp_imp_next')} <Icon name="chevronRight" size={14} />
+            </Button>
+          </div>
+        </>
       )}
 
       {/* Accounts */}
@@ -227,8 +280,8 @@ export default function SpendingImportPage() {
             onChange={(a, v) => setAcctSplit(prev => ({ ...prev, [a]: v }))}
           />
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => setStep('upload')}>{t('sp_imp_back')}</Button>
-            <Button variant="primary" size="sm" onClick={() => setStep('categories')} disabled={!accountsValid}>
+            <Button variant="ghost" size="sm" onClick={goBack}>{t('sp_imp_back')}</Button>
+            <Button variant="primary" size="sm" onClick={goNext} disabled={!accountsValid}>
               {t('sp_imp_next')} <Icon name="chevronRight" size={14} />
             </Button>
           </div>
@@ -246,8 +299,8 @@ export default function SpendingImportPage() {
             onChange={(c, target) => setCatChoice(prev => ({ ...prev, [c]: target }))}
           />
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => setStep('accounts')}>{t('sp_imp_back')}</Button>
-            <Button variant="primary" size="sm" onClick={() => setStep('review')}>
+            <Button variant="ghost" size="sm" onClick={goBack}>{t('sp_imp_back')}</Button>
+            <Button variant="primary" size="sm" onClick={goNext}>
               {t('sp_imp_next')} <Icon name="chevronRight" size={14} />
             </Button>
           </div>
@@ -267,7 +320,7 @@ export default function SpendingImportPage() {
             mainCurrency={mainCurrency}
           />
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => setStep('categories')}>{t('sp_imp_back')}</Button>
+            <Button variant="ghost" size="sm" onClick={goBack}>{t('sp_imp_back')}</Button>
             <Button variant="primary" size="sm" onClick={doImport} disabled={writing || importCount === 0}>
               {writing ? t('sp_imp_importing') : t('sp_imp_import_n', { count: importCount })}
             </Button>
@@ -284,7 +337,7 @@ export default function SpendingImportPage() {
             {t('sp_imp_done_detail', { newCats: result.newCats, duplicates: result.duplicates })}
           </p>
           <div className="mt-4 flex justify-center gap-2">
-            <Button variant="default" size="sm" onClick={() => { setStep('upload'); setImporter(null); setRaw([]); setResult(null); setExcluded(new Set()); }}>
+            <Button variant="default" size="sm" onClick={() => { setStep('upload'); setImporter(null); setRaw([]); setResult(null); setExcluded(new Set()); setKindChoice({}); }}>
               {t('sp_imp_another')}
             </Button>
             <Button variant="primary" size="sm" asChild><Link to="/spending/entries">{t('sp_imp_view_entries')}</Link></Button>

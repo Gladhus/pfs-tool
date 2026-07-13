@@ -374,5 +374,11 @@
   "sp_imp_done_detail": "{{newCats}} new categories · {{duplicates}} duplicates skipped",
   "sp_imp_another": "Import another",
   "sp_imp_view_entries": "View entries",
-  "tab_spending_import": "Import"
+  "tab_spending_import": "Import",
+  "sp_imp_step_uncertain": "Uncertain",
+  "sp_imp_found_uncertain": "{{count}} uncertain (you decide)",
+  "sp_imp_uncertain_help": "These don’t look like clear personal spending. Choose which to include. Transfers and credit-card payments are always excluded to avoid double-counting. Your choices are remembered.",
+  "sp_imp_uncertain_detail": "{{count}} transactions",
+  "sp_imp_skip": "Skip",
+  "sp_imp_include": "Include"
 }

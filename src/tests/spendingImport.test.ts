@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { bncImporter, parseAmount, parseFrDate } from '@/features/spending/import/bnc.importer';
 import { detectImporter } from '@/features/spending/import/registry';
 import {
-  summarize, expenseTxns, distinct, assignImportIds, suggestCategory, slugCategoryId, buildSpendings,
+  summarize, expenseTxns, resolvedExpenses, uncertainCategories, distinct,
+  assignImportIds, suggestCategory, slugCategoryId, buildSpendings,
 } from '@/features/spending/import/prepare';
 import type { ImportSource, PositionedLine, PositionedToken } from '@/features/spending/import/types';
 import type { SpendingCategory } from '@/types/sheets';
@@ -83,6 +84,10 @@ describe('bncImporter.parse', () => {
     line(1, 725, { desc: 'assurance' }),
     // transfer (excluded) + income (excluded)
     line(1, 700, { date: '6 juillet 2026', desc: 'Transfert entre comptes', acct: 'Compte Perso', cat: 'Transfert', amt: '1 500,00 $' }),
+    // credit-card payoff — must NOT count as spending (would double-count card purchases)
+    line(1, 695, { date: '6 juillet 2026', desc: 'Mastercard BNC', acct: 'Compte Perso', cat: 'Paiement carte de crédit', amt: '2 303,20 $' }),
+    // an uncertain category (bank fee) — user decides
+    line(1, 690, { date: '6 juillet 2026', desc: 'Frais mensuels', acct: 'Compte Conjoint', cat: 'Frais', amt: '4,00 $' }),
     line(1, 680, { date: '5 juillet 2026', desc: 'Mondou', acct: 'Compte Conjoint', cat: 'Animaux', amt: '158,19 $' }),
     // pending (no date, excluded)
     line(1, 660, { date: 'En attente', desc: 'McDonald’s', acct: 'Mastercard World Elite', cat: 'Restauration rapide', amt: '26,97 $' }),
@@ -102,18 +107,27 @@ describe('bncImporter.parse', () => {
   it('classifies kinds correctly', () => {
     expect(txns.find(t => t.description === 'Simons')?.kind).toBe('expense');
     expect(txns.find(t => t.category === 'Transfert')?.kind).toBe('transfer');
+    expect(txns.find(t => t.category === 'Paiement carte de crédit')?.kind).toBe('transfer'); // no double-count
+    expect(txns.find(t => t.category === 'Frais')?.kind).toBe('uncertain');
     expect(txns.find(t => t.description.startsWith('Santé'))?.kind).toBe('income'); // + credit
     expect(txns.find(t => t.pending)?.pending).toBe(true);
   });
 
-  it('summarize + expenseTxns keep only real dated expenses', () => {
+  it('excludes credit-card payments and transfers from expenses by default', () => {
     const s = summarize(txns);
     expect(s.expenses).toBe(2);   // Simons, Mondou
-    expect(s.transfers).toBe(1);
+    expect(s.transfers).toBe(2);  // Transfert + Paiement carte de crédit
     expect(s.income).toBe(1);
+    expect(s.uncertain).toBe(1);  // Frais
     expect(s.pending).toBe(1);
-    const exp = expenseTxns(txns);
-    expect(exp.map(t => t.description).sort()).toEqual(['Mondou', 'Simons']);
+    // Default resolve keeps only certain expenses — no card payoff, no fee.
+    expect(expenseTxns(txns).map(t => t.description).sort()).toEqual(['Mondou', 'Simons']);
+  });
+
+  it('surfaces uncertain categories and includes them only when chosen', () => {
+    expect(uncertainCategories(txns)).toEqual(['Frais']);
+    const withFees = resolvedExpenses(txns, new Set(['Frais']));
+    expect(withFees.map(t => t.description).sort()).toEqual(['Frais mensuels', 'Mondou', 'Simons']);
   });
 });
 

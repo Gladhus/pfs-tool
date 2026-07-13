@@ -319,11 +319,21 @@ left-x — robust to fragmentation and to descriptions that wrap onto a second l
 A second pass recovers an account absorbed by a very long merchant name.
 
 **Pipeline.** `parse` → `RawTxn[]` (bank-native labels, each classified
-`expense | income | transfer`) → `expenseTxns` keeps only dated money-out rows →
-the wizard maps **accounts → ownership** and **bank categories → your categories**
-(both remembered in `localStorage`, unknowns surfaced first) → `buildSpendings`
-emits `Spending[]` with **deterministic ids** so re-importing the same export is
-idempotent (identical rows de-duplicated).
+`expense | income | transfer | uncertain`). `income` and `transfer` are always
+excluded — critically, **credit-card payments and account transfers never count as
+spending**, so paying off a card doesn't double-count the individual purchases the
+export already lists. Then the wizard:
+
+1. **Uncertain** — categories that aren't clearly personal spending (bank fees,
+   cash withdrawals, "Non catégorisé", …) are surfaced for an explicit
+   include/skip decision (default: skip). Shown only when present; decisions are
+   remembered per category, so the step shrinks over time.
+2. **Accounts → ownership** and **Categories → your categories** (create-new
+   allowed) — both remembered in `localStorage`, unknowns surfaced first.
+3. **Review** — the resulting rows, any of which can be unticked.
+
+`buildSpendings` then emits `Spending[]` with **deterministic ids** so re-importing
+the same export is idempotent (identical rows de-duplicated).
 
 **pdfjs is lazy.** It's `import()`-ed inside `pdf.ts` only when a PDF is parsed, so
 it (and its worker) code-split out of the main bundle — the app pays for it only on

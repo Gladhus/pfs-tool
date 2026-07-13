@@ -4,6 +4,10 @@ import type { OwnershipEntry } from '@/types/sheets';
 // collide. Persisted in localStorage — they're device preferences, not sheet data.
 const LS_CAT = 'pfs_spending_cat_map';
 const LS_ACCT = 'pfs_spending_acct_map';
+const LS_KIND = 'pfs_spending_kind_map';
+
+/** Whether an uncertain bank category should be imported as spending or skipped. */
+export type KindDecision = 'include' | 'exclude';
 
 type Store<T> = Record<string, Record<string, T>>; // importerId → bankLabel → value
 
@@ -40,4 +44,15 @@ export function saveAccountMap(importerId: string, map: Record<string, Ownership
   const store = read<OwnershipEntry[]>(LS_ACCT);
   store[importerId] = { ...(store[importerId] ?? {}), ...map };
   write(LS_ACCT, store);
+}
+
+/** uncertain bankCategory → include/exclude decision, for one importer. */
+export function loadKindMap(importerId: string): Record<string, KindDecision> {
+  return read<KindDecision>(LS_KIND)[importerId] ?? {};
+}
+
+export function saveKindMap(importerId: string, map: Record<string, KindDecision>): void {
+  const store = read<KindDecision>(LS_KIND);
+  store[importerId] = { ...(store[importerId] ?? {}), ...map };
+  write(LS_KIND, store);
 }

@@ -7,22 +7,54 @@ export interface ImportSummary {
   expenses: number;
   income: number;
   transfers: number;
+  uncertain: number;
   pending: number;
 }
 
 export function summarize(raw: RawTxn[]): ImportSummary {
   return {
     total: raw.length,
-    expenses: expenseTxns(raw).length,
+    expenses: raw.filter(t => t.kind === 'expense' && !t.pending && t.amount > 0 && !!t.date).length,
     income: raw.filter(t => t.kind === 'income').length,
     transfers: raw.filter(t => t.kind === 'transfer').length,
+    uncertain: raw.filter(t => t.kind === 'uncertain' && !t.pending && t.amount > 0 && !!t.date).length,
     pending: raw.filter(t => t.pending).length,
   };
 }
 
-/** The rows we actually import: real, dated, money-out expenses. */
+/** A dated, positive, non-pending money-out row. */
+function isImportable(t: RawTxn): boolean {
+  return !t.pending && t.amount > 0 && !!t.date;
+}
+
+/** Distinct categories the importer wasn't sure about (the user must decide). */
+export function uncertainCategories(raw: RawTxn[]): string[] {
+  return distinct(raw.filter(t => t.kind === 'uncertain' && isImportable(t)), t => t.category);
+}
+
+/** Aggregate an uncertain category for display (count + total, in native amounts). */
+export function uncertainSummary(raw: RawTxn[], category: string): { count: number; total: number; example: string } {
+  const rows = raw.filter(t => t.kind === 'uncertain' && isImportable(t) && t.category === category);
+  return {
+    count: rows.length,
+    total: rows.reduce((s, t) => s + t.amount, 0),
+    example: rows.find(t => t.description)?.description ?? '',
+  };
+}
+
+/**
+ * The rows we actually import: certain expenses, plus any uncertain categories the
+ * user chose to include. `includeUncertain` is the set of uncertain categories to keep.
+ */
+export function resolvedExpenses(raw: RawTxn[], includeUncertain: Set<string> = new Set()): RawTxn[] {
+  return raw.filter(t =>
+    isImportable(t) &&
+    (t.kind === 'expense' || (t.kind === 'uncertain' && includeUncertain.has(t.category))));
+}
+
+/** The rows we import when no uncertain category is included (certain expenses only). */
 export function expenseTxns(raw: RawTxn[]): RawTxn[] {
-  return raw.filter(t => t.kind === 'expense' && !t.pending && t.amount > 0 && !!t.date);
+  return resolvedExpenses(raw);
 }
 
 /** Distinct bank labels (stable order of first appearance). */

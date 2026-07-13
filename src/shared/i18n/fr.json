@@ -374,5 +374,11 @@
   "sp_imp_done_detail": "{{newCats}} nouvelles catégories · {{duplicates}} doublons ignorés",
   "sp_imp_another": "Importer un autre",
   "sp_imp_view_entries": "Voir les entrées",
-  "tab_spending_import": "Importer"
+  "tab_spending_import": "Importer",
+  "sp_imp_step_uncertain": "Incertains",
+  "sp_imp_found_uncertain": "{{count}} incertaines (à vous de choisir)",
+  "sp_imp_uncertain_help": "Ces transactions ne ressemblent pas à des dépenses personnelles claires. Choisissez lesquelles inclure. Les transferts et paiements de carte de crédit sont toujours exclus pour éviter le double comptage. Vos choix sont mémorisés.",
+  "sp_imp_uncertain_detail": "{{count}} transactions",
+  "sp_imp_skip": "Ignorer",
+  "sp_imp_include": "Inclure"
 }

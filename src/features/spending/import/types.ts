@@ -19,8 +19,9 @@ export interface ImportSource {
 }
 
 /** How a raw transaction should be treated. The importer classifies it; the
-    generic pipeline only imports `expense` rows. */
-export type TxnKind = 'expense' | 'income' | 'transfer';
+    generic pipeline imports `expense` rows and whichever `uncertain` categories
+    the user chooses to include. `income`/`transfer` are always excluded. */
+export type TxnKind = 'expense' | 'income' | 'transfer' | 'uncertain';
 
 /** A transaction parsed from the source, in the bank's native labels (pre-mapping). */
 export interface RawTxn {

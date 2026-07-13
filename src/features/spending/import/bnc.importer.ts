@@ -11,8 +11,14 @@ import type { ImportSource, PositionedLine, RawTxn, SpendingImporter, TxnKind } 
 const HEADER_COLS = ['Date', 'Description', 'Compte', 'Catégorie', 'Montant'];
 const HEADER_WORDS = new Set(['Bilan', 'Historique de mes transactions', ...HEADER_COLS]);
 
-// BNC categories that are internal movements, not spending.
+// BNC categories that are unambiguously internal movements, never spending —
+// notably "Paiement carte de crédit" (paying the card off would double-count the
+// individual card purchases we already import). Always excluded.
 const TRANSFER_CATEGORIES = new Set(['Transfert', 'Paiement carte de crédit']);
+
+// Debit categories that aren't clearly personal spending — the user decides
+// (per category, remembered) whether to include or skip these.
+const UNCERTAIN_CATEGORIES = new Set(['Frais', 'Frais bancaires', 'Non catégorisé', 'Argent comptant', 'Remboursement']);
 
 const DATE_FR = /^\d{1,2}\s+[a-zàâäéèêëîïôöùûüç]+\.?\s+\d{4}$/i;
 
@@ -117,6 +123,7 @@ interface Draft {
 function classify(category: string, credit: boolean): TxnKind {
   if (credit) return 'income';
   if (TRANSFER_CATEGORIES.has(category)) return 'transfer';
+  if (UNCERTAIN_CATEGORIES.has(category)) return 'uncertain';
   return 'expense';
 }
 

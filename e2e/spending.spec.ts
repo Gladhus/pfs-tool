@@ -47,6 +47,15 @@ test.describe('Spending tracker', () => {
     await expect(page.getByText('$42.50').first()).toBeVisible();
   });
 
+  test('the Detail tab renders the MoM/YoY breakdown', async ({ page }) => {
+    await page.locator('a[href="/pfs-tool/spending"]').first().click();
+    await page.waitForURL(/\/spending$/);
+    await page.locator('a[href="/pfs-tool/spending/detail"]').click();
+    await page.waitForURL(/\/spending\/detail/);
+    await expect(page.getByRole('radio', { name: 'Monthly' })).toBeVisible();
+    await expect(page.getByRole('radio', { name: 'Yearly' })).toBeVisible();
+  });
+
   test('the Import wizard is reachable and shows the upload step', async ({ page }) => {
     await page.locator('a[href="/pfs-tool/spending"]').first().click();
     await page.waitForURL(/\/spending$/);

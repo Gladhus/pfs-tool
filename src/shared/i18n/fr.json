@@ -382,5 +382,14 @@
   "sp_imp_skip": "Ignorer",
   "sp_imp_include": "Inclure",
   "sp_imp_assign_all_me": "Tout attribuer à {{name}} (ignorer l’association des comptes)",
-  "sp_imp_assign_all_note": "Les {{count}} comptes → détenus par {{name}}"
+  "sp_imp_assign_all_note": "Les {{count}} comptes → détenus par {{name}}",
+  "sp_imp_new_name": "Nom",
+  "sp_period_label": "Période",
+  "sp_period_month": "Mois",
+  "sp_detail_mom": "Mensuel",
+  "sp_detail_yoy": "Annuel",
+  "sp_detail_granularity": "Granularité du détail",
+  "sp_detail_total": "Total",
+  "sp_no_detail": "Pas encore assez de données",
+  "sp_no_detail_hint": "Ajoutez ou importez des dépenses pour voir les ventilations mensuelles et annuelles."
 }

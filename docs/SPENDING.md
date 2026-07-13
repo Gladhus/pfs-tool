@@ -50,7 +50,8 @@ features/
   spending/   ← NEW self-contained domain, NOT a contributor
     data/
       spending.selectors.ts        ← recurrence expansion, per-owner slicing, summary
-    SpendingOverviewPage.tsx       ← totals + by-category + by-person for a month
+    SpendingOverviewPage.tsx       ← totals + by-category + by-person (period selector)
+    SpendingDetailPage.tsx         ← per-category MoM / YoY table (last 6 periods with data)
     SpendingEntriesPage.tsx        ← the ledger: list / add / edit / delete
     SpendingManagePage.tsx         ← manage categories + recurring rules
     components/
@@ -328,10 +329,11 @@ export already lists. Then the wizard:
    cash withdrawals, "Non catégorisé", …) are surfaced for an explicit
    include/skip decision (default: skip). Shown only when present; decisions are
    remembered per category, so the step shrinks over time.
-2. **Accounts → ownership** and **Categories → your categories** (create-new
-   allowed) — both remembered in `localStorage`, unknowns surfaced first. The
-   accounts step also offers a one-click **"assign everything to me"** shortcut
-   (owned by the current viewer / primary member) that skips per-account mapping.
+2. **Accounts → ownership** and **Categories → your categories** — both remembered
+   in `localStorage`, unknowns surfaced first. "Create new" lets you **type the new
+   category's name** (defaults to the bank's label). The accounts step also offers a
+   one-click **"assign everything to me"** shortcut (owned by the current viewer /
+   primary member) that skips per-account mapping.
 3. **Review** — the resulting rows, any of which can be unticked.
 
 `buildSpendings` then emits `Spending[]` with **deterministic ids** so re-importing

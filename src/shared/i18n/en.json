@@ -382,5 +382,14 @@
   "sp_imp_skip": "Skip",
   "sp_imp_include": "Include",
   "sp_imp_assign_all_me": "Assign everything to {{name}} (skip account mapping)",
-  "sp_imp_assign_all_note": "All {{count}} accounts → owned by {{name}}"
+  "sp_imp_assign_all_note": "All {{count}} accounts → owned by {{name}}",
+  "sp_imp_new_name": "Name",
+  "sp_period_label": "Period",
+  "sp_period_month": "Month",
+  "sp_detail_mom": "Monthly",
+  "sp_detail_yoy": "Yearly",
+  "sp_detail_granularity": "Detail granularity",
+  "sp_detail_total": "Total",
+  "sp_no_detail": "Not enough data yet",
+  "sp_no_detail_hint": "Add or import some spendings to see monthly and yearly breakdowns."
 }

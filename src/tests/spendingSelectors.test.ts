@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   expandRecurrence, recurringOccurrences, ledgerFor, sliceLedger,
   viewerAmount, spendingSummary, monthWindow, shiftMonthKey, monthKeyOf,
+  periodWindow, categoryPeriodTable,
   type SpendingCtx,
 } from '@/features/spending/data/spending.selectors';
 import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
@@ -155,5 +156,62 @@ describe('spendingSummary', () => {
     expect(s.total).toBe(0);
     expect(s.count).toBe(0);
     expect(s.byCategory).toEqual([]);
+  });
+});
+
+describe('periodWindow', () => {
+  const today = '2026-07-13';
+  it('month → the current calendar month', () => {
+    expect(periodWindow('month', today)).toEqual({ start: '2026-07-01', end: '2026-07-31' });
+  });
+  it('ytd → Jan 1 to today', () => {
+    expect(periodWindow('ytd', today)).toEqual({ start: '2026-01-01', end: today });
+  });
+  it('rolling 3m/1y end at today', () => {
+    expect(periodWindow('3m', today)).toEqual({ start: '2026-04-13', end: today });
+    expect(periodWindow('1y', today)).toEqual({ start: '2025-07-13', end: today });
+  });
+  it('all starts at the epoch floor', () => {
+    expect(periodWindow('all', today)).toEqual({ start: '0000-01-01', end: today });
+  });
+});
+
+describe('categoryPeriodTable', () => {
+  const spendings: Spending[] = [
+    spend({ id: 'a', date: '2026-05-10', amount: 100, category_id: 'groceries' }),
+    spend({ id: 'b', date: '2026-06-10', amount: 50, category_id: 'groceries' }),
+    spend({ id: 'c', date: '2026-06-12', amount: 30, category_id: 'dining' }),
+    spend({ id: 'd', date: '2026-07-05', amount: 20, category_id: 'groceries' }),
+  ];
+
+  it('builds a MoM table over only the months with data, sorted by total', () => {
+    const tbl = categoryPeriodTable(spendings, [], CTX, HOUSEHOLD_VIEWER, 'month', '2026-07-13', 6);
+    expect(tbl.periods).toEqual(['2026-05', '2026-06', '2026-07']); // April etc. skipped (no data)
+    expect(tbl.rows[0]).toEqual({ categoryId: 'groceries', cells: [100, 50, 20], total: 170 });
+    expect(tbl.rows[1]).toEqual({ categoryId: 'dining', cells: [0, 30, 0], total: 30 });
+    expect(tbl.columnTotals).toEqual([100, 80, 20]);
+    expect(tbl.grandTotal).toBe(200);
+  });
+
+  it('caps at the most recent maxPeriods columns', () => {
+    // Eight consecutive months of data → only the latest six columns.
+    const many: Spending[] = ['01', '02', '03', '04', '05', '06', '07', '08'].map(mm =>
+      spend({ id: `m${mm}`, date: `2026-${mm}-05`, amount: 10, category_id: 'groceries' }));
+    const tbl = categoryPeriodTable(many, [], CTX, HOUSEHOLD_VIEWER, 'month', '2026-08-31', 6);
+    expect(tbl.periods).toEqual(['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08']);
+  });
+
+  it('YoY shows only years with data (no empty leading years)', () => {
+    const yearly: Spending[] = [
+      spend({ id: 'y1', date: '2024-03-01', amount: 100, category_id: 'groceries' }),
+      spend({ id: 'y2', date: '2026-03-01', amount: 200, category_id: 'groceries' }),
+    ];
+    const tbl = categoryPeriodTable(yearly, [], CTX, HOUSEHOLD_VIEWER, 'year', '2026-07-13', 6);
+    expect(tbl.periods).toEqual(['2024', '2026']); // 2025 skipped, no phantom years
+    expect(tbl.rows[0].cells).toEqual([100, 200]);
+  });
+
+  it('is empty with no data', () => {
+    expect(categoryPeriodTable([], [], CTX, HOUSEHOLD_VIEWER, 'month', '2026-07-13').periods).toEqual([]);
   });
 });

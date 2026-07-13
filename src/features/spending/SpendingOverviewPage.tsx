@@ -8,8 +8,11 @@ import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { SegmentControl } from '@/shared/ui/SegmentControl';
 import { useSpendingData } from './data/useSpendingData';
-import { monthWindow, shiftMonthKey, spendingSummary } from './data/spending.selectors';
+import { monthWindow, shiftMonthKey, periodWindow, spendingSummary, type SpendingPeriod } from './data/spending.selectors';
+
+const PERIODS: SpendingPeriod[] = ['month', '3m', '6m', 'ytd', '1y', 'all'];
 
 function Bar({ pct, color }: { pct: number; color: string }) {
   return (
@@ -22,25 +25,37 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 export default function SpendingOverviewPage() {
   const { t, i18n } = useTranslation();
   const { categories, spendings, recurrences, people, ctx, viewer, isPending } = useSpendingData();
+  const [period, setPeriod] = useState<SpendingPeriod>('month');
   const [monthKey, setMonthKey] = useState(() => todayISO().slice(0, 7));
 
-  const window = monthWindow(monthKey);
+  const window = period === 'month' ? monthWindow(monthKey) : periodWindow(period, todayISO());
   const summary = spendingSummary(spendings, recurrences, window, ctx, viewer);
   const cat = (id: string) => categories.find(c => c.id === id);
   const personName = (id: string) => people.find(p => p.id === id)?.name || (id || t('sp_unassigned'));
 
   return (
     <div className="space-y-4">
-      {/* Month nav */}
-      <div className="flex items-center justify-center gap-2">
-        <Button variant="ghost" size="sm" aria-label={t('sp_prev_month')} onClick={() => setMonthKey(m => shiftMonthKey(m, -1))}>
-          <Icon name="chevronRight" size={16} className="rotate-180" />
-        </Button>
-        <span className="min-w-36 text-center text-sm font-semibold text-fg">{fmtMonth(monthKey, { locale: i18n.language })}</span>
-        <Button variant="ghost" size="sm" aria-label={t('sp_next_month')} onClick={() => setMonthKey(m => shiftMonthKey(m, 1))}>
-          <Icon name="chevronRight" size={16} />
-        </Button>
-      </div>
+      {/* Period selector */}
+      <SegmentControl<SpendingPeriod>
+        options={PERIODS.map(p => ({ value: p, label: p === 'month' ? t('sp_period_month') : t(`period_${p}`) }))}
+        value={period}
+        onChange={setPeriod}
+        responsive
+        aria-label={t('sp_period_label')}
+      />
+
+      {/* Month stepper — only in "This month" mode */}
+      {period === 'month' && (
+        <div className="flex items-center justify-center gap-2">
+          <Button variant="ghost" size="sm" aria-label={t('sp_prev_month')} onClick={() => setMonthKey(m => shiftMonthKey(m, -1))}>
+            <Icon name="chevronRight" size={16} className="rotate-180" />
+          </Button>
+          <span className="min-w-36 text-center text-sm font-semibold text-fg">{fmtMonth(monthKey, { locale: i18n.language })}</span>
+          <Button variant="ghost" size="sm" aria-label={t('sp_next_month')} onClick={() => setMonthKey(m => shiftMonthKey(m, 1))}>
+            <Icon name="chevronRight" size={16} />
+          </Button>
+        </div>
+      )}
 
       {isPending ? (
         <div className="space-y-3">{Array.from({ length: 3 }, (_, i) => <Skeleton key={i} variant="card" className="h-28" />)}</div>

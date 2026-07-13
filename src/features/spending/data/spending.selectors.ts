@@ -204,3 +204,81 @@ export function spendingSummary(
 export function monthsWithData(spendings: Spending[]): string[] {
   return [...new Set(spendings.map(s => monthKeyOf(s.date)))].sort((a, b) => b.localeCompare(a));
 }
+
+// ── Overview period windows ──────────────────────────────────────────────────
+
+export type SpendingPeriod = 'month' | '3m' | '6m' | 'ytd' | '1y' | 'all';
+
+/** The window a given overview period maps to, relative to `today` (YYYY-MM-DD). */
+export function periodWindow(period: SpendingPeriod, today: string): SpendingWindow {
+  if (period === 'month') return monthWindow(today.slice(0, 7));
+  const end = today;
+  if (period === 'all') return { start: '0000-01-01', end };
+  if (period === 'ytd') return { start: `${today.slice(0, 4)}-01-01`, end };
+  const months = period === '3m' ? 3 : period === '6m' ? 6 : 12; // 1y
+  return { start: isoOf(addMonths(parseISO(today), -months)), end };
+}
+
+// ── Detail: per-category, per-period table (MoM / YoY) ───────────────────────
+
+export interface CategoryPeriodRow {
+  categoryId: string;
+  cells: number[];   // aligned to `periods`
+  total: number;
+}
+
+export interface CategoryPeriodTable {
+  periods: string[];        // column keys (oldest → newest); 'YYYY-MM' or 'YYYY'
+  rows: CategoryPeriodRow[]; // sorted by total desc
+  columnTotals: number[];
+  grandTotal: number;
+}
+
+/**
+ * Spending per category across the most recent `maxPeriods` periods that actually
+ * have data (empty periods are skipped, so 2 years of history shows 2 columns,
+ * not 6). `granularity` = 'month' for MoM, 'year' for YoY.
+ */
+export function categoryPeriodTable(
+  spendings: Spending[],
+  rules: SpendingRecurrence[],
+  ctx: SpendingCtx,
+  viewer: string,
+  granularity: 'month' | 'year',
+  today: string,
+  maxPeriods = 6,
+): CategoryPeriodTable {
+  const empty: CategoryPeriodTable = { periods: [], rows: [], columnTotals: [], grandTotal: 0 };
+  const dates = [...spendings.map(s => s.date), ...rules.map(r => r.start_date)].filter(Boolean);
+  if (!dates.length) return empty;
+
+  const start = dates.reduce((a, b) => (a < b ? a : b));
+  const w: SpendingWindow = { start, end: today };
+  const slices = sliceLedger(ledgerFor(spendings, rules, w), ctx);
+  const visible = viewer === HOUSEHOLD_VIEWER ? slices : slices.filter(s => s.ownerId === viewer);
+
+  const keyOf = (date: string) => (granularity === 'month' ? date.slice(0, 7) : date.slice(0, 4));
+
+  const byPeriodCat = new Map<string, Map<string, number>>();
+  for (const s of visible) {
+    const pk = keyOf(s.date);
+    let m = byPeriodCat.get(pk);
+    if (!m) { m = new Map(); byPeriodCat.set(pk, m); }
+    m.set(s.categoryId, (m.get(s.categoryId) ?? 0) + s.amount);
+  }
+
+  const periods = [...byPeriodCat.keys()].sort().slice(-maxPeriods); // last N with data, ascending
+  if (!periods.length) return empty;
+
+  const catTotals = new Map<string, number>();
+  for (const p of periods) for (const [cat, amt] of byPeriodCat.get(p)!) catTotals.set(cat, (catTotals.get(cat) ?? 0) + amt);
+
+  const rows: CategoryPeriodRow[] = [...catTotals.keys()]
+    .map(cat => ({ categoryId: cat, cells: periods.map(p => byPeriodCat.get(p)?.get(cat) ?? 0), total: catTotals.get(cat) ?? 0 }))
+    .sort((a, b) => b.total - a.total);
+
+  const columnTotals = periods.map(p => [...(byPeriodCat.get(p)?.values() ?? [])].reduce((a, b) => a + b, 0));
+  const grandTotal = columnTotals.reduce((a, b) => a + b, 0);
+
+  return { periods, rows, columnTotals, grandTotal };
+}

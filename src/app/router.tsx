@@ -24,6 +24,7 @@ import { ImportSection } from '@/features/settings/sections/ImportSection';
 import OptionsPage from '@/features/options/OptionsPage';
 import OptionsManagePage from '@/features/options/OptionsManagePage';
 import SpendingOverviewPage from '@/features/spending/SpendingOverviewPage';
+import SpendingDetailPage from '@/features/spending/SpendingDetailPage';
 import SpendingEntriesPage from '@/features/spending/SpendingEntriesPage';
 import SpendingManagePage from '@/features/spending/SpendingManagePage';
 import SpendingImportPage from '@/features/spending/SpendingImportPage';
@@ -42,6 +43,7 @@ const OPTIONS_LINKS: SubNavLink[] = [
 
 const SPENDING_LINKS: SubNavLink[] = [
   { to: '/spending', label: 'Overview', icon: 'dashboard', end: true },
+  { to: '/spending/detail', label: 'Detail', icon: 'table' },
   { to: '/spending/entries', label: 'Entries', icon: 'calendar' },
   { to: '/spending/import', label: 'Import', icon: 'upload' },
   { to: '/spending/manage', label: 'Manage', icon: 'settings' },
@@ -122,6 +124,7 @@ export const router = createBrowserRouter(
                       element: <SectionLayout links={SPENDING_LINKS} />,
                       children: [
                         { index: true, element: <SpendingOverviewPage /> },
+                        { path: 'detail', element: <SpendingDetailPage /> },
                         { path: 'entries', element: <SpendingEntriesPage /> },
                         { path: 'import', element: <SpendingImportPage /> },
                         { path: 'manage', element: <SpendingManagePage /> },

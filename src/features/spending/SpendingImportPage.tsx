@@ -45,6 +45,7 @@ export default function SpendingImportPage() {
   const [acctSplit, setAcctSplit] = useState<Record<string, OwnerSplitValue>>({});
   const [catChoice, setCatChoice] = useState<Record<string, string>>({});
   const [kindChoice, setKindChoice] = useState<Record<string, KindDecision>>({});
+  const [newCatNames, setNewCatNames] = useState<Record<string, string>>({});
   const [assignAllToMe, setAssignAllToMe] = useState(false);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [result, setResult] = useState<{ imported: number; duplicates: number; newCats: number } | null>(null);
@@ -104,13 +105,16 @@ export default function SpendingImportPage() {
 
     const rCat = loadCategoryMap(importer.id);
     const seededCat: Record<string, string> = {};
+    const seededNames: Record<string, string> = {};
     for (const c of distinct(exp, x => x.category)) {
       const remembered = rCat[c];
       seededCat[c] = (remembered && categories.some(x => x.id === remembered))
         ? remembered
         : (suggestCategory(c, categories) || NEW_CATEGORY);
+      seededNames[c] = c; // default the "create new" name to the bank's label
     }
     setCatChoice(seededCat);
+    setNewCatNames(seededNames);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importer, raw]);
 
@@ -146,7 +150,7 @@ export default function SpendingImportPage() {
 
   const targetCategoryLabel = (bankCat: string): string => {
     const choice = catChoice[bankCat] ?? NEW_CATEGORY;
-    if (choice === NEW_CATEGORY) return `${bankCat} (${t('sp_imp_new')})`;
+    if (choice === NEW_CATEGORY) return `${(newCatNames[bankCat] ?? bankCat).trim() || bankCat} (${t('sp_imp_new')})`;
     const c = categories.find(x => x.id === choice);
     return c ? tr(c) : bankCat;
   };
@@ -169,10 +173,11 @@ export default function SpendingImportPage() {
     for (const bankCat of bankCats) {
       const choice = catChoice[bankCat] ?? NEW_CATEGORY;
       if (choice === NEW_CATEGORY) {
-        const id = slugCategoryId(bankCat, taken);
+        const name = (newCatNames[bankCat] ?? bankCat).trim() || bankCat;
+        const id = slugCategoryId(name, taken);
         taken.add(id);
         sortBase += 10;
-        newCats.push({ id, name_fr: bankCat, name_en: bankCat, color: TAG_PALETTE[newCats.length % TAG_PALETTE.length], icon: 'other', sort_order: sortBase, active: true });
+        newCats.push({ id, name_fr: name, name_en: name, color: TAG_PALETTE[newCats.length % TAG_PALETTE.length], icon: 'other', sort_order: sortBase, active: true });
         catTarget[bankCat] = id;
       } else {
         catTarget[bankCat] = choice;
@@ -306,7 +311,9 @@ export default function SpendingImportPage() {
             rememberedKeys={rememberedCatKeys}
             spendingCategories={categories}
             value={catChoice}
+            newNames={newCatNames}
             onChange={(c, target) => setCatChoice(prev => ({ ...prev, [c]: target }))}
+            onNewNameChange={(c, name) => setNewCatNames(prev => ({ ...prev, [c]: name }))}
           />
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="sm" onClick={goBack}>{t('sp_imp_back')}</Button>
@@ -347,7 +354,7 @@ export default function SpendingImportPage() {
             {t('sp_imp_done_detail', { newCats: result.newCats, duplicates: result.duplicates })}
           </p>
           <div className="mt-4 flex justify-center gap-2">
-            <Button variant="default" size="sm" onClick={() => { setStep('upload'); setImporter(null); setRaw([]); setResult(null); setExcluded(new Set()); setKindChoice({}); setAssignAllToMe(false); }}>
+            <Button variant="default" size="sm" onClick={() => { setStep('upload'); setImporter(null); setRaw([]); setResult(null); setExcluded(new Set()); setKindChoice({}); setNewCatNames({}); setAssignAllToMe(false); }}>
               {t('sp_imp_another')}
             </Button>
             <Button variant="primary" size="sm" asChild><Link to="/spending/entries">{t('sp_imp_view_entries')}</Link></Button>

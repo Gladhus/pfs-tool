@@ -329,7 +329,9 @@ export already lists. Then the wizard:
    include/skip decision (default: skip). Shown only when present; decisions are
    remembered per category, so the step shrinks over time.
 2. **Accounts → ownership** and **Categories → your categories** (create-new
-   allowed) — both remembered in `localStorage`, unknowns surfaced first.
+   allowed) — both remembered in `localStorage`, unknowns surfaced first. The
+   accounts step also offers a one-click **"assign everything to me"** shortcut
+   (owned by the current viewer / primary member) that skips per-account mapping.
 3. **Review** — the resulting rows, any of which can be unticked.
 
 `buildSpendings` then emits `Spending[]` with **deterministic ids** so re-importing

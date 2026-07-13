@@ -380,5 +380,7 @@
   "sp_imp_uncertain_help": "Ces transactions ne ressemblent pas à des dépenses personnelles claires. Choisissez lesquelles inclure. Les transferts et paiements de carte de crédit sont toujours exclus pour éviter le double comptage. Vos choix sont mémorisés.",
   "sp_imp_uncertain_detail": "{{count}} transactions",
   "sp_imp_skip": "Ignorer",
-  "sp_imp_include": "Inclure"
+  "sp_imp_include": "Inclure",
+  "sp_imp_assign_all_me": "Tout attribuer à {{name}} (ignorer l’association des comptes)",
+  "sp_imp_assign_all_note": "Les {{count}} comptes → détenus par {{name}}"
 }

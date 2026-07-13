@@ -380,5 +380,7 @@
   "sp_imp_uncertain_help": "These don’t look like clear personal spending. Choose which to include. Transfers and credit-card payments are always excluded to avoid double-counting. Your choices are remembered.",
   "sp_imp_uncertain_detail": "{{count}} transactions",
   "sp_imp_skip": "Skip",
-  "sp_imp_include": "Include"
+  "sp_imp_include": "Include",
+  "sp_imp_assign_all_me": "Assign everything to {{name}} (skip account mapping)",
+  "sp_imp_assign_all_note": "All {{count}} accounts → owned by {{name}}"
 }

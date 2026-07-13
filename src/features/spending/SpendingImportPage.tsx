@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { tr } from '@/shared/i18n';
 import { useToastStore } from '@/shared/stores/toast.store';
 import { TAG_PALETTE } from '@/shared/utils/colors';
-import { migrateLegacyOwnership, ownershipLabel } from '@/shared/utils/ownership';
+import { migrateLegacyOwnership, ownershipLabel, HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
 import { useWriteSpendingsMutation, useWriteSpendingCategoriesMutation } from '@/shared/io/queries/sheetMutations';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
@@ -33,7 +33,7 @@ type Step = 'upload' | 'uncertain' | 'accounts' | 'categories' | 'review' | 'don
 export default function SpendingImportPage() {
   const { t } = useTranslation();
   const addToast = useToastStore(s => s.addToast);
-  const { categories, spendings, people, mainCurrency, isPending } = useSpendingData();
+  const { categories, spendings, people, mainCurrency, viewer, isPending } = useSpendingData();
   const writeCategories = useWriteSpendingCategoriesMutation();
   const writeSpendings = useWriteSpendingsMutation();
 
@@ -45,11 +45,15 @@ export default function SpendingImportPage() {
   const [acctSplit, setAcctSplit] = useState<Record<string, OwnerSplitValue>>({});
   const [catChoice, setCatChoice] = useState<Record<string, string>>({});
   const [kindChoice, setKindChoice] = useState<Record<string, KindDecision>>({});
+  const [assignAllToMe, setAssignAllToMe] = useState(false);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [result, setResult] = useState<{ imported: number; duplicates: number; newCats: number } | null>(null);
 
   const activePeople = useMemo(() => people.filter(p => p.active), [people]);
   const primaryId = people.find(p => p.primary)?.id ?? activePeople[0]?.id ?? '';
+  // "Me" = the current viewer when it's a real person, else the primary member.
+  const meId = (viewer !== HOUSEHOLD_VIEWER && activePeople.some(p => p.id === viewer)) ? viewer : primaryId;
+  const meName = people.find(p => p.id === meId)?.name || meId;
 
   const uncertainCats = useMemo(() => uncertainCategories(raw), [raw]);
   const rememberedKindKeys = useMemo(() => new Set(Object.keys(importer ? loadKindMap(importer.id) : {})), [importer]);
@@ -147,11 +151,12 @@ export default function SpendingImportPage() {
     return c ? tr(c) : bankCat;
   };
   const ownerLabelForAcct = (acct: string): string => {
+    if (assignAllToMe) return meName;
     const v = acctSplit[acct];
     return v ? ownershipLabel(splitToOwnership(v, activePeople), people, t('viewer_household')) : '';
   };
 
-  const accountsValid = orderedAccounts.every(a => acctSplit[a] && !splitInvalid(acctSplit[a], activePeople));
+  const accountsValid = assignAllToMe || orderedAccounts.every(a => acctSplit[a] && !splitInvalid(acctSplit[a], activePeople));
   const importCount = keyed.filter(k => !duplicateIds.has(k.id) && !excluded.has(k.id)).length;
   const writing = writeCategories.isPending || writeSpendings.isPending;
 
@@ -174,13 +179,15 @@ export default function SpendingImportPage() {
       }
     }
     const acctOwn: Record<string, OwnershipEntry[]> = {};
-    for (const a of accounts) acctOwn[a] = splitToOwnership(acctSplit[a], activePeople);
+    const meOwnership: OwnershipEntry[] = [{ person_id: meId, share: 1 }];
+    for (const a of accounts) acctOwn[a] = assignAllToMe ? meOwnership : splitToOwnership(acctSplit[a], activePeople);
 
     const { spendings: toAdd, duplicates } = buildSpendings(keyed, catTarget, acctOwn, existingIds, new Date().toISOString(), excluded);
 
     const finish = () => {
       saveCategoryMap(importer.id, catTarget);
-      saveAccountMap(importer.id, acctOwn);
+      // Don't clobber remembered per-account mappings when the user skipped mapping.
+      if (!assignAllToMe) saveAccountMap(importer.id, acctOwn);
       if (uncertainCats.length) saveKindMap(importer.id, Object.fromEntries(uncertainCats.map(c => [c, kindChoice[c] ?? 'exclude'])));
       setResult({ imported: toAdd.length, duplicates, newCats: newCats.length });
       setStep('done');
@@ -278,6 +285,9 @@ export default function SpendingImportPage() {
             people={people}
             value={acctSplit}
             onChange={(a, v) => setAcctSplit(prev => ({ ...prev, [a]: v }))}
+            assignAllToMe={assignAllToMe}
+            onToggleAssignAll={setAssignAllToMe}
+            meName={meName}
           />
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="sm" onClick={goBack}>{t('sp_imp_back')}</Button>
@@ -337,7 +347,7 @@ export default function SpendingImportPage() {
             {t('sp_imp_done_detail', { newCats: result.newCats, duplicates: result.duplicates })}
           </p>
           <div className="mt-4 flex justify-center gap-2">
-            <Button variant="default" size="sm" onClick={() => { setStep('upload'); setImporter(null); setRaw([]); setResult(null); setExcluded(new Set()); setKindChoice({}); }}>
+            <Button variant="default" size="sm" onClick={() => { setStep('upload'); setImporter(null); setRaw([]); setResult(null); setExcluded(new Set()); setKindChoice({}); setAssignAllToMe(false); }}>
               {t('sp_imp_another')}
             </Button>
             <Button variant="primary" size="sm" asChild><Link to="/spending/entries">{t('sp_imp_view_entries')}</Link></Button>

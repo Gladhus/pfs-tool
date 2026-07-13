@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { tr } from '@/shared/i18n';
 import { fmtMonth, todayISO } from '@/shared/utils/dates';
+import { useUIStore } from '@/shared/stores/ui.store';
 import { Amount } from '@/shared/ui/Amount';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
@@ -10,7 +11,8 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { SegmentControl } from '@/shared/ui/SegmentControl';
 import { useSpendingData } from './data/useSpendingData';
-import { monthWindow, shiftMonthKey, periodWindow, spendingSummary, type SpendingPeriod } from './data/spending.selectors';
+import { SpendingBarChart } from './components/SpendingBarChart';
+import { monthWindow, shiftMonthKey, periodWindow, spendingSummary, monthlyTotals, type SpendingPeriod } from './data/spending.selectors';
 
 const PERIODS: SpendingPeriod[] = ['month', '3m', '6m', 'ytd', '1y', 'all'];
 
@@ -24,14 +26,23 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 
 export default function SpendingOverviewPage() {
   const { t, i18n } = useTranslation();
-  const { categories, spendings, recurrences, people, ctx, viewer, isPending } = useSpendingData();
+  const { categories, spendings, recurrences, people, ctx, viewer, mainCurrency, isPending } = useSpendingData();
+  const isPrivate = useUIStore(s => s.privateMode);
   const [period, setPeriod] = useState<SpendingPeriod>('month');
   const [monthKey, setMonthKey] = useState(() => todayISO().slice(0, 7));
 
-  const window = period === 'month' ? monthWindow(monthKey) : periodWindow(period, todayISO());
+  const today = todayISO();
+  const window = period === 'month' ? monthWindow(monthKey) : periodWindow(period, today);
   const summary = spendingSummary(spendings, recurrences, window, ctx, viewer);
   const cat = (id: string) => categories.find(c => c.id === id);
   const personName = (id: string) => people.find(p => p.id === id)?.name || (id || t('sp_unassigned'));
+  const locale = i18n.language === 'fr' ? 'fr' : 'en';
+
+  const hasAnyData = spendings.length > 0 || recurrences.length > 0;
+  const chartData = useMemo(() => monthlyTotals(spendings, recurrences, ctx, viewer, today, 12), [spendings, recurrences, ctx, viewer, today]);
+  const startM = window.start.slice(0, 7), endM = window.end.slice(0, 7);
+  const selectedMonths = useMemo(() => new Set(chartData.filter(d => d.month >= startM && d.month <= endM).map(d => d.month)), [chartData, startM, endM]);
+  const selectMonth = (m: string) => { setPeriod('month'); setMonthKey(m); };
 
   return (
     <div className="space-y-4">
@@ -59,7 +70,7 @@ export default function SpendingOverviewPage() {
 
       {isPending ? (
         <div className="space-y-3">{Array.from({ length: 3 }, (_, i) => <Skeleton key={i} variant="card" className="h-28" />)}</div>
-      ) : summary.count === 0 ? (
+      ) : !hasAnyData ? (
         <EmptyState
           icon={<Icon name="cash" size={28} />}
           title={t('sp_no_spending_month')}
@@ -68,6 +79,27 @@ export default function SpendingOverviewPage() {
         />
       ) : (
         <>
+          {/* Monthly trend */}
+          <section className="rounded-xl bg-surface-1 p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-fg">{t('sp_monthly_spending')}</h3>
+            <SpendingBarChart
+              data={chartData}
+              selectedMonths={selectedMonths}
+              locale={locale}
+              currency={mainCurrency}
+              isPrivate={isPrivate}
+              onSelectMonth={selectMonth}
+            />
+          </section>
+
+          {summary.count === 0 ? (
+            <EmptyState
+              icon={<Icon name="cash" size={28} />}
+              title={t('sp_no_spending_period')}
+              description={t('sp_no_spending_period_hint')}
+            />
+          ) : (
+          <>
           {/* Hero total */}
           <section className="rounded-xl bg-surface-1 p-5 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-muted">{t('sp_total_spent')}</p>
@@ -123,6 +155,8 @@ export default function SpendingOverviewPage() {
                 ))}
               </div>
             </section>
+          )}
+          </>
           )}
         </>
       )}

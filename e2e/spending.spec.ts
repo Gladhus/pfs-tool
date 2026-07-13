@@ -40,10 +40,11 @@ test.describe('Spending tracker', () => {
     // Appears in the ledger.
     await expect(page.getByText('$42.50').first()).toBeVisible({ timeout: 15000 });
 
-    // And rolls into the overview total.
+    // And rolls into the overview total + monthly chart.
     await page.locator('a[href="/pfs-tool/spending"]').first().click();
     await page.waitForURL(/\/spending$/);
-    await expect(page.getByText('Total spent')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Monthly spending')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Total spent')).toBeVisible();
     await expect(page.getByText('$42.50').first()).toBeVisible();
   });
 

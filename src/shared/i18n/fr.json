@@ -391,5 +391,8 @@
   "sp_detail_granularity": "Granularité du détail",
   "sp_detail_total": "Total",
   "sp_no_detail": "Pas encore assez de données",
-  "sp_no_detail_hint": "Ajoutez ou importez des dépenses pour voir les ventilations mensuelles et annuelles."
+  "sp_no_detail_hint": "Ajoutez ou importez des dépenses pour voir les ventilations mensuelles et annuelles.",
+  "sp_monthly_spending": "Dépenses mensuelles",
+  "sp_no_spending_period": "Aucune dépense pour cette période",
+  "sp_no_spending_period_hint": "Essayez une autre période, ou ajoutez une dépense."
 }

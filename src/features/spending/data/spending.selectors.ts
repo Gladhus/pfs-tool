@@ -223,6 +223,32 @@ export function periodWindow(period: SpendingPeriod, today: string): SpendingWin
   return { start: monthWindow(shiftMonthKey(thisMonth, -(months - 1))).start, end: monthWindow(thisMonth).end };
 }
 
+/** Total spending per calendar month over the trailing `months` window (oldest → newest,
+    gaps filled with 0), scoped to the viewer. For the overview trend bar chart. */
+export interface MonthlyTotal { month: string; total: number }
+
+export function monthlyTotals(
+  spendings: Spending[],
+  rules: SpendingRecurrence[],
+  ctx: SpendingCtx,
+  viewer: string,
+  today: string,
+  months = 12,
+): MonthlyTotal[] {
+  const endMonth = today.slice(0, 7);
+  const startMonth = shiftMonthKey(endMonth, -(months - 1));
+  const w: SpendingWindow = { start: monthWindow(startMonth).start, end: monthWindow(endMonth).end };
+
+  const slices = sliceLedger(ledgerFor(spendings, rules, w), ctx);
+  const visible = viewer === HOUSEHOLD_VIEWER ? slices : slices.filter(s => s.ownerId === viewer);
+  const byMonth = new Map<string, number>();
+  for (const s of visible) byMonth.set(s.date.slice(0, 7), (byMonth.get(s.date.slice(0, 7)) ?? 0) + s.amount);
+
+  const out: MonthlyTotal[] = [];
+  for (let m = startMonth; m <= endMonth; m = shiftMonthKey(m, 1)) out.push({ month: m, total: byMonth.get(m) ?? 0 });
+  return out;
+}
+
 // ── Detail: per-category, per-period table (MoM / YoY) ───────────────────────
 
 export interface CategoryPeriodRow {

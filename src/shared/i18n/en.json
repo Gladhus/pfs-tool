@@ -391,5 +391,8 @@
   "sp_detail_granularity": "Detail granularity",
   "sp_detail_total": "Total",
   "sp_no_detail": "Not enough data yet",
-  "sp_no_detail_hint": "Add or import some spendings to see monthly and yearly breakdowns."
+  "sp_no_detail_hint": "Add or import some spendings to see monthly and yearly breakdowns.",
+  "sp_monthly_spending": "Monthly spending",
+  "sp_no_spending_period": "No spending in this period",
+  "sp_no_spending_period_hint": "Try a different period, or add a spending."
 }

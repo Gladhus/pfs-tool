@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   expandRecurrence, recurringOccurrences, ledgerFor, sliceLedger,
   viewerAmount, spendingSummary, monthWindow, shiftMonthKey, monthKeyOf,
-  periodWindow, categoryPeriodTable,
+  periodWindow, categoryPeriodTable, monthlyTotals,
   type SpendingCtx,
 } from '@/features/spending/data/spending.selectors';
 import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
@@ -227,5 +227,25 @@ describe('categoryPeriodTable', () => {
 
   it('is empty with no data', () => {
     expect(categoryPeriodTable([], [], CTX, HOUSEHOLD_VIEWER, 'month', '2026-07-13').periods).toEqual([]);
+  });
+});
+
+describe('monthlyTotals', () => {
+  it('returns a contiguous trailing window with gaps as 0, newest last', () => {
+    const spendings: Spending[] = [
+      spend({ id: 'a', date: '2026-05-10', amount: 100, category_id: 'groceries' }),
+      spend({ id: 'b', date: '2026-07-05', amount: 40, category_id: 'dining' }),
+    ];
+    const rows = monthlyTotals(spendings, [], CTX, HOUSEHOLD_VIEWER, '2026-07-13', 6);
+    expect(rows.map(r => r.month)).toEqual(['2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07']);
+    expect(rows.map(r => r.total)).toEqual([0, 0, 0, 100, 0, 40]); // June stays 0
+  });
+
+  it('scopes to the viewer', () => {
+    const spendings: Spending[] = [
+      spend({ id: 'a', date: '2026-07-05', amount: 100, ownership: [{ person_id: 'self', share: 0.25 }, { person_id: 'partner', share: 0.75 }] }),
+    ];
+    const self = monthlyTotals(spendings, [], CTX, 'self', '2026-07-13', 2);
+    expect(self[self.length - 1].total).toBeCloseTo(25, 5);
   });
 });

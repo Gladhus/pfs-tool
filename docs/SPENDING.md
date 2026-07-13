@@ -50,7 +50,7 @@ features/
   spending/   ← NEW self-contained domain, NOT a contributor
     data/
       spending.selectors.ts        ← recurrence expansion, per-owner slicing, summary
-    SpendingOverviewPage.tsx       ← totals + by-category + by-person (period selector)
+    SpendingOverviewPage.tsx       ← monthly bar chart + totals + by-category + by-person (period selector)
     SpendingDetailPage.tsx         ← per-category MoM / YoY table + Δ/% per period (last 6, contiguous)
     SpendingEntriesPage.tsx        ← the ledger: list / add / edit / delete
     SpendingManagePage.tsx         ← manage categories + recurring rules

@@ -45,6 +45,7 @@ PFS Tool lets you record snapshots of your accounts over time and watch your net
 - Enable from **Settings → Preferences** — a self-contained section, separate from net worth
 - Record expenses with a **category** and an **owner split** (per-person %, like account ownership)
 - **Recurring rules** — rent, subscriptions, etc. entered once and counted automatically every period
+- **Bank import** — upload a PDF export and a wizard maps accounts → owners and categories, remembering your choices; the format is auto-detected and the plugin registry makes new banks additive
 - Monthly **overview** — total spent with a by-category and by-person breakdown
 - Multi-currency spendings converted to your main currency
 

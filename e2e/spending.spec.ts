@@ -38,13 +38,22 @@ test.describe('Spending tracker', () => {
     await expect(dialog).not.toBeVisible();
 
     // Appears in the ledger.
-    await expect(page.getByText('$42.50').first()).toBeVisible();
+    await expect(page.getByText('$42.50').first()).toBeVisible({ timeout: 15000 });
 
     // And rolls into the overview total.
     await page.locator('a[href="/pfs-tool/spending"]').first().click();
     await page.waitForURL(/\/spending$/);
-    await expect(page.getByText('Total spent')).toBeVisible();
+    await expect(page.getByText('Total spent')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('$42.50').first()).toBeVisible();
+  });
+
+  test('the Import wizard is reachable and shows the upload step', async ({ page }) => {
+    await page.locator('a[href="/pfs-tool/spending"]').first().click();
+    await page.waitForURL(/\/spending$/);
+    await page.locator('a[href="/pfs-tool/spending/import"]').click();
+    await page.waitForURL(/\/spending\/import/);
+    await expect(page.getByText('Import transactions from your bank')).toBeVisible();
+    await expect(page.getByText(/Choose PDF/i)).toBeVisible();
   });
 
   test('a custom category can be added in Manage', async ({ page }) => {

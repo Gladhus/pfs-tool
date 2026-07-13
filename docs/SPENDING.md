@@ -290,6 +290,45 @@ tab is absent (empty array) — the same contract every optional tab already hon
 
 ---
 
+## 7b. Importing bank exports (pluggable, auto-detecting)
+
+Transactions can be bulk-imported from a bank export via a wizard at
+`/spending/import`. The design is a **format-plugin registry** so new banks are
+additive — you write one `SpendingImporter` and register it; detection is automatic.
+
+```
+features/spending/import/
+  types.ts            SpendingImporter · RawTxn · ImportSource · PositionedLine
+  pdf.ts              extractPdf(file) → { text, lines }  (pdfjs, lazy-loaded)
+  registry.ts         IMPORTERS[] + detectImporter(src)   ← add a plugin here
+  bnc.importer.ts     Banque Nationale (PDF table)        ← one plugin
+  prepare.ts          expense filtering · stable import ids · buildSpendings (pure)
+  mappings.ts         remembered category/account maps (localStorage, per importer)
+```
+
+**The seam.** A `SpendingImporter` is `{ detect(src), parse(src) }`. `extractPdf`
+returns both the full `text` (for `detect`) and geometry — positioned `lines` with
+per-token `x`/width (for table `parse`). `detectImporter` returns the first plugin
+whose `detect` passes. Adding "Desjardins" or a CSV export is a new file + one line
+in `registry.ts`; nothing else changes.
+
+**Why geometry, not line order.** pdf.js emits per-character fragment tokens and
+separates table columns with wide space tokens. The BNC importer rebuilds cells by
+splitting each line at those wide spaces and assigning cells to columns by their
+left-x — robust to fragmentation and to descriptions that wrap onto a second line.
+A second pass recovers an account absorbed by a very long merchant name.
+
+**Pipeline.** `parse` → `RawTxn[]` (bank-native labels, each classified
+`expense | income | transfer`) → `expenseTxns` keeps only dated money-out rows →
+the wizard maps **accounts → ownership** and **bank categories → your categories**
+(both remembered in `localStorage`, unknowns surfaced first) → `buildSpendings`
+emits `Spending[]` with **deterministic ids** so re-importing the same export is
+idempotent (identical rows de-duplicated).
+
+**pdfjs is lazy.** It's `import()`-ed inside `pdf.ts` only when a PDF is parsed, so
+it (and its worker) code-split out of the main bundle — the app pays for it only on
+the import screen.
+
 ## 8. Budgets — the deferred Phase 2 (designed, not built)
 
 The user asked to focus on tracking first. Budgets slot in additively:

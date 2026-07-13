@@ -203,14 +203,26 @@ describe('categoryPeriodTable', () => {
     expect(tbl.periods).toEqual(['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08']);
   });
 
-  it('YoY shows only years with data (no empty leading years)', () => {
+  it('keeps middle gaps as $0 columns, trimming only leading empties', () => {
+    // Data in May and Jul (no June). June is a middle gap → shown as 0.
+    const gap: Spending[] = [
+      spend({ id: 'g1', date: '2026-05-10', amount: 100, category_id: 'groceries' }),
+      spend({ id: 'g2', date: '2026-07-10', amount: 40, category_id: 'groceries' }),
+    ];
+    const tbl = categoryPeriodTable(gap, [], CTX, HOUSEHOLD_VIEWER, 'month', '2026-07-13', 6);
+    expect(tbl.periods).toEqual(['2026-05', '2026-06', '2026-07']); // June filled in
+    expect(tbl.rows[0].cells).toEqual([100, 0, 40]);
+    expect(tbl.columnTotals).toEqual([100, 0, 40]);
+  });
+
+  it('YoY trims leading empty years but fills middle ones', () => {
     const yearly: Spending[] = [
       spend({ id: 'y1', date: '2024-03-01', amount: 100, category_id: 'groceries' }),
       spend({ id: 'y2', date: '2026-03-01', amount: 200, category_id: 'groceries' }),
     ];
     const tbl = categoryPeriodTable(yearly, [], CTX, HOUSEHOLD_VIEWER, 'year', '2026-07-13', 6);
-    expect(tbl.periods).toEqual(['2024', '2026']); // 2025 skipped, no phantom years
-    expect(tbl.rows[0].cells).toEqual([100, 200]);
+    expect(tbl.periods).toEqual(['2024', '2025', '2026']); // 2025 filled (middle), no pre-2024 padding
+    expect(tbl.rows[0].cells).toEqual([100, 0, 200]);
   });
 
   it('is empty with no data', () => {

@@ -271,11 +271,22 @@ export function categoryPeriodTable(
     m.set(s.categoryId, (m.get(s.categoryId) ?? 0) + s.amount);
   }
 
-  const periods = [...byPeriodCat.keys()].sort().slice(-maxPeriods); // last N with data, ascending
-  if (!periods.length) return empty;
+  const withData = [...byPeriodCat.keys()].sort();
+  if (!withData.length) return empty;
+
+  // Columns are a CONTIGUOUS run ending at the latest period with data — middle
+  // gaps are kept (shown as $0 for a true period-over-period comparison), only
+  // leading empties are trimmed, and the run is capped at `maxPeriods` columns.
+  const first = withData[0];
+  const last = withData[withData.length - 1];
+  const step = (key: string, n: number) => (granularity === 'month' ? shiftMonthKey(key, n) : String(Number(key) + n));
+  let colStart = step(last, -(maxPeriods - 1));
+  if (colStart < first) colStart = first;
+  const periods: string[] = [];
+  for (let k = colStart; k <= last && periods.length < maxPeriods; k = step(k, 1)) periods.push(k);
 
   const catTotals = new Map<string, number>();
-  for (const p of periods) for (const [cat, amt] of byPeriodCat.get(p)!) catTotals.set(cat, (catTotals.get(cat) ?? 0) + amt);
+  for (const p of periods) for (const [cat, amt] of byPeriodCat.get(p) ?? []) catTotals.set(cat, (catTotals.get(cat) ?? 0) + amt);
 
   const rows: CategoryPeriodRow[] = [...catTotals.keys()]
     .map(cat => ({ categoryId: cat, cells: periods.map(p => byPeriodCat.get(p)?.get(cat) ?? 0), total: catTotals.get(cat) ?? 0 }))

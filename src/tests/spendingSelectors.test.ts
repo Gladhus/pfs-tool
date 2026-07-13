@@ -159,20 +159,22 @@ describe('spendingSummary', () => {
   });
 });
 
-describe('periodWindow', () => {
+describe('periodWindow (whole calendar months)', () => {
   const today = '2026-07-13';
+  const monthEnd = '2026-07-31';
   it('month → the current calendar month', () => {
-    expect(periodWindow('month', today)).toEqual({ start: '2026-07-01', end: '2026-07-31' });
+    expect(periodWindow('month', today)).toEqual({ start: '2026-07-01', end: monthEnd });
   });
-  it('ytd → Jan 1 to today', () => {
-    expect(periodWindow('ytd', today)).toEqual({ start: '2026-01-01', end: today });
+  it('ytd → Jan 1 to end of the current month', () => {
+    expect(periodWindow('ytd', today)).toEqual({ start: '2026-01-01', end: monthEnd });
   });
-  it('rolling 3m/1y end at today', () => {
-    expect(periodWindow('3m', today)).toEqual({ start: '2026-04-13', end: today });
-    expect(periodWindow('1y', today)).toEqual({ start: '2025-07-13', end: today });
+  it('3m/6m/1y span whole months back, ending at the current month-end', () => {
+    expect(periodWindow('3m', today)).toEqual({ start: '2026-05-01', end: monthEnd }); // May, Jun, Jul
+    expect(periodWindow('6m', today)).toEqual({ start: '2026-02-01', end: monthEnd });
+    expect(periodWindow('1y', today)).toEqual({ start: '2025-08-01', end: monthEnd }); // 12 months incl. current
   });
   it('all starts at the epoch floor', () => {
-    expect(periodWindow('all', today)).toEqual({ start: '0000-01-01', end: today });
+    expect(periodWindow('all', today)).toEqual({ start: '0000-01-01', end: monthEnd });
   });
 });
 

@@ -209,14 +209,18 @@ export function monthsWithData(spendings: Spending[]): string[] {
 
 export type SpendingPeriod = 'month' | '3m' | '6m' | 'ytd' | '1y' | 'all';
 
-/** The window a given overview period maps to, relative to `today` (YYYY-MM-DD). */
+/**
+ * The window a given overview period maps to, relative to `today` (YYYY-MM-DD).
+ * Multi-month periods span whole calendar months (e.g. 3M = the current month plus
+ * the two before it, from the 1st of the earliest to the last day of the current).
+ */
 export function periodWindow(period: SpendingPeriod, today: string): SpendingWindow {
-  if (period === 'month') return monthWindow(today.slice(0, 7));
-  const end = today;
-  if (period === 'all') return { start: '0000-01-01', end };
-  if (period === 'ytd') return { start: `${today.slice(0, 4)}-01-01`, end };
+  const thisMonth = today.slice(0, 7);
+  if (period === 'month') return monthWindow(thisMonth);
+  if (period === 'all') return { start: '0000-01-01', end: monthWindow(thisMonth).end };
+  if (period === 'ytd') return { start: `${today.slice(0, 4)}-01-01`, end: monthWindow(thisMonth).end };
   const months = period === '3m' ? 3 : period === '6m' ? 6 : 12; // 1y
-  return { start: isoOf(addMonths(parseISO(today), -months)), end };
+  return { start: monthWindow(shiftMonthKey(thisMonth, -(months - 1))).start, end: monthWindow(thisMonth).end };
 }
 
 // ── Detail: per-category, per-period table (MoM / YoY) ───────────────────────

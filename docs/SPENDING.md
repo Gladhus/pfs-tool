@@ -51,7 +51,7 @@ features/
     data/
       spending.selectors.ts        ← recurrence expansion, per-owner slicing, summary
     SpendingOverviewPage.tsx       ← totals + by-category + by-person (period selector)
-    SpendingDetailPage.tsx         ← per-category MoM / YoY table (last 6 periods with data)
+    SpendingDetailPage.tsx         ← per-category MoM / YoY table + Δ/% per period (last 6 with data)
     SpendingEntriesPage.tsx        ← the ledger: list / add / edit / delete
     SpendingManagePage.tsx         ← manage categories + recurring rules
     components/

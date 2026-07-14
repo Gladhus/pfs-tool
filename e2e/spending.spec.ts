@@ -27,7 +27,7 @@ test.describe('Spending tracker', () => {
     // Enter the section, then reach the ledger via its sub-nav.
     await page.locator('a[href="/pfs-tool/spending"]').first().click();
     await page.waitForURL(/\/spending$/);
-    await page.locator('a[href="/pfs-tool/spending/entries"]').click();
+    await page.getByRole('link', { name: 'Entries' }).click();
     await page.waitForURL(/\/spending\/entries/);
 
     await page.getByRole('button', { name: /add spending/i }).first().click();

@@ -1,4 +1,4 @@
-import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise } from '@/types/sheets';
+import type { Account, Snapshot, AppConfig, Tag, Group, Person, FxRate, OptionCompany, OptionGrant, OptionFmv, OptionExercise, SpendingCategory, Spending, SpendingRecurrence } from '@/types/sheets';
 
 export interface Datasource {
   readonly id: string;
@@ -15,6 +15,9 @@ export interface Datasource {
   loadOptionGrants(): Promise<OptionGrant[]>;
   loadOptionFmv(): Promise<OptionFmv[]>;
   loadOptionExercises(): Promise<OptionExercise[]>;
+  loadSpendingCategories(): Promise<SpendingCategory[]>;
+  loadSpendings(): Promise<Spending[]>;
+  loadSpendingRecurrences(): Promise<SpendingRecurrence[]>;
 
   writeAccounts(accounts: Account[]): Promise<void>;
   writeSnapshots(snapshots: Snapshot[]): Promise<void>;
@@ -27,4 +30,7 @@ export interface Datasource {
   writeOptionGrants(items: OptionGrant[]): Promise<void>;
   writeOptionFmv(items: OptionFmv[]): Promise<void>;
   writeOptionExercises(items: OptionExercise[]): Promise<void>;
+  writeSpendingCategories(items: SpendingCategory[]): Promise<void>;
+  writeSpendings(items: Spending[]): Promise<void>;
+  writeSpendingRecurrences(items: SpendingRecurrence[]): Promise<void>;
 }

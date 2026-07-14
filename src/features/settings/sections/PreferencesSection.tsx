@@ -49,10 +49,14 @@ export function PreferencesSection() {
   const xlsxDs = isXlsx ? (datasource as XlsxDatasource) : null;
 
   const stockOptionsEnabled = configQ.data?.stock_options_enabled === true;
+  const spendingEnabled = configQ.data?.spending_enabled === true;
   const mainCurrency: Currency = configQ.data?.currency === 'USD' ? 'USD' : 'CAD';
 
   const onToggleStockOptions = (checked: boolean) =>
     writeConfig.mutate({ key: 'stock_options_enabled', value: checked ? '1' : '0' });
+
+  const onToggleSpending = (checked: boolean) =>
+    writeConfig.mutate({ key: 'spending_enabled', value: checked ? '1' : '0' });
 
   const onCurrencyChange = (next: Currency) =>
     writeConfig.mutate({ key: 'currency', value: next });
@@ -115,6 +119,16 @@ export function PreferencesSection() {
             checked={stockOptionsEnabled}
             disabled={writeConfig.isPending}
             onCheckedChange={onToggleStockOptions}
+            aria-label={t('enable_stock_options')}
+          />
+        </Row>
+
+        <Row label={t('enable_spending')}>
+          <Checkbox
+            checked={spendingEnabled}
+            disabled={writeConfig.isPending}
+            onCheckedChange={onToggleSpending}
+            aria-label={t('enable_spending')}
           />
         </Row>
       </section>

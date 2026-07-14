@@ -17,7 +17,7 @@ test.describe('Stock options ownership', () => {
     await page.locator('a[href="/pfs-tool/settings"]').click();
     await page.waitForURL(/\/settings$/);
     await expect(page.getByText('Enable Stock Options tab')).toBeVisible();
-    const stockOptionsCheckbox = page.getByRole('checkbox');
+    const stockOptionsCheckbox = page.getByRole('checkbox', { name: 'Enable Stock Options tab' });
     await stockOptionsCheckbox.click();
     await expect(stockOptionsCheckbox).toBeChecked();
   });

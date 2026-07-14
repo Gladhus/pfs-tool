@@ -12,5 +12,8 @@ export const qk = {
   optFmv:        (s: string) => ['sheet', s, 'option_fmv'] as const,
   optExercises:  (s: string) => ['sheet', s, 'option_exercises'] as const,
   fxRates:       (s: string) => ['sheet', s, 'fx_rates'] as const,
+  spendingCategories:  (s: string) => ['sheet', s, 'spending_categories'] as const,
+  spendings:           (s: string) => ['sheet', s, 'spendings'] as const,
+  spendingRecurrences: (s: string) => ['sheet', s, 'spending_recurrences'] as const,
   sheetsList:    ()          => ['drive', 'sheets'] as const,
 };

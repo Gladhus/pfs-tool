@@ -249,6 +249,65 @@ export function monthlyTotals(
   return out;
 }
 
+/** Bucket key for spending that falls outside the top-N categories in the stacked chart. */
+export const OTHER_CATEGORY = '__other__';
+
+/** A chart row: the month plus one numeric column per category bucket. */
+export type MonthlyCategoryRow = { month: string; [category: string]: number | string };
+
+export interface MonthlyByCategory {
+  months: string[];        // oldest → newest
+  categories: string[];    // stack order (top-N by total, + OTHER_CATEGORY)
+  data: MonthlyCategoryRow[];
+}
+
+/** Monthly spending split by category (top `topN` + "Other"), for the stacked bar chart. */
+export function monthlyByCategory(
+  spendings: Spending[],
+  rules: SpendingRecurrence[],
+  ctx: SpendingCtx,
+  viewer: string,
+  today: string,
+  months = 12,
+  topN = 6,
+): MonthlyByCategory {
+  const endMonth = today.slice(0, 7);
+  const startMonth = shiftMonthKey(endMonth, -(months - 1));
+  const w: SpendingWindow = { start: monthWindow(startMonth).start, end: monthWindow(endMonth).end };
+  const slices = sliceLedger(ledgerFor(spendings, rules, w), ctx);
+  const visible = viewer === HOUSEHOLD_VIEWER ? slices : slices.filter(s => s.ownerId === viewer);
+
+  const catTotal = new Map<string, number>();
+  for (const s of visible) catTotal.set(s.categoryId, (catTotal.get(s.categoryId) ?? 0) + s.amount);
+  const topCats = [...catTotal.entries()].sort((a, b) => b[1] - a[1]).slice(0, topN).map(([id]) => id);
+  const topSet = new Set(topCats);
+  const hasOther = catTotal.size > topCats.length;
+
+  const monthsArr: string[] = [];
+  for (let m = startMonth; m <= endMonth; m = shiftMonthKey(m, 1)) monthsArr.push(m);
+
+  const byMonth = new Map<string, Record<string, number>>(monthsArr.map(m => [m, {}]));
+  for (const s of visible) {
+    const row = byMonth.get(s.date.slice(0, 7));
+    if (!row) continue;
+    const bucket = topSet.has(s.categoryId) ? s.categoryId : OTHER_CATEGORY;
+    row[bucket] = (row[bucket] ?? 0) + s.amount;
+  }
+
+  return {
+    months: monthsArr,
+    categories: hasOther ? [...topCats, OTHER_CATEGORY] : topCats,
+    data: monthsArr.map((m): MonthlyCategoryRow => ({ month: m, ...byMonth.get(m)! })),
+  };
+}
+
+/** Case-insensitive live search over a ledger row: matches category name, comment, or date. */
+export function rowMatchesQuery(row: { date: string; comment?: string }, categoryName: string, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return categoryName.toLowerCase().includes(q) || (row.comment ?? '').toLowerCase().includes(q) || row.date.includes(q);
+}
+
 // ── Detail: per-category, per-period table (MoM / YoY) ───────────────────────
 
 export interface CategoryPeriodRow {

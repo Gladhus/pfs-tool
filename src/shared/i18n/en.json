@@ -394,5 +394,13 @@
   "sp_no_detail_hint": "Add or import some spendings to see monthly and yearly breakdowns.",
   "sp_monthly_spending": "Monthly spending",
   "sp_no_spending_period": "No spending in this period",
-  "sp_no_spending_period_hint": "Try a different period, or add a spending."
+  "sp_no_spending_period_hint": "Try a different period, or add a spending.",
+  "sp_search_placeholder": "Search description, category…",
+  "sp_all_categories": "All categories",
+  "sp_no_matches": "No matching spendings",
+  "sp_no_matches_hint": "Try a different search or category filter.",
+  "sp_export_csv": "Export CSV",
+  "sp_chart_total": "Total",
+  "sp_chart_category": "By category",
+  "sp_other": "Other"
 }

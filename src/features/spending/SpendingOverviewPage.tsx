@@ -12,7 +12,8 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { SegmentControl } from '@/shared/ui/SegmentControl';
 import { useSpendingData } from './data/useSpendingData';
 import { SpendingBarChart } from './components/SpendingBarChart';
-import { monthWindow, shiftMonthKey, periodWindow, spendingSummary, monthlyTotals, type SpendingPeriod } from './data/spending.selectors';
+import { SpendingStackedChart } from './components/SpendingStackedChart';
+import { monthWindow, shiftMonthKey, periodWindow, spendingSummary, monthlyTotals, monthlyByCategory, OTHER_CATEGORY, type SpendingPeriod } from './data/spending.selectors';
 
 const PERIODS: SpendingPeriod[] = ['month', '3m', '6m', 'ytd', '1y', 'all'];
 
@@ -38,11 +39,15 @@ export default function SpendingOverviewPage() {
   const personName = (id: string) => people.find(p => p.id === id)?.name || (id || t('sp_unassigned'));
   const locale = i18n.language === 'fr' ? 'fr' : 'en';
 
+  const [chartMode, setChartMode] = useState<'total' | 'category'>('total');
   const hasAnyData = spendings.length > 0 || recurrences.length > 0;
   const chartData = useMemo(() => monthlyTotals(spendings, recurrences, ctx, viewer, today, 12), [spendings, recurrences, ctx, viewer, today]);
+  const stacked = useMemo(() => monthlyByCategory(spendings, recurrences, ctx, viewer, today, 12, 6), [spendings, recurrences, ctx, viewer, today]);
   const startM = window.start.slice(0, 7), endM = window.end.slice(0, 7);
   const selectedMonths = useMemo(() => new Set(chartData.filter(d => d.month >= startM && d.month <= endM).map(d => d.month)), [chartData, startM, endM]);
   const selectMonth = (m: string) => { setPeriod('month'); setMonthKey(m); };
+  const catColor = (k: string) => (k === OTHER_CATEGORY ? '#9ca3af' : (categories.find(c => c.id === k)?.color ?? '#888'));
+  const catLabel = (k: string) => { if (k === OTHER_CATEGORY) return t('sp_other'); const c = categories.find(x => x.id === k); return c ? tr(c) : k; };
 
   return (
     <div className="space-y-4">
@@ -81,15 +86,40 @@ export default function SpendingOverviewPage() {
         <>
           {/* Monthly trend */}
           <section className="rounded-xl bg-surface-1 p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-fg">{t('sp_monthly_spending')}</h3>
-            <SpendingBarChart
-              data={chartData}
-              selectedMonths={selectedMonths}
-              locale={locale}
-              currency={mainCurrency}
-              isPrivate={isPrivate}
-              onSelectMonth={selectMonth}
-            />
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-fg">{t('sp_monthly_spending')}</h3>
+              <SegmentControl<'total' | 'category'>
+                options={[
+                  { value: 'total', label: t('sp_chart_total') },
+                  { value: 'category', label: t('sp_chart_category') },
+                ]}
+                value={chartMode}
+                onChange={setChartMode}
+                aria-label={t('sp_monthly_spending')}
+              />
+            </div>
+            {chartMode === 'total' ? (
+              <SpendingBarChart
+                data={chartData}
+                selectedMonths={selectedMonths}
+                locale={locale}
+                currency={mainCurrency}
+                isPrivate={isPrivate}
+                onSelectMonth={selectMonth}
+              />
+            ) : (
+              <SpendingStackedChart
+                data={stacked.data}
+                categoryKeys={stacked.categories}
+                colorFor={catColor}
+                nameFor={catLabel}
+                selectedMonths={selectedMonths}
+                locale={locale}
+                currency={mainCurrency}
+                isPrivate={isPrivate}
+                onSelectMonth={selectMonth}
+              />
+            )}
           </section>
 
           {summary.count === 0 ? (

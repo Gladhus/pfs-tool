@@ -394,5 +394,13 @@
   "sp_no_detail_hint": "Ajoutez ou importez des dépenses pour voir les ventilations mensuelles et annuelles.",
   "sp_monthly_spending": "Dépenses mensuelles",
   "sp_no_spending_period": "Aucune dépense pour cette période",
-  "sp_no_spending_period_hint": "Essayez une autre période, ou ajoutez une dépense."
+  "sp_no_spending_period_hint": "Essayez une autre période, ou ajoutez une dépense.",
+  "sp_search_placeholder": "Rechercher description, catégorie…",
+  "sp_all_categories": "Toutes les catégories",
+  "sp_no_matches": "Aucune dépense correspondante",
+  "sp_no_matches_hint": "Essayez une autre recherche ou catégorie.",
+  "sp_export_csv": "Exporter CSV",
+  "sp_chart_total": "Total",
+  "sp_chart_category": "Par catégorie",
+  "sp_other": "Autres"
 }

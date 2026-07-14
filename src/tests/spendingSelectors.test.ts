@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   expandRecurrence, recurringOccurrences, ledgerFor, sliceLedger,
   viewerAmount, spendingSummary, monthWindow, shiftMonthKey, monthKeyOf,
-  periodWindow, categoryPeriodTable, monthlyTotals,
+  periodWindow, categoryPeriodTable, monthlyTotals, monthlyByCategory, OTHER_CATEGORY, rowMatchesQuery,
   type SpendingCtx,
 } from '@/features/spending/data/spending.selectors';
 import { HOUSEHOLD_VIEWER } from '@/shared/utils/ownership';
@@ -247,5 +247,40 @@ describe('monthlyTotals', () => {
     ];
     const self = monthlyTotals(spendings, [], CTX, 'self', '2026-07-13', 2);
     expect(self[self.length - 1].total).toBeCloseTo(25, 5);
+  });
+});
+
+describe('monthlyByCategory', () => {
+  const spendings: Spending[] = [
+    spend({ id: 'a', date: '2026-06-10', amount: 100, category_id: 'groceries' }),
+    spend({ id: 'b', date: '2026-07-05', amount: 40, category_id: 'groceries' }),
+    spend({ id: 'c', date: '2026-07-06', amount: 30, category_id: 'dining' }),
+    spend({ id: 'd', date: '2026-07-07', amount: 10, category_id: 'travel' }),
+  ];
+
+  it('keeps top-N categories and folds the rest into Other', () => {
+    const r = monthlyByCategory(spendings, [], CTX, HOUSEHOLD_VIEWER, '2026-07-13', 2, 2);
+    expect(r.months).toEqual(['2026-06', '2026-07']);
+    expect(r.categories).toEqual(['groceries', 'dining', OTHER_CATEGORY]); // travel → Other
+    expect(r.data[1].groceries).toBe(40);
+    expect(r.data[1].dining).toBe(30);
+    expect(r.data[1][OTHER_CATEGORY]).toBe(10);
+    expect(r.data[0].groceries).toBe(100);
+  });
+
+  it('omits the Other bucket when everything fits in top-N', () => {
+    const r = monthlyByCategory(spendings, [], CTX, HOUSEHOLD_VIEWER, '2026-07-13', 2, 6);
+    expect(r.categories).toEqual(['groceries', 'dining', 'travel']);
+  });
+});
+
+describe('rowMatchesQuery', () => {
+  const row = { date: '2026-07-05', comment: 'Costco run' };
+  it('matches category name, comment, or date; empty query matches all', () => {
+    expect(rowMatchesQuery(row, 'Groceries', '')).toBe(true);
+    expect(rowMatchesQuery(row, 'Groceries', 'gro')).toBe(true);   // category
+    expect(rowMatchesQuery(row, 'Groceries', 'costco')).toBe(true); // comment, case-insensitive
+    expect(rowMatchesQuery(row, 'Groceries', '2026-07')).toBe(true); // date
+    expect(rowMatchesQuery(row, 'Groceries', 'zzz')).toBe(false);
   });
 });

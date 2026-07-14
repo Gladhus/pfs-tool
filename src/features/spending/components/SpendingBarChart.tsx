@@ -1,20 +1,10 @@
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { fmtMonth } from '@/shared/utils/dates';
 import { privCur } from '@/shared/utils/currency';
-import { MASK } from '@/shared/utils/privacy';
 import { useContainerWidth } from '@/shared/hooks/useContainerWidth';
 import type { Currency } from '@/types/sheets';
 import type { MonthlyTotal } from '../data/spending.selectors';
-
-/** Compact money ticks that keep one decimal in the low-k range, so 1,050 and
-    1,400 don't both collapse to "1k" (the shared moneyTickFmt rounds to integer k). */
-function moneyTick(v: number, isPrivate: boolean): string {
-  if (isPrivate) return MASK.med;
-  const abs = Math.abs(v);
-  if (abs >= 10_000) return `${Math.round(v / 1000)}k`;
-  if (abs >= 1_000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}k`;
-  return String(Math.round(v));
-}
+import { moneyTick, xMonthTick } from './chartFormat';
 
 interface Props {
   data: MonthlyTotal[];
@@ -44,12 +34,6 @@ function TooltipCard({ active, payload, locale, currency, isPrivate }: {
     selected period are solid, the rest dimmed. Click a bar to jump to that month. */
 export function SpendingBarChart({ data, selectedMonths, locale, currency, isPrivate, onSelectMonth }: Props) {
   const [containerRef, width] = useContainerWidth();
-
-  const xTick = (m: string) => {
-    const [y, mo] = m.split('-');
-    const short = new Date(+y, +mo - 1, 1).toLocaleDateString(locale === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short' });
-    return mo === '01' ? `${short} '${y.slice(2)}` : short; // year marker each January
-  };
   // Keep ~8 labels max so they never collide on narrow screens.
   const interval = width && width < 380 ? 1 : 0;
 
@@ -60,7 +44,7 @@ export function SpendingBarChart({ data, selectedMonths, locale, currency, isPri
           <CartesianGrid stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
           <XAxis
             dataKey="month"
-            tickFormatter={xTick}
+            tickFormatter={(m: string) => xMonthTick(m, locale)}
             tick={{ fill: 'var(--subtle)', fontSize: 11 }}
             axisLine={false}
             tickLine={false}

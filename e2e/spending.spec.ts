@@ -40,10 +40,20 @@ test.describe('Spending tracker', () => {
     // Appears in the ledger.
     await expect(page.getByText('$42.50').first()).toBeVisible({ timeout: 15000 });
 
+    // Live search filters as you type.
+    await page.getByPlaceholder(/Search/i).fill('zzz');
+    await expect(page.getByText('No matching spendings')).toBeVisible();
+    await page.getByPlaceholder(/Search/i).fill('');
+    await expect(page.getByText('$42.50').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /Export CSV/i })).toBeVisible();
+
     // And rolls into the overview total + monthly chart.
     await page.locator('a[href="/pfs-tool/spending"]').first().click();
     await page.waitForURL(/\/spending$/);
     await expect(page.getByText('Monthly spending')).toBeVisible({ timeout: 15000 });
+    await page.getByRole('radio', { name: 'By category' }).click();
+    await expect(page.getByText('Groceries').first()).toBeVisible(); // stacked legend
+    await page.getByRole('radio', { name: 'Total' }).click();
     await expect(page.getByText('Total spent')).toBeVisible();
     await expect(page.getByText('$42.50').first()).toBeVisible();
   });

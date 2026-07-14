@@ -164,6 +164,7 @@ export default function SpendingEntriesPage() {
           people={people}
           mainCurrency={mainCurrency}
           defaultDate={monthKey === todayISO().slice(0, 7) ? todayISO() : window.start}
+          pastSpendings={spendings}
           onSave={saveSpending}
           onDelete={() => dlg.spending && deleteSpending(dlg.spending.id)}
         />

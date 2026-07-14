@@ -58,6 +58,29 @@ test.describe('Spending tracker', () => {
     await expect(page.getByText('$42.50').first()).toBeVisible();
   });
 
+  test('merchant autocomplete suggests past merchants', async ({ page }) => {
+    await page.locator('a[href="/pfs-tool/spending"]').first().click();
+    await page.waitForURL(/\/spending$/);
+    await page.getByRole('link', { name: 'Entries' }).click();
+    await page.waitForURL(/\/spending\/entries/);
+
+    // Seed a merchant.
+    await page.getByRole('button', { name: /add spending/i }).first().click();
+    let d = page.getByRole('dialog');
+    await expect(d).toBeVisible();
+    await d.getByPlaceholder('0.00').fill('80');
+    await d.getByPlaceholder('Optional note').fill('Costco Wholesale');
+    await d.getByRole('button', { name: /^save changes$/i }).click();
+    await expect(d).not.toBeVisible();
+
+    // Reopen, type a prefix, and pick the suggestion.
+    await page.getByRole('button', { name: /add spending/i }).first().click();
+    d = page.getByRole('dialog');
+    await d.getByPlaceholder('Optional note').fill('cost');
+    await page.getByRole('button', { name: /^Costco Wholesale/ }).click();
+    await expect(d.getByPlaceholder('Optional note')).toHaveValue('Costco Wholesale');
+  });
+
   test('the Detail tab renders the MoM/YoY breakdown', async ({ page }) => {
     await page.locator('a[href="/pfs-tool/spending"]').first().click();
     await page.waitForURL(/\/spending$/);

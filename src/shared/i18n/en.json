@@ -402,5 +402,6 @@
   "sp_export_csv": "Export CSV",
   "sp_chart_total": "Total",
   "sp_chart_category": "By category",
-  "sp_other": "Other"
+  "sp_other": "Other",
+  "sp_merchant_note": "Merchant / note"
 }

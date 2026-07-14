@@ -53,6 +53,7 @@ features/
     SpendingOverviewPage.tsx       ← monthly bar chart (total / stacked-by-category) + breakdowns (period selector)
     SpendingDetailPage.tsx         ← per-category MoM / YoY table + Δ/% per period (last 6, contiguous)
     SpendingEntriesPage.tsx        ← the ledger: list / add / edit / delete + live search + CSV export
+                                     (add/edit dialog has merchant autocomplete → learned category)
     SpendingManagePage.tsx         ← manage categories + recurring rules
     components/
       SpendingDialog.tsx           ← add/edit one spending (amount, date, category, split)

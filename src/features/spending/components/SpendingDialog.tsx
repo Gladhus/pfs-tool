@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/shared/ui/Dialog';
 import { Button } from '@/shared/ui/Button';
@@ -8,6 +8,8 @@ import { Label } from '@/shared/ui/Label';
 import { tr } from '@/shared/i18n';
 import { migrateLegacyOwnership } from '@/shared/utils/ownership';
 import { OwnerSplitField, ownershipToSplit, splitToOwnership, splitInvalid } from './OwnerSplitField';
+import { MerchantAutocomplete } from './MerchantAutocomplete';
+import { merchantIndex, suggestMerchants } from '../data/merchants';
 import type { Currency, Person, Spending, SpendingCategory } from '@/types/sheets';
 
 const CURRENCIES: Currency[] = ['CAD', 'USD'];
@@ -20,6 +22,8 @@ interface Props {
   people: Person[];
   mainCurrency: Currency;
   defaultDate: string;
+  /** Past spendings, for merchant autocomplete + learned categories. */
+  pastSpendings: Spending[];
   onSave: (spending: Spending) => void;
   onDelete: () => void;
 }
@@ -28,12 +32,14 @@ function newId(): string {
   return `sp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function SpendingDialog({ open, onClose, spending, categories, people, mainCurrency, defaultDate, onSave, onDelete }: Props) {
+export function SpendingDialog({ open, onClose, spending, categories, people, mainCurrency, defaultDate, pastSpendings, onSave, onDelete }: Props) {
   const { t } = useTranslation();
   const isNew = spending === null;
   const activePeople = people.filter(p => p.active);
   const activeCats = categories.filter(c => c.active || c.id === spending?.category_id);
   const primaryId = people.find(p => p.primary)?.id ?? activePeople[0]?.id ?? '';
+  const catName = (id: string) => { const c = categories.find(x => x.id === id); return c ? tr(c) : id; };
+  const index = useMemo(() => merchantIndex(pastSpendings), [pastSpendings]);
 
   const build = () => ({
     date: spending?.date ?? defaultDate,
@@ -103,8 +109,21 @@ export function SpendingDialog({ open, onClose, spending, categories, people, ma
         <OwnerSplitField people={activePeople} value={form.split} onChange={v => set('split', v)} />
 
         <div>
-          <Label>{t('sp_comment')}</Label>
-          <Input value={form.comment} onChange={e => set('comment', e.target.value)} placeholder={t('sp_comment_placeholder')} />
+          <Label>{t('sp_merchant_note')}</Label>
+          <MerchantAutocomplete
+            value={form.comment}
+            onChange={v => set('comment', v)}
+            onPick={s => setForm(f => ({
+              ...f,
+              comment: s.name,
+              // Apply the merchant's usual category if we still know it.
+              category_id: (s.categoryId && categories.some(c => c.id === s.categoryId)) ? s.categoryId : f.category_id,
+            }))}
+            suggestions={suggestMerchants(index, form.comment)}
+            categoryName={catName}
+            placeholder={t('sp_comment_placeholder')}
+            aria-label={t('sp_merchant_note')}
+          />
         </div>
       </div>
 
